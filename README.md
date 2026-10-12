@@ -8,3 +8,4 @@ B.Tech final-year project (2026-27), Department of Computer Science and Engineer
 
 - `research-plan/main.tex` – detailed research plan (single file, compiles with pdfLaTeX on Overleaf)
 - `research-plan/main.pdf` – compiled copy of the plan
+- `BTP_Synopsis (1).pdf` – approved project synopsis
