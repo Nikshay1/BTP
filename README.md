@@ -6,9 +6,10 @@ B.Tech final-year project (2026-27), Department of Computer Science and Engineer
 
 ## Status
 
-Building milestone M1 (mid-November 2026): the coordinator, the common executor interface, runtime
-checks and logging, working end to end with one executor on a toy task. See `docs/decisions.md` for
-every design decision and the reason for it.
+M1 done (26 October 2026): the coordinator, the common executor interface, runtime checks and
+logging work end to end with the Direct executor on a toy task, using a scripted fake model. Next
+is M2 (December 2026): the core executors, the task suites, the baselines and a pilot on the real
+backbone. See `docs/progress.md` for milestones and `docs/decisions.md` for every design decision.
 
 ## Development
 
@@ -40,5 +41,6 @@ Each run writes `runs/demo/<run-id>/trace.jsonl` and `manifest.json`.
 - `docs/mentor-questions.md` – questions for the guide, with their answers and the decisions that follow
 - `docs/decisions.md` – log of design and research decisions, with dates and reasons
 - `docs/architecture.md` – how the framework works, written for reuse in the report and paper
+- `docs/progress.md` – milestone status and what carries over
 - `src/bioalloc/` – the framework (Python package)
 - `tests/` – unit and end-to-end tests
