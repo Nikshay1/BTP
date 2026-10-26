@@ -500,3 +500,43 @@ def test_admission_is_fifo() -> None:
 
     asyncio.run(go())
     assert order == ["holder", "big", "small"]
+
+
+# Third review: a batch with a cancelled worker and a failing one leaves no exception unobserved.
+def test_mixed_cancelled_and_failed_batch_is_fully_observed(tmp_path: Path) -> None:
+    import gc
+
+    graph = TaskGraph(
+        id="m",
+        nodes=(Subtask(id="a", instruction="a"), Subtask(id="b", instruction="b")),
+        final_nodes=("a", "b"),
+    )
+
+    class Mixed:
+        name = "mixed"
+
+        async def execute(self, subtask, ctx):  # type: ignore[no-untyped-def]
+            if subtask.id == "a":
+                raise asyncio.CancelledError()
+            raise RuntimeError("bug in b")
+
+    unobserved: list[str] = []
+    llm = MeteredClient(
+        FakeTransport(),
+        Account(Budget(max_tokens=1000, max_model_calls=5)),
+        "coordinator",
+        "coordinator",
+    )
+    coord = Coordinator({"mixed": Mixed()}, Constant("mixed"))
+
+    async def go() -> None:
+        asyncio.get_running_loop().set_exception_handler(
+            lambda loop, ctx: unobserved.append(ctx["message"])
+        )
+        with pytest.raises(RuntimeError, match="bug in b"):
+            await coord.run(graph, Echo(), llm, Tracer(tmp_path, "r"))
+        gc.collect()
+
+    asyncio.run(go())
+    gc.collect()
+    assert unobserved == []

@@ -161,10 +161,12 @@ named milestone).
 
 GPT-6.1 Sol (high effort) reviewed the eight M1 commits and reported 15 findings, verified with
 probes. All were checked against the code and accepted. A second review of the fixes found five of
-them only partly fixed and six new problems; those were fixed in a second round. Regression tests
+them only partly fixed and six new problems; those were fixed in a second round. A third review
+found one remaining case (a batch holding both a cancelled and a failed worker left the failure
+unobserved), fixed in a third round. Regression tests
 are in `tests/test_review_regressions.py`. Each was mutation-checked: the fix was reverted and the
-test confirmed to fail. The exception is the "every task exception is retrieved" property of
-round 2, which only shows as an asyncio log warning and is covered by code inspection.
+test confirmed to fail. The "every task exception is retrieved" property is tested by capturing
+asyncio's unobserved-exception handler.
 
 | # | Finding | Fix | Round |
 |---|---|---|---|
@@ -181,7 +183,7 @@ round 2, which only shows as an asyncio log warning and is covered by code inspe
 | 11 | Model seeds unset; random policy order-dependent | Seeds derived from task, subtask and attempt | 1 |
 | 12 | Unknown usage priced at the input rate | Charged as prompt estimate plus maximum completion | 1 |
 | 13 | Raw inputs counted as communication | One message per source; wrappers separate from agent text | 1, 2 |
-| N1 | Executor exception left siblings unobserved | All finished tasks retrieved, others cancelled, first error raised | 2 |
+| N1 | Executor exception left siblings unobserved | Every finished task retrieved (cancelled ones included), others cancelled, a real error raised before a cancellation | 2, 3 |
 | N2 | Call cut off before sending was charged | Charged only if it reached the transport | 2 |
 | N3 | Admission not first come first served | FIFO admission queue per task | 2 |
 

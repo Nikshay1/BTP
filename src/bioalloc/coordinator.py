@@ -123,9 +123,16 @@ class Coordinator:
                 finished, _ = await asyncio.wait(active, return_when=asyncio.FIRST_COMPLETED)
                 # Retrieve every finished task before raising, so no exception goes unobserved.
                 outcomes = [(active.pop(t), t) for t in finished]
-                errors = [t.exception() for _, t in outcomes if t.exception() is not None]
+                errors: list[BaseException] = []
+                for sub, t in outcomes:
+                    if t.cancelled():
+                        errors.append(asyncio.CancelledError(f"worker for {sub.id} was cancelled"))
+                    elif (exc := t.exception()) is not None:
+                        errors.append(exc)
                 if errors:
-                    raise errors[0]  # type: ignore[misc]
+                    # Prefer a real failure over a cancellation when both happened together.
+                    errors.sort(key=lambda e: isinstance(e, asyncio.CancelledError))
+                    raise errors[0]
                 for subtask, task in outcomes:
                     solved = task.result()
                     records += solved.records
