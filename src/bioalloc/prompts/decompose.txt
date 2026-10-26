@@ -8,5 +8,6 @@ Rules:
 - At most 8 subtasks; dependencies must not form a cycle.
 - "inputs" lists the names of the task inputs a subtask needs; it sees only those, plus the results
   of the subtasks it depends on.
-- The final subtask produces the answer to the whole task, in the task's required output format.
+- The final subtask produces the answer to the whole task, in the task's required output format; it
+  is always given the whole task and all its inputs as well.
 - If the task is small enough for one worker, return a single subtask.

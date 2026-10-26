@@ -212,3 +212,20 @@ def test_yoked_majority_stops_when_every_request_is_rejected(tmp_path: Path) -> 
     fake = FakeTransport().respond(SOLVE, lambda r: RequestRejected("bad request"))
     result, _ = run(fake, tmp_path, MajorityVote(model="m", max_calls=4, name="majority_yoked"))
     assert len(fake.requests) == 4 and result.status == "failed"
+
+
+def test_bee_votes_on_intermediate_nodes_without_a_contract(tmp_path: Path) -> None:
+    from bioalloc.tasks.gsm8k import GSM8K
+
+    graph = TaskGraph(
+        id="i",
+        nodes=(Subtask(id="a", instruction="pick", written_by="decomposer"),),
+        final_nodes=("a",),
+    )
+    fake = FakeTransport().respond(SOLVE, lambda r: json.dumps({"partial": 12}))
+    llm = MeteredClient(
+        fake, Account(Budget(max_tokens=10**6, max_model_calls=50)), "coordinator", "coordinator"
+    )
+    coord = Coordinator({"bee": Bee(model="m")}, Constant("bee"), CoordinatorConfig(max_attempts=1))
+    result = asyncio.run(coord.run(graph, GSM8K(), llm, Tracer(tmp_path, "r")))
+    assert result.status == "completed" and result.answer == {"partial": 12}

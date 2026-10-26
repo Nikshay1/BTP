@@ -31,7 +31,8 @@ MAX_DEPTH = 6
 
 
 class PublicTask(Wire):
-    """What a decomposer may see: the task as given to a solver, never its answer."""
+    """What a decomposer may see: the task as given to a solver (instruction, input values,
+    output schema, tools), never its answer."""
 
     id: str
     instruction: str
@@ -138,6 +139,11 @@ def graph_from_proposal(task: PublicTask, proposal: JsonValue) -> TaskGraph:
             instruction = ""
         node_id = str(n["id"])
         is_final = node_id == final
+        if is_final:
+            # The final node always keeps the whole public task, so a plan can never lose the
+            # question or weaken the goal (D17).
+            instruction = f"{instruction}\n\nThe overall task: {task.instruction}"
+            wanted = list(task.inputs)
         subtasks.append(
             Subtask(
                 id=node_id,
@@ -184,7 +190,7 @@ async def model_decomposition(
     task_text = json.dumps(
         {
             "instruction": task.instruction,
-            "input_names": sorted(task.inputs),
+            "inputs": task.inputs,
             "output_schema": task.output_schema,
             "tools": list(task.allowed_tools),
         },

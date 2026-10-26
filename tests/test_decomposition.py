@@ -46,6 +46,8 @@ def test_valid_proposal_builds_graph_with_contract_on_final_node_only() -> None:
     assert s1.inputs == {"items": [["pen", 2, 1.5]]} and s1.contract is None
     assert s1.output_schema is None and s1.written_by == "decomposer"
     assert s2.contract == "total" and s2.output_schema == TASK.output_schema
+    # The final node always keeps the whole public task.
+    assert set(s2.inputs) == set(TASK.inputs) and TASK.instruction in s2.instruction
     assert g.final_nodes == ("s2",)
 
 
@@ -103,9 +105,9 @@ def test_first_valid_proposal_is_ok() -> None:
     rec = asyncio.run(model_decomposition(TASK, 0, llm, model="m"))
     assert rec.status == "ok" and rec.cost.coordinator.total > 0 and rec.cost.worker.total == 0
     assert len(rec.graph().nodes) == 2
-    # The decomposer sees input names, never input values or any answer.
+    # The decomposer sees the public task, input values included.
     sent = fake.requests[0].messages[1].content
-    assert "items" in sent and "pen" not in sent
+    assert "items" in sent and "pen" in sent
 
 
 def test_invalid_then_repaired_then_fallback() -> None:
@@ -159,3 +161,15 @@ def test_every_system_starts_with_the_same_imported_cost(tmp_path: Path) -> None
             == rec.cost.tokens.total
         )
         assert graph.final_nodes == ("s2",)
+
+
+def test_a_plan_that_drops_the_inputs_still_keeps_them_on_the_final_node() -> None:
+    lossy = {
+        "nodes": [
+            {"id": "s1", "instruction": "Think.", "inputs": []},
+            {"id": "s2", "instruction": "Answer.", "depends_on": ["s1"], "inputs": []},
+        ],
+        "final": "s2",
+    }
+    g = graph_from_proposal(TASK, lossy)
+    assert g.node("s1").inputs == {} and g.node("s2").inputs == TASK.inputs

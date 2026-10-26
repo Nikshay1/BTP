@@ -92,7 +92,9 @@ def _action_space(family: TaskFamily, subtask: Subtask) -> ActionSpace | None:
 
 def _normalizer(family: TaskFamily, subtask: Subtask) -> Callable[[JsonValue], str | None]:
     get = getattr(family, "normalize", None)
-    if get is None:
+    if get is None or subtask.contract is None:
+        # Intermediate nodes of a model decomposition carry no family contract: compare their
+        # outputs by canonical JSON, which needs no knowledge of the expected answer.
         return canonical_option
     return lambda output: get(subtask, output)
 
