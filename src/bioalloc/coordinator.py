@@ -121,6 +121,11 @@ class Coordinator:
         self.seed = seed
         self.tools = dict(tools or {})
 
+    def _tools_for(self, family: TaskFamily) -> dict[str, Tool]:
+        """The family's tools plus any given to the coordinator; every executor sees the same."""
+        get = getattr(family, "tools", None)
+        return {**(get() if get is not None else {}), **self.tools}
+
     async def run(
         self, graph: TaskGraph, family: TaskFamily, llm: MeteredClient, tracer: Tracer
     ) -> RunResult:
@@ -250,7 +255,12 @@ class Coordinator:
                 emit=tracer.hook(span),
                 checks=tuple(family.checks(subtask)),
                 tools=(
-                    ToolService(self.tools, subtask.allowed_tools, child.account, tracer.hook(span))
+                    ToolService(
+                        self._tools_for(family),
+                        subtask.allowed_tools,
+                        child.account,
+                        tracer.hook(span),
+                    )
                     if subtask.allowed_tools
                     else None
                 ),

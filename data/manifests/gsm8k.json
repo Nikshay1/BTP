@@ -1,0 +1,18 @@
+{
+ "config": "main",
+ "counts": {
+  "groups": 8792,
+  "tasks": 8792
+ },
+ "licence": "MIT",
+ "prepared": {
+  "gsm8k/private.jsonl": "4e631b54679a2846f26f54f4381535c18df8a5d57631159cfaf973dddc328950",
+  "gsm8k/public.jsonl": "5ade8f1237d14d6769f6f51254e93c8ebabc015e363801d8ed6103e85092c9fa"
+ },
+ "raw": {
+  "main/test-00000-of-00001.parquet": "ee7b8da9e381df27b9e3f7758a159ab2bdaa4dbaa910546cbbc47e0cb44e4f59",
+  "main/train-00000-of-00001.parquet": "ea82612ea9582142387730c793eb67d3b12849002bc0b7fa6f8efafa7351419d"
+ },
+ "revision": "740312add88f781978c0658806c59bc2815b9866",
+ "source": "https://huggingface.co/datasets/openai/gsm8k"
+}

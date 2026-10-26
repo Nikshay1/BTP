@@ -11,6 +11,8 @@ build/
 # Generated experiment output. Traces are published separately, not committed.
 runs/
 .cache/
+data/raw/
+data/prepared/
 
 # Secrets
 .env
