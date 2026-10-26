@@ -31,6 +31,7 @@ from bioalloc.executors.base import (
     Upstream,
     canonical_option,
 )
+from bioalloc.features import subtask_features
 from bioalloc.graph import TaskGraph
 from bioalloc.llm.base import LLMError, TransportTimeout
 from bioalloc.policies import Attempt, Policy
@@ -151,9 +152,20 @@ class Coordinator:
             ready = graph.ready(done, started=busy)
             if self.config.serial:
                 ready = ready[:1] if not active else []
+            width = len(ready) + len(active)  # siblings ready or running at this moment
             for s in ready:
                 task = asyncio.create_task(
-                    self._solve(graph.id, s, family, done, llm, tracer, root, task_state)
+                    self._solve(
+                        graph.id,
+                        s,
+                        family,
+                        done,
+                        llm,
+                        tracer,
+                        root,
+                        task_state,
+                        ready_width=width,
+                    )
                 )
                 active[task] = s
 
@@ -227,6 +239,7 @@ class Coordinator:
         tracer: Tracer,
         root: str,
         task_state: dict[str, Any],
+        ready_width: int = 1,
     ) -> _Solved:
         previous: list[Attempt] = []
         feedback: list[Feedback] = []
@@ -236,6 +249,9 @@ class Coordinator:
         for attempt in range(self.config.max_attempts):
             if llm.account.exhausted():
                 return _Solved(None, records, True)
+            subtask = subtask.model_copy(
+                update={"features": subtask_features(subtask, family, ready_width, attempt)}
+            )
             name = self.policy.select(task_id, subtask, previous)
             executor = self.executors[name]
             span = tracer.span(parent=root)
@@ -255,6 +271,7 @@ class Coordinator:
                     "executor": name,
                     "attempt": attempt,
                     "seed": seed,
+                    "features": subtask.features,
                     "limits": limits.model_dump(),
                     "feedback_items": len(feedback),
                 },
