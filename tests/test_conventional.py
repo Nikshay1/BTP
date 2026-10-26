@@ -52,10 +52,7 @@ def test_plan_then_execute_plans_once_then_answers(tmp_path: Path) -> None:
 
 def test_single_agent_runs_serially_remembers_and_has_one_identity(tmp_path: Path) -> None:
     def respond(req: LLMRequest) -> str:
-        leg2 = (
-            "Continue from the node" in req.messages[-3].content
-            or "Continue from the node" in req.messages[-1].content
-        )
+        leg2 = any("Continue from the node" in m.content for m in req.messages)
         return json.dumps({"route": LEG2 if leg2 else LEG1})
 
     fake = FakeTransport().respond(lambda r: True, respond)
