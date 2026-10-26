@@ -17,6 +17,7 @@ from typing import Any, Protocol
 
 from pydantic import JsonValue
 
+from bioalloc.actions import ActionSpace
 from bioalloc.budget import MeteredClient
 from bioalloc.checks import RuntimeCheck, combine
 from bioalloc.llm.base import LLMReply, LLMRequest, Message
@@ -55,6 +56,11 @@ class ExecutionContext:
     checks: tuple[RuntimeCheck, ...] = ()
     # Tools the subtask allows, or None if it allows none.
     tools: ToolService | None = None
+    # The family's typed action space for this subtask, if it has one (D10).
+    actions: ActionSpace | None = None
+    # State private to one task run, shared by attempts within it and dropped afterwards
+    # (e.g. ant weights, D10). Never shared across tasks, systems or repetitions.
+    task_state: dict[str, Any] = field(default_factory=dict)
 
     @property
     def agent(self) -> str:

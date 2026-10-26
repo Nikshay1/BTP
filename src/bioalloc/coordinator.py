@@ -17,10 +17,11 @@ import hashlib
 import random
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import JsonValue
 
+from bioalloc.actions import ActionSpace
 from bioalloc.budget import BudgetExceeded, MeteredClient
 from bioalloc.checks import combine
 from bioalloc.executors.base import ExecutionContext, Executor, Feedback, Upstream
@@ -75,6 +76,11 @@ class CoordinatorConfig:
     retry_feedback: bool = True
 
 
+def _action_space(family: TaskFamily, subtask: Subtask) -> ActionSpace | None:
+    get = getattr(family, "action_space", None)
+    return get(subtask) if get is not None else None
+
+
 def derive_seed(*parts: object) -> int:
     digest = hashlib.sha256(":".join(map(str, parts)).encode()).digest()
     return int.from_bytes(digest[:4], "big")
@@ -112,12 +118,13 @@ class Coordinator:
         records: list[AttemptRecord] = []
         out_of_budget = False
         active: dict[asyncio.Task[_Solved], Subtask] = {}
+        task_state: dict[str, Any] = {}  # private to this run (D10)
 
         def launch() -> None:
             busy = given_up | {s.id for s in active.values()}
             for s in graph.ready(done, started=busy):
                 task = asyncio.create_task(
-                    self._solve(graph.id, s, family, done, llm, tracer, root)
+                    self._solve(graph.id, s, family, done, llm, tracer, root, task_state)
                 )
                 active[task] = s
 
@@ -190,6 +197,7 @@ class Coordinator:
         llm: MeteredClient,
         tracer: Tracer,
         root: str,
+        task_state: dict[str, Any],
     ) -> _Solved:
         previous: list[Attempt] = []
         feedback: list[Feedback] = []
@@ -233,6 +241,8 @@ class Coordinator:
                     if subtask.allowed_tools
                     else None
                 ),
+                actions=_action_space(family, subtask),
+                task_state=task_state,
             )
             output: JsonValue = None
             confidence: float | None = None

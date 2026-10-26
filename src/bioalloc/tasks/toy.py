@@ -9,11 +9,13 @@ excluded from every reported result (decision D4).
 
 from __future__ import annotations
 
+import json
 from collections.abc import Mapping, Sequence
 from typing import Any
 
 from pydantic import JsonValue
 
+from bioalloc.actions import FINISH, Action
 from bioalloc.checks import RuntimeCheck, SchemaCheck
 from bioalloc.graph import TaskGraph
 from bioalloc.schemas import CheckResult, Evidence, Subtask
@@ -93,8 +95,53 @@ class RouteCheck:
         return CheckResult(check=self.name, evidence=self.evidence, verdict="pass")
 
 
+class RouteActions:
+    """MOVE(to) along an existing edge from the current node; FINISH once at the goal."""
+
+    kinds: tuple[str, ...] = ("MOVE", FINISH)
+
+    def __init__(self, subtask: Subtask) -> None:
+        self.subtask = subtask
+        self.costs = edge_costs(subtask.inputs["edges"])
+        self.goal = str(subtask.inputs["goal"])
+
+    def start(self, subtask: Subtask, upstream: Mapping[str, JsonValue]) -> list[str]:
+        start = leg_start(subtask, upstream)
+        return [start] if start is not None else []
+
+    def legal(self, state: list[str], action: Action) -> str | None:
+        if not state:
+            return "start node unknown"
+        if action.kind == FINISH:
+            return None if state[-1] == self.goal else f"not at the goal {self.goal} yet"
+        to = action.args.get("to")
+        if action.kind != "MOVE" or not isinstance(to, str):
+            return "expected MOVE with a string 'to'"
+        if (state[-1], to) not in self.costs:
+            return f"no edge {state[-1]} -> {to}"
+        return None
+
+    def apply(self, state: list[str], action: Action) -> tuple[list[str], str]:
+        to = str(action.args["to"])
+        return [*state, to], f"moved to {to} at cost {self.costs[(state[-1], to)]}"
+
+    def finish(self, state: list[str], action: Action) -> JsonValue:
+        return {"route": list(state)}
+
+    def describe(self, state: list[str]) -> str:
+        here = state[-1] if state else "?"
+        out = sorted((v, w) for (u, v), w in self.costs.items() if u == here)
+        return (
+            f"Route so far: {json.dumps(state)}. Current node: {here}. Goal: {self.goal}. "
+            f"Edges from {here}: {json.dumps([[v, w] for v, w in out])}."
+        )
+
+
 class ToyRoutes:
     name = "toy_routes"
+
+    def action_space(self, subtask: Subtask) -> RouteActions:
+        return RouteActions(subtask)
 
     def checks(self, subtask: Subtask) -> Sequence[RuntimeCheck]:
         return [SchemaCheck(), RouteCheck()]

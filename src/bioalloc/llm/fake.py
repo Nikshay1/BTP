@@ -36,6 +36,8 @@ def contains(text: str) -> Predicate:
 class _Rule:
     predicate: Predicate
     replies: list[Script]
+    # If set, answers every matching request (replies is ignored).
+    responder: Callable[[LLMRequest], Script] | None = None
 
 
 @dataclass
@@ -51,9 +53,19 @@ class FakeTransport:
     def always(self, *replies: Script) -> FakeTransport:
         return self.on(always, *replies)
 
+    def respond(
+        self, predicate: Predicate, responder: Callable[[LLMRequest], Script]
+    ) -> FakeTransport:
+        """Answer every matching request by calling ``responder`` on it."""
+        self.rules.append(_Rule(predicate, [], responder))
+        return self
+
     async def send(self, request: LLMRequest) -> LLMReply:
         self.requests.append(request)
         for rule in self.rules:
+            if rule.responder is not None and rule.predicate(request):
+                script = rule.responder(request)
+                break
             if rule.replies and rule.predicate(request):
                 script = rule.replies.pop(0)
                 break
