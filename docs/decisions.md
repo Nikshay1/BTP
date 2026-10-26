@@ -359,6 +359,28 @@ and settled; where they differed, the entry says which was taken and why.
   missing usage is treated as unknown, not zero. The seed is best effort on Groq. Tested offline with
   a mocked HTTP transport; the first live step is a small charged capability check.
 
+## D20. Grouped splits v1 and the test-only variants
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 4.4 (tasks)
+- **Decision:** the 450 study tasks are split once into `data/splits/v1.json` (SHA-256
+  `8b38f35b966e...`, recorded in the file): per family 50 training, 30 tuning, 50 ordinary test and
+  20 test-only variant tasks. Whole template groups are assigned in SHA-256 order of (split
+  version, seed 20261026, group id); no group crosses splits. The variants, fixed before any model
+  run:
+  - planning: the 5-block Blocksworld instances (development has only 4-block Blocksworld and
+    Logistics);
+  - tools: the `compare` template (two parallel chains joined at the end), a composition topology
+    absent from development;
+  - reasoning: the longest fifth of GSM8K test questions by word count.
+- **Pools:** PlanBench main sets (Blocksworld 1-500, Logistics 1-285); tool-suite seeds 0-299 per
+  template; GSM8K upstream test split (1,319 problems).
+- **Trade-off:** with `compare` held out, every development tool task is a chain of three
+  subtasks; parallel siblings are studied through the synthetic suite (width factor) and appear in
+  tools only at test time. MATH is not in v1; adding it later means a new split version, never an
+  edit to v1.
+- **Statistics:** planning has more tasks than groups (isomorphic duplicates stay together), so the
+  bootstrap resamples groups, as Section E of Sol's plan requires.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

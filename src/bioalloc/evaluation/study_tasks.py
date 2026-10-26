@@ -45,11 +45,13 @@ def inventory() -> list[Candidate]:
                     variant=template == "compare",
                 )
             )
-    items = [i for i in gsm8k_data.load() if i.upstream_split == "test"]
-    threshold = gsm8k_long_threshold([str(i.task.inputs["question"]) for i in items])
-    for item in items:
-        long = len(str(item.task.inputs["question"]).split()) > threshold
+    problems = [p for p in gsm8k_data.load() if p.upstream_split == "test"]
+    threshold = gsm8k_long_threshold([str(p.task.inputs["question"]) for p in problems])
+    for problem in problems:
+        long = len(str(problem.task.inputs["question"]).split()) > threshold
         cands.append(
-            Candidate(task_id=item.task.id, family="reasoning", group=item.group, variant=long)
+            Candidate(
+                task_id=problem.task.id, family="reasoning", group=problem.group, variant=long
+            )
         )
     return cands
