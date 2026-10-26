@@ -257,7 +257,15 @@ class MeteredClient:
             reply = await self.transport.send(request)
         except TransportTimeout as exc:
             self.account.settle_unknown(rid, self.actor, self.pricing)
-            self._emit("llm_error", {"agent": self.agent, "error": repr(exc), "usage": "unknown"})
+            self._emit(
+                "llm_error",
+                {
+                    "agent": self.agent,
+                    "error": repr(exc),
+                    "usage": "unknown",
+                    "charged_tokens": reservation,
+                },
+            )
             raise
         except Exception as exc:
             # No reply and no evidence of consumption: release the reservation.
