@@ -1,6 +1,7 @@
 """A minimal STRIPS interpreter for the PlanBench domains (Blocksworld, Logistics).
 
-Parses the subset of PDDL these domains use: untyped or typed objects, actions whose preconditions
+Parses the subset of PDDL these domains use: untyped objects (typed lists are refused, since
+types would not be checked; the pinned domains use type predicates), actions whose preconditions
 are conjunctions of positive atoms and whose effects are conjunctions of atoms and negated atoms,
 and conjunctive positive goals. It is used as the public plan check (legal actions, goal reached)
 and, until the pinned VAL binary is available, as the grader; it is cross-checked against VAL on
@@ -53,16 +54,12 @@ def parse_sexpr(text: str) -> list[object]:
 
 
 def _strip_types(items: list[object]) -> list[str]:
-    """['?a', '?b', '-', 'truck', '?c'] -> ['?a', '?b', '?c']."""
+    """A plain list of parameters or objects. Typed lists ('?a - truck') are refused: this
+    interpreter does not check types, so accepting them would accept ill-typed plans."""
     out: list[str] = []
-    skip = False
     for x in items:
-        if skip:
-            skip = False
-            continue
         if x == "-":
-            skip = True
-            continue
+            raise PDDLError("typed PDDL is not supported; use type predicates instead")
         if not isinstance(x, str):
             raise PDDLError(f"unexpected parameter list item {x!r}")
         out.append(x)

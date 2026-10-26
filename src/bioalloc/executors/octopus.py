@@ -1,9 +1,9 @@
 """Octopus: bounded local execution with a private scratchpad, reporting only at the end.
 
 The worker receives the subtask and a local budget and runs its own act-observe loop. Each step is
-one tool episode (Direct's, D11). When the model answers without tools, the answer is run through
-the public checks: a goal-verified answer ends the loop (D15); a rejected answer goes back to the
-worker with the public reasons; an answer that passes without goal evidence is returned as
+one completion plus the tools it calls. When the model answers without tools, the answer is run
+through the public checks: a goal-verified answer ends the loop (D15); a rejected answer goes back
+to the worker with the public reasons; an answer that passes without goal evidence is returned as
 unverified. The transcript is private and dropped after the report. Limits: ``max_steps`` model
 steps (tool calls are bounded by the task's tool budget). Any answer no check rejects is returned at
 once, so the loop only continues after a rejection; if it ends without an answer (step limit,
@@ -11,7 +11,8 @@ supervisor stop) the outcome is marked incomplete and the coordinator rejects it
 budget mid-loop is reported as budget exhaustion.
 
 ``report_every_step=True`` is the plain counterpart in Table 3 of the research plan: the same
-worker, but after every step it reports to a coordinator model call (actor ``coordinator``) that
+worker, but after every step that does not end the dispatch (each tool step and each rejected
+answer) it reports to a coordinator model call (actor ``coordinator``) that
 answers continue or stop and may add one instruction. The report and the coordinator's reply are
 both charged, and the instruction counts as communication. The same class with
 ``report_every_step=False`` and no octopus-specific behaviour is the ordinary act-observe worker of
@@ -31,10 +32,8 @@ from bioalloc.checks import goal_verified
 from bioalloc.executors.base import (
     ExecutionContext,
     ExecutorOutcome,
-    incompleteness,
     parse_json,
     subtask_messages,
-    tool_episode,
 )
 from bioalloc.llm.base import LLMRequest, Message
 from bioalloc.schemas import Subtask
@@ -84,11 +83,41 @@ class Octopus:
             return ExecutorOutcome(output=output)
 
         for step in range(self.max_steps):
-            episode = await tool_episode(ctx, self._request(messages, ctx, step), 4)
-            messages = list(episode.messages)
-            reply = episode.reply
+            # One step = one completion, plus the tools it calls (an act-observe step).
+            request = self._request(messages, ctx, step)
+            if ctx.tools is not None:
+                request = request.model_copy(update={"tools": ctx.tools.wire()})
+            reply = await ctx.llm.complete(request)
+            if reply.tool_calls and ctx.tools is not None:
+                messages.append(
+                    Message(
+                        role="assistant",
+                        content=reply.content,
+                        source=ctx.agent,
+                        tool_calls=reply.tool_calls,
+                    )
+                )
+                for tc in reply.tool_calls:
+                    result = await ctx.tools.call(tc)
+                    messages.append(
+                        Message(role="tool", content=result.message_content(), tool_call_id=tc.id)
+                    )
+                if self.report_every_step:
+                    decision, instruction = await self._supervise(messages, ctx, step)
+                    if decision == "stop":
+                        return stop("supervisor_stop")
+                    if instruction:
+                        messages.append(
+                            Message(
+                                role="user", content=instruction, source=f"supervisor:{ctx.agent}"
+                            )
+                        )
+                continue
             messages.append(Message(role="assistant", content=reply.content, source=ctx.agent))
-            problem = incompleteness(episode)
+            problem = {
+                "length": "the reply was cut off at the completion limit",
+                "content_filter": "the reply was filtered by the provider",
+            }.get(reply.finish_reason)
             if problem is not None:
                 messages.append(Message(role="user", content=f"Your last step failed: {problem}."))
             else:

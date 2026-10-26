@@ -7,6 +7,7 @@ from bioalloc.coordinator import Coordinator, CoordinatorConfig
 from bioalloc.evaluation.toy_data import make_instance, optimal_legs
 from bioalloc.executors.base import ExecutionContext
 from bioalloc.executors.octopus import Octopus
+from bioalloc.llm.base import LLMRequest
 from bioalloc.llm.fake import FakeTransport
 from bioalloc.policies import Constant
 from bioalloc.schemas import Budget, CheckResult, Subtask
@@ -114,3 +115,39 @@ def test_supervisor_stop_without_answer_is_rejected(tmp_path: Path) -> None:
         fake, tmp_path, Octopus(model="m", report_every_step=True, name="octopus_reporting")
     )
     assert not result.attempts[0].accepted and result.status == "failed"
+
+
+def test_reporting_counterpart_reports_after_tool_steps_too() -> None:
+    from bioalloc.llm.base import LLMReply, ToolCall, Usage
+    from bioalloc.tasks.common import CALCULATOR
+    from bioalloc.tools import ToolService
+
+    def tool_turn() -> LLMReply:
+        return LLMReply(
+            content="",
+            model="m",
+            finish_reason="tool_calls",
+            tool_calls=(ToolCall(id="t", name="calculate", arguments='{"expression": "2+3"}'),),
+            usage=Usage(prompt_tokens=5, completion_tokens=5),
+        )
+
+    def supervise(r: LLMRequest) -> bool:
+        return "supervise" in r.messages[0].content
+
+    for reporting, supervisor_calls in ((False, 0), (True, 1)):
+        fake = FakeTransport().on(supervise, json.dumps({"decision": "continue"}))
+        fake.on(lambda r: not supervise(r), tool_turn(), '{"x": 5}')
+        account = Account(Budget(max_tokens=10**6, max_model_calls=20))
+        ctx = ExecutionContext(
+            llm=MeteredClient(fake, account, "worker", "w"),
+            span_id="s",
+            tools=ToolService({"calculate": CALCULATOR}, ("calculate",), account),
+        )
+        out = asyncio.run(
+            Octopus(model="m", report_every_step=reporting).execute(
+                Subtask(id="a", instruction="x"), ctx
+            )
+        )
+        assert out.output == {"x": 5}
+        assert len([r for r in fake.requests if supervise(r)]) == supervisor_calls
+        assert (account.snapshot().coordinator.total > 0) == reporting

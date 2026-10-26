@@ -103,3 +103,15 @@ def test_grading_and_isomorphic_grouping() -> None:
         PlanBench().normalize(item.task.as_single_node().nodes[0], {"plan": ["(PICK-UP  b)"]})
         == '["pick-up b"]'
     )
+
+
+def test_typed_pddl_is_refused_rather_than_unchecked() -> None:
+    typed = DOMAIN.replace(
+        ":parameters (?ob)\n  :precondition (and (clear ?ob) (ontable ?ob) (handempty))",
+        ":parameters (?ob - block)\n  :precondition (and (clear ?ob) (ontable ?ob) (handempty))",
+    )
+    assert typed != DOMAIN
+    with pytest.raises(PDDLError, match="typed"):
+        parse_domain(typed)
+    with pytest.raises(PDDLError, match="typed"):
+        parse_problem(PROB.replace("(:objects a b c)", "(:objects a b c - block)"))
