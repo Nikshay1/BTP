@@ -2,8 +2,8 @@
 
 - **Mentor (guide):** Prof. Shailender Kumar
 - **Prepared on:** 12 October 2026
-- **Discussed on:** _not yet_
-- **Status:** waiting for answers
+- **Discussed on:** 26 October 2026 (briefly)
+- **Status:** the guide asked the group to decide these themselves; see `docs/decisions.md`
 
 Each question has a short reason, a place for the answer, and a place for what it changes in the plan.
 The four marked **(priority)** matter most, because their answers can change the plan.
@@ -111,10 +111,10 @@ Do you want any changes to the plan before you sign it?
 
 ## Other advice from the professor
 
-_Nothing recorded yet._
+26 October 2026: the guide was busy and asked the group to decide the details as they see fit.
+The questions below remain useful as a checklist, and the group's answers are recorded in
+`docs/decisions.md`.
 
 ## Decisions
 
-A short list of what was decided, with the date. Each decision should say which file was changed because of it.
-
-_Nothing recorded yet._
+All decisions are kept in `docs/decisions.md`, with their dates and reasons.
