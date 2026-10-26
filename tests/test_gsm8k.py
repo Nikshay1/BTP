@@ -113,3 +113,11 @@ def test_family_checks_normalizer_and_actions() -> None:
     assert space.legal(s, Action(kind="CALCULATE", args={"name": "x", "expression": "eggs / 0"}))
     assert space.finish(s, Action(kind="FINISH", args={"answer": "left"})) == {"answer": 9}
     assert "calculate" in fam.tools()
+
+
+@pytest.mark.parametrize(
+    "expr", ["sqrt(-1)", "round(2, 2.5)", "(-1)**0.5", "min()", "abs(1, 2)", "10.0 ** 10 * 1e300"]
+)
+def test_calculator_turns_every_arithmetic_failure_into_calc_error(expr: str) -> None:
+    with pytest.raises(CalcError):
+        calculate(expr)

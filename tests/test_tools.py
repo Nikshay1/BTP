@@ -198,3 +198,14 @@ def test_truncated_or_unfinished_output_is_rejected_even_if_it_parses(tmp_path: 
     first = result.attempts[0]
     assert not first.accepted and first.checks[-1].check == "generation"
     assert result.answer == {"a": {"answer": 5}}
+
+
+def test_non_json_tool_output_is_an_observation_not_a_crash() -> None:
+    registry = {
+        "odd": Tool(ToolSpec(name="odd", description="", parameters=ANY), lambda a: complex(1, 1)),
+        "nan": Tool(ToolSpec(name="nan", description="", parameters=ANY), lambda a: float("nan")),
+    }
+    svc = ToolService(registry, ("odd", "nan"), Account(Budget(max_tokens=1, max_model_calls=1)))
+    for name in ("odd", "nan"):
+        r = asyncio.run(svc.call(ToolCall(id="x", name=name, arguments="{}")))
+        assert not r.ok and "not JSON" in str(r.error)

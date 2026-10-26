@@ -84,10 +84,20 @@ def calculate(expression: str) -> float | int:
             return _FUNCS[node.func.id](*(ev(a) for a in node.args))
         raise CalcError(f"unsupported element: {type(node).__name__}")
 
-    value = ev(tree)
+    try:
+        value = ev(tree)
+    except (ValueError, TypeError, OverflowError, RecursionError) as exc:
+        # e.g. sqrt(-1), round(2, 2.5), huge intermediate results
+        raise CalcError(f"{type(exc).__name__}: {exc}") from exc
+    if isinstance(value, bool) or not isinstance(value, int | float):
+        raise CalcError(f"the result is not a real number ({type(value).__name__})")
+    if isinstance(value, float) and not math.isfinite(value):
+        raise CalcError("the result is not finite")
+    if abs(value) > MAX_MAGNITUDE:
+        raise CalcError("result too large")
     if isinstance(value, float) and value.is_integer():
         return int(value)
-    return value  # type: ignore[no-any-return]
+    return value
 
 
 CALCULATOR = Tool(

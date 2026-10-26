@@ -113,7 +113,10 @@ class ToolService:
             return fail(f"tool timed out after {self.timeout_s} s")
         except Exception as exc:  # a tool error is an observation for the model, not a crash
             return fail(f"{type(exc).__name__}: {exc}")
-        text = json.dumps(output)
+        try:
+            text = json.dumps(output, allow_nan=False)
+        except (TypeError, ValueError) as exc:
+            return fail(f"the tool returned a value that is not JSON: {exc}")
         if len(text) > self.max_output_chars:
             return fail(f"output too large ({len(text)} characters)")
         return ToolResult(call_id=tc.id, name=tc.name, ok=True, output=output)
