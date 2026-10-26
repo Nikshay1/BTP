@@ -83,6 +83,24 @@ named milestone).
 - **Second opinion:** points 1, 3, 4 and 6 were raised independently by both plans; Sol added the
   reservation-then-settle accounting and the separate purpose view of tokens.
 
+## D6. How tokens are attributed
+
+- **Date:** 2026-10-26 · **Status:** active
+- **Decision:** each model call is tagged with its actor, coordinator or worker, and all of its
+  tokens go to that actor. Separately, the prompt tokens a call spends on content written by
+  another agent (another worker's output, or the coordinator's instructions when they were written
+  by a model) are counted as **communication**. Communication is a subset of the actor totals, so
+  both views add up to the same total and nothing is counted twice. Generating a message counts as
+  the sender's local work; each time another agent reads it, the reading is communication.
+- **How the split is computed:** providers report prompt tokens per call, not per message. The
+  communication share of a call's prompt is estimated from message provenance in proportion to the
+  characters of the messages written by other agents. The residual error of this estimate is
+  documented alongside results.
+- **Why:** Section 4.4 of the plan reports coordinator, worker and communication tokens separately,
+  and RQ5 depends on those numbers being well defined.
+- **Second opinion:** Sol recommended an actor view and a disjoint purpose view, with generation and
+  each reading billed as separate occurrences; this entry follows that.
+
 ## Open questions found while planning (to settle before M2)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
