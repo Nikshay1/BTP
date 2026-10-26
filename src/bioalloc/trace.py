@@ -143,6 +143,15 @@ def tokens_from_trace(events: list[TraceEvent]) -> dict[str, int]:
             totals["communication"] += int(data["communication_tokens"])
         elif e.kind == "tool_call":
             totals["tool_calls"] += 1
+        elif e.kind == "cost_import":
+            imported = data["cost"]
+            totals["model_calls"] += int(imported["model_calls"])
+            totals["tool_calls"] += int(imported["tool_calls"])
+            totals["communication"] += int(imported["communication"])
+            for actor in ("coordinator", "worker"):
+                totals["tokens"] += int(imported[actor]["prompt"]) + int(
+                    imported[actor]["completion"]
+                )
         elif e.kind == "llm_error" and data.get("usage") == "unknown":
             totals["model_calls"] += 1
             totals["tokens"] += int(data["charged_prompt_tokens"])

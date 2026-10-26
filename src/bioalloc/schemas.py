@@ -28,6 +28,9 @@ class Subtask(Wire):
     # Agent that wrote the instruction (e.g. a model decomposer), or None for task text. Reading
     # model-written instructions counts as communication (decision D6).
     written_by: str | None = None
+    # Which public output contract (and so which runtime checks) applies. For a model
+    # decomposition only the final node carries the task's contract (decision D17).
+    contract: str | None = None
 
 
 class Budget(Wire):

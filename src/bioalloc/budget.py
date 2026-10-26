@@ -295,6 +295,28 @@ class Account:
         self._release(rid)
         self._notify()
 
+    def import_cost(self, cost: Cost) -> None:
+        """Charge an already-settled cost, e.g. the shared decomposition every system starts with
+        (D17). It counts against the limits like any other spending."""
+        for acc in self._chain():
+            s = acc.spent
+            s.coordinator_prompt += cost.coordinator.prompt
+            s.coordinator_completion += cost.coordinator.completion
+            s.worker_prompt += cost.worker.prompt
+            s.worker_completion += cost.worker.completion
+            s.communication += cost.communication
+            s.reasoning += cost.reasoning
+            s.model_calls += cost.model_calls
+            s.tool_calls += cost.tool_calls
+            s.usd += cost.usd
+            s.usage_complete &= cost.usage_complete
+            if s.tokens > acc.limits.max_tokens:
+                acc.overrun = True
+        if cost.overrun or any(a.overrun for a in self._chain()):
+            for acc in self._chain():
+                acc.spent.limit_exceeded = True
+        self._notify()
+
     def record_tool_call(self) -> None:
         """Count one tool execution attempt. Raises if a tool-call limit is already reached."""
         for acc in self._chain():
