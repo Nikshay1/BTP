@@ -262,6 +262,11 @@ class DecompositionStore:
             f.flush()
             os.fsync(f.fileno())
         os.replace(tmp, path)
+        dir_fd = os.open(path.parent, os.O_RDONLY)
+        try:
+            os.fsync(dir_fd)
+        finally:
+            os.close(dir_fd)
         return path
 
     def load(self, task_id: str, repetition: int) -> Decomposition:

@@ -44,6 +44,7 @@ from bioalloc.trace import (
     Tracer,
     code_revision,
     finish_manifest,
+    fsync_dir,
     read_trace,
     sha256_text,
     start_manifest,
@@ -250,6 +251,7 @@ class Experiment:
         while (aside := run_dir.with_name(f"{run_dir.name}.interrupted.{n}")).exists():
             n += 1
         run_dir.rename(aside)
+        fsync_dir(aside.parent)
 
     def _acquire(self) -> None:
         """An OS-level exclusive lock on ``.lock`` for the life of this runner. The kernel releases
@@ -410,17 +412,22 @@ class Experiment:
         done = set()
         if results_path.exists():  # resume: skip runs already recorded
             kept = []
-            for line in results_path.read_text().splitlines():
+            for raw in results_path.read_bytes().splitlines():
                 try:
+                    line = raw.decode("utf-8")
                     r = json.loads(line)
-                except json.JSONDecodeError:
-                    continue  # a line torn by a crash: that run is set aside and rerun
+                except ValueError:  # torn by a crash (JSON or UTF-8): set aside and rerun
+                    continue
                 kept.append(line)
                 done.add((r["task_id"], r["system"], r["repetition"]))
             # Rewrite atomically without the torn line, so new lines never join onto it.
             tmp = results_path.with_suffix(".jsonl.tmp")
-            tmp.write_text("".join(f"{line}\n" for line in kept), encoding="utf-8")
+            with tmp.open("w", encoding="utf-8") as f:
+                f.write("".join(f"{line}\n" for line in kept))
+                f.flush()
+                os.fsync(f.fileno())
             os.replace(tmp, results_path)
+            fsync_dir(self.out)
         tasks = select_tasks(cfg.tasks, self.root)
         sem = asyncio.Semaphore(cfg.concurrency)
         records: list[RunRecord] = []

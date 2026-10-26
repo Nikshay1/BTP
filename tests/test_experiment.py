@@ -248,3 +248,18 @@ def test_populated_directory_without_provenance_is_refused(tmp_path: Path) -> No
     (tmp_path / "t" / "provenance.json").unlink()
     with pytest.raises(ExperimentMismatch, match="no provenance"):
         asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
+
+
+def test_utf8_cut_mid_character_is_a_torn_tail(tmp_path: Path) -> None:
+    cfg = config(["direct"])
+    asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+    out = tmp_path / "t"
+    aside = out / "runs" / "direct" / TASKS[0] / "rep0.interrupted.0"
+    aside.mkdir(parents=True)
+    (aside / "trace.jsonl").write_bytes('{"kind": "llm_reply", "data": "é'.encode()[:-1])
+    results = out / "results.jsonl"
+    lines = results.read_bytes().splitlines()
+    results.write_bytes(lines[0] + b"\n" + '{"task_id": "ü'.encode()[:-1])
+    exp = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT)
+    assert len(asyncio.run(exp.run())) == 1
+    assert len(load_results(results)) == 2

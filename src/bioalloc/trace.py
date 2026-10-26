@@ -35,6 +35,19 @@ SCHEMA_VERSION = 1
 REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
+# Events that carry spending (model call outcomes) and the end of a run.
+DURABLE_KINDS = frozenset({"llm_reply", "llm_error", "run_end"})
+
+
+def fsync_dir(path: Path) -> None:
+    """Make a directory's entries (new or renamed files) durable."""
+    fd = os.open(path, os.O_RDONLY)
+    try:
+        os.fsync(fd)
+    finally:
+        os.close(fd)
+
+
 class TraceEvent(Wire):
     schema_version: int = SCHEMA_VERSION
     run_id: str
@@ -81,6 +94,7 @@ class Tracer:
         run_dir.mkdir(parents=True, exist_ok=True)
         # Exclusive create: a trace is never appended to by a second run.
         self._file: TextIO = (run_dir / "trace.jsonl").open("x", encoding="utf-8")
+        fsync_dir(run_dir)  # the new file's directory entry survives a power loss
         self._seq = count()
         self._span_ids = count(1)
         self._parents: dict[str, str | None] = {}
@@ -102,9 +116,10 @@ class Tracer:
         )
         self._file.write(event.model_dump_json() + "\n")
         self._file.flush()
-        # Durable before the run moves on: spending is computed from traces (one fsync per event;
-        # events are per model call or tool call, so this is cheap next to the calls themselves).
-        os.fsync(self._file.fileno())
+        if kind in DURABLE_KINDS:
+            # Spending is computed from these events, so they are made durable before the run
+            # moves on. One fsync per model call is small next to the call itself.
+            os.fsync(self._file.fileno())
         return event
 
     def hook(self, span_id: str) -> EventHook:
@@ -122,13 +137,15 @@ class Tracer:
 def read_trace(run_dir: Path, *, tolerate_torn_tail: bool = False) -> Iterator[TraceEvent]:
     """Events in order. With ``tolerate_torn_tail``, a last line cut off by a crash is skipped;
     a malformed line anywhere else is always an error."""
-    with (run_dir / "trace.jsonl").open(encoding="utf-8") as f:
-        lines = [line for line in f if line.strip()]
+    raw = (run_dir / "trace.jsonl").read_bytes()
+    lines = [line for line in raw.split(b"\n") if line.strip()]
+    torn_tail = not raw.endswith(b"\n")
     for i, line in enumerate(lines):
         try:
-            yield TraceEvent.model_validate_json(line)
-        except ValueError:
-            if tolerate_torn_tail and i == len(lines) - 1 and not line.endswith("\n"):
+            # Decoded per line: a crash can cut a multi-byte character in the last line.
+            yield TraceEvent.model_validate_json(line.decode("utf-8"))
+        except ValueError:  # UnicodeDecodeError and ValidationError are both ValueErrors
+            if tolerate_torn_tail and torn_tail and i == len(lines) - 1:
                 return
             raise
 
