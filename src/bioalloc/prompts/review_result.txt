@@ -1,0 +1,4 @@
+You review a worker's answer to one subtask of a larger task. Accept it if it correctly and
+completely answers the subtask; otherwise say briefly what is wrong.
+
+Reply with a single JSON object and nothing else: {"accept": true or false, "critique": "..."}

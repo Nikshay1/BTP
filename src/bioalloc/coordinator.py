@@ -138,7 +138,13 @@ class Coordinator:
         records: list[AttemptRecord] = []
         out_of_budget = False
         active: dict[asyncio.Task[_Solved], Subtask] = {}
-        task_state: dict[str, Any] = {}  # private to this run (D10)
+        task_state: dict[str, Any] = {  # private to this run (D10)
+            # The public graph outline, for the specialist planner.
+            "specialist:graph": [
+                {"id": n.id, "instruction": n.instruction, "depends_on": list(n.depends_on)}
+                for n in graph.nodes
+            ],
+        }
 
         def launch() -> None:
             busy = given_up | {s.id for s in active.values()}
