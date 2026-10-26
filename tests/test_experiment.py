@@ -192,7 +192,7 @@ def test_loader_refuses_a_snapshot_that_differs_from_the_split_provenance() -> N
         loader.load("gsm8k-test-00001")
 
 
-def test_torn_result_line_reruns_that_run(tmp_path: Path) -> None:
+def test_torn_result_line_reruns_that_run_and_leaves_valid_results(tmp_path: Path) -> None:
     cfg = config(["direct"])
     asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
     results = tmp_path / "t" / "results.jsonl"
@@ -200,21 +200,45 @@ def test_torn_result_line_reruns_that_run(tmp_path: Path) -> None:
     results.write_text(lines[0] + "\n" + lines[1][: len(lines[1]) // 2])  # crash mid-write
     rerun = asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
     assert len(rerun) == 1
+    assert len(load_results(results)) == 2  # every line parses; analysis works
+    again = asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+    assert again == []  # and the run is not repeated on later resumes
+
+
+def test_torn_trace_tail_and_corrupt_decomposition_do_not_block_recovery(tmp_path: Path) -> None:
+    cfg = config(["direct"])
+    asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+    out = tmp_path / "t"
+    # A run trace whose last event was cut off, inside an archived interrupted directory.
+    aside = out / "runs" / "direct" / TASKS[0] / "rep0.interrupted.0"
+    aside.mkdir(parents=True)
+    (aside / "trace.jsonl").write_text('{"schema_version": 1, "run_id": "x", "seq')
+    # A decomposition file left half-written by an older version.
+    decomp = out / "decompositions" / TASKS[1] / "rep0.json"
+    decomp.write_text(decomp.read_text()[:40])
+    results = out / "results.jsonl"
+    lines = results.read_text().splitlines()
+    results.write_text(lines[0] + "\n")  # the second task's run is to be redone
+    exp = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT)
+    rerun = asyncio.run(exp.run())
+    assert len(rerun) == 1 and exp.spent() >= 0
+    assert (out / "decompositions" / TASKS[1] / "rep0.json.interrupted.0").exists()
 
 
 def test_one_runner_per_directory(tmp_path: Path) -> None:
-    import os
+    import fcntl
 
     from bioalloc.evaluation.experiment import ExperimentMismatch
 
     out = tmp_path / "t"
     out.mkdir()
-    (out / ".lock").write_text(str(os.getpid()))  # a live process holds it
+    holder = (out / ".lock").open("a+")
+    fcntl.flock(holder, fcntl.LOCK_EX | fcntl.LOCK_NB)  # another runner holds the lock
     with pytest.raises(ExperimentMismatch, match="another runner"):
         asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
-    (out / ".lock").write_text("999999999")  # a process that is gone: stale lock, taken over
+    holder.close()  # that runner exits (or dies): the kernel releases the lock
+    (out / ".lock").write_text("")  # even an empty leftover file does not block
     asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
-    assert not (out / ".lock").exists()
 
 
 def test_populated_directory_without_provenance_is_refused(tmp_path: Path) -> None:

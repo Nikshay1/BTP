@@ -452,6 +452,11 @@ updated), the stop lets runs in flight finish, a pid lock allows one runner per 
 populated directory without provenance is refused, time overruns are reported, and the last step
 runs no tools. A test now checks the frozen split file itself for tool leaks.
 
+A final check found four remaining crash-safety gaps, fixed in turn: the results file is rewritten
+atomically without a torn line on resume; spending scans tolerate a torn last trace line and
+stored decompositions are written atomically; the directory lock is an OS file lock (released by
+the kernel if the runner dies); trace events are fsynced so spending survives a power loss.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import subprocess
 from collections.abc import Iterator
 from datetime import UTC, datetime
@@ -101,6 +102,9 @@ class Tracer:
         )
         self._file.write(event.model_dump_json() + "\n")
         self._file.flush()
+        # Durable before the run moves on: spending is computed from traces (one fsync per event;
+        # events are per model call or tool call, so this is cheap next to the calls themselves).
+        os.fsync(self._file.fileno())
         return event
 
     def hook(self, span_id: str) -> EventHook:
@@ -115,11 +119,18 @@ class Tracer:
         self._file.close()
 
 
-def read_trace(run_dir: Path) -> Iterator[TraceEvent]:
+def read_trace(run_dir: Path, *, tolerate_torn_tail: bool = False) -> Iterator[TraceEvent]:
+    """Events in order. With ``tolerate_torn_tail``, a last line cut off by a crash is skipped;
+    a malformed line anywhere else is always an error."""
     with (run_dir / "trace.jsonl").open(encoding="utf-8") as f:
-        for line in f:
-            if line.strip():
-                yield TraceEvent.model_validate_json(line)
+        lines = [line for line in f if line.strip()]
+    for i, line in enumerate(lines):
+        try:
+            yield TraceEvent.model_validate_json(line)
+        except ValueError:
+            if tolerate_torn_tail and i == len(lines) - 1 and not line.endswith("\n"):
+                return
+            raise
 
 
 def span_tree(events: list[TraceEvent], root: str) -> list[TraceEvent]:

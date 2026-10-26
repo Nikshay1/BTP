@@ -10,6 +10,7 @@ manifest; one line per run goes to ``results.jsonl``.
 from __future__ import annotations
 
 import asyncio
+import fcntl
 import json
 import os
 import random
@@ -224,9 +225,8 @@ class Experiment:
     def _trace_usd(self, trace_dir: Path) -> float:
         if not (trace_dir / "trace.jsonl").exists():
             return 0.0
-        return usd_from_trace(
-            list(read_trace(trace_dir)), self.pricing.input_per_m, self.pricing.output_per_m
-        )
+        events = list(read_trace(trace_dir, tolerate_torn_tail=True))
+        return usd_from_trace(events, self.pricing.input_per_m, self.pricing.output_per_m)
 
     def spent(self) -> float:
         """Actual spending so far, from every trace under the experiment directory."""
@@ -252,24 +252,24 @@ class Experiment:
         run_dir.rename(aside)
 
     def _acquire(self) -> None:
-        lock = self.out / ".lock"
+        """An OS-level exclusive lock on ``.lock`` for the life of this runner. The kernel releases
+        it if the process dies, so there is no stale-lock guessing and nothing is unlinked."""
+        self._lock_file = (self.out / ".lock").open("a+", encoding="utf-8")
         try:
-            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-        except FileExistsError:
-            try:
-                pid = int(lock.read_text().strip() or 0)
-                os.kill(pid, 0)
-            except (ValueError, ProcessLookupError):
-                lock.unlink(missing_ok=True)  # stale lock from a process that is gone
-                return self._acquire()
-            except PermissionError:
-                pass
-            raise ExperimentMismatch(f"another runner (pid {pid}) is using {self.out}") from None
-        with os.fdopen(fd, "w") as f:
-            f.write(str(os.getpid()))
+            fcntl.flock(self._lock_file, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            self._lock_file.seek(0)
+            holder = self._lock_file.read().strip() or "unknown"
+            self._lock_file.close()
+            raise ExperimentMismatch(f"another runner (pid {holder}) is using {self.out}") from None
+        self._lock_file.seek(0)
+        self._lock_file.truncate()
+        self._lock_file.write(str(os.getpid()))
+        self._lock_file.flush()
 
     def _release(self) -> None:
-        (self.out / ".lock").unlink(missing_ok=True)
+        fcntl.flock(self._lock_file, fcntl.LOCK_UN)
+        self._lock_file.close()
 
     # -- decompositions and runs --------------------------------------------------------------
 
@@ -277,7 +277,10 @@ class Experiment:
         """Prepared once per task and repetition, before any system runs on it."""
         path = self.store.path(task.task_id, rep)
         if path.exists():
-            return self.store.load(task.task_id, rep)
+            try:
+                return self.store.load(task.task_id, rep)
+            except ValueError:  # left corrupt by a crash in an older version: redo it
+                self._set_aside(path)
         trace_dir = self.out / "decompositions" / task.task_id / f"rep{rep}-trace"
         if trace_dir.exists():
             self._set_aside(trace_dir)
@@ -406,12 +409,18 @@ class Experiment:
         results_path = self.out / "results.jsonl"
         done = set()
         if results_path.exists():  # resume: skip runs already recorded
+            kept = []
             for line in results_path.read_text().splitlines():
                 try:
                     r = json.loads(line)
                 except json.JSONDecodeError:
                     continue  # a line torn by a crash: that run is set aside and rerun
+                kept.append(line)
                 done.add((r["task_id"], r["system"], r["repetition"]))
+            # Rewrite atomically without the torn line, so new lines never join onto it.
+            tmp = results_path.with_suffix(".jsonl.tmp")
+            tmp.write_text("".join(f"{line}\n" for line in kept), encoding="utf-8")
+            os.replace(tmp, results_path)
         tasks = select_tasks(cfg.tasks, self.root)
         sem = asyncio.Semaphore(cfg.concurrency)
         records: list[RunRecord] = []

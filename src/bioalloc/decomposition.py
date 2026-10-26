@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 from pathlib import Path
 from typing import Literal
 
@@ -252,8 +253,15 @@ class DecompositionStore:
     def save(self, record: Decomposition) -> Path:
         path = self.path(record.task_id, record.repetition)
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("x", encoding="utf-8") as f:
+        if path.exists():
+            raise FileExistsError(path)
+        # Atomic: a crash leaves either no file or the whole file, never part of one.
+        tmp = path.with_suffix(".json.tmp")
+        with tmp.open("w", encoding="utf-8") as f:
             f.write(record.model_dump_json(indent=1) + "\n")
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(tmp, path)
         return path
 
     def load(self, task_id: str, repetition: int) -> Decomposition:
