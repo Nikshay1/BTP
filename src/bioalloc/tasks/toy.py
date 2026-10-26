@@ -16,7 +16,7 @@ from pydantic import JsonValue
 
 from bioalloc.checks import RuntimeCheck, SchemaCheck
 from bioalloc.graph import TaskGraph
-from bioalloc.schemas import CheckResult, Subtask
+from bioalloc.schemas import CheckResult, Evidence, Subtask
 
 ROUTE_SCHEMA: dict[str, JsonValue] = {
     "type": "object",
@@ -55,20 +55,28 @@ def leg_start(subtask: Subtask, upstream: Mapping[str, JsonValue]) -> str | None
 
 
 class RouteCheck:
-    """Public constraint check: the route starts and ends where asked and uses only real edges."""
+    """Public constraint check: the route starts and ends where asked and uses only real edges.
+
+    Operational evidence only: it cannot tell whether the route is the cheapest, which is the goal.
+    """
 
     name = "route"
+    evidence: Evidence = "operational"
 
     def evaluate(
         self, subtask: Subtask, output: JsonValue, upstream: Mapping[str, JsonValue]
     ) -> CheckResult:
         route = route_of(output)
         if route is None:
-            return CheckResult(check=self.name, verdict="fail", reason="no route in output")
+            return CheckResult(
+                check=self.name, evidence=self.evidence, verdict="fail", reason="no route in output"
+            )
         start = leg_start(subtask, upstream)
         goal = str(subtask.inputs["goal"])
         if start is None:
-            return CheckResult(check=self.name, verdict="unknown", reason="start not known")
+            return CheckResult(
+                check=self.name, evidence=self.evidence, verdict="unknown", reason="start not known"
+            )
         if route[0] != start or route[-1] != goal:
             return CheckResult(
                 check=self.name,
@@ -76,8 +84,13 @@ class RouteCheck:
                 reason=f"route must go from {start} to {goal}, got {route[0]} to {route[-1]}",
             )
         if route_cost(route, edge_costs(subtask.inputs["edges"])) is None:
-            return CheckResult(check=self.name, verdict="fail", reason="route uses a missing edge")
-        return CheckResult(check=self.name, verdict="pass")
+            return CheckResult(
+                check=self.name,
+                evidence=self.evidence,
+                verdict="fail",
+                reason="route uses a missing edge",
+            )
+        return CheckResult(check=self.name, evidence=self.evidence, verdict="pass")
 
 
 class ToyRoutes:

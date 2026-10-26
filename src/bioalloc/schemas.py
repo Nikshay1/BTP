@@ -90,11 +90,17 @@ class Cost(Wire):
 
 Verdict = Literal["pass", "fail", "unknown"]
 
+# How much a passing check says about the result (decision D15):
+# format: schema or type only; operational: tool status, legal actions, consistency;
+# agreement: independent samples agree; goal: a public checker verifies the subtask's goal.
+Evidence = Literal["format", "operational", "agreement", "goal"]
+
 
 class CheckResult(Wire):
     check: str
     verdict: Verdict
     reason: str = ""
+    evidence: Evidence = "format"
 
 
 ExecutorStatus = Literal["completed", "budget_exhausted", "timeout", "error"]

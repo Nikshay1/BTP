@@ -96,3 +96,18 @@ def test_executor_can_run_the_public_checks() -> None:
     assert verdict == "fail" and {r.check for r in results} == {"schema", "route"}
     assert events == ["executor_check", "executor_check"]
     assert c.llm.account.snapshot().model_calls == 0
+
+
+def test_schema_pass_is_never_goal_verification() -> None:
+    from bioalloc.checks import goal_verified
+
+    def r(v: str, e: str) -> CheckResult:
+        return CheckResult(check="c", verdict=v, evidence=e)  # type: ignore[arg-type]
+
+    leg1 = INSTANCE.graph.node("leg1")
+    results = [c.evaluate(leg1, {"route": LEG1}, {}) for c in ToyRoutes().checks(leg1)]
+    assert combine(results) == "pass" and not goal_verified(results)
+    assert {x.evidence for x in results} == {"format", "operational"}
+    assert goal_verified([r("pass", "format"), r("pass", "goal")])
+    assert not goal_verified([r("pass", "goal"), r("fail", "format")])
+    assert not goal_verified([r("unknown", "goal"), r("pass", "agreement")])
