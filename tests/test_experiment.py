@@ -13,7 +13,7 @@ from bioalloc.schemas import Budget
 from bioalloc.trace import read_manifest, read_trace, tokens_from_trace
 
 ROOT = Path(__file__).resolve().parents[1]
-TASKS = ["tools-v1-revenue-s105", "tools-v1-top_product-s119"]
+TASKS = ["tools-v1-revenue-s0", "tools-v1-top_product-s0"]
 
 
 def config(systems: list[str], reps: int = 1) -> ExperimentConfig:

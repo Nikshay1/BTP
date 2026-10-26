@@ -38,7 +38,7 @@ DecomposeMode = Literal["natural", "single", "model"]
 
 
 class TaskSelection(Wire):
-    split_file: str = "data/splits/v1.json"
+    split_file: str = "data/splits/v2.json"
     split: str = "train"
     per_family: dict[str, int] = {}  # e.g. {"planning": 10, "tools": 10, "reasoning": 10}
     task_ids: list[str] = []  # explicit ids override the per-family selection

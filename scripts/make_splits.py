@@ -1,4 +1,4 @@
-"""Build the study's grouped splits once and save them to data/splits/v1.json.
+"""Build the study's grouped splits once and save them to data/splits/v2.json.
 
 Usage: uv run python scripts/make_splits.py   (needs the prepared GSM8K and PlanBench snapshots)
 """
@@ -9,7 +9,7 @@ from bioalloc.evaluation.data import REPO_ROOT, verify_prepared
 from bioalloc.evaluation.splits import assign, save
 from bioalloc.evaluation.study_tasks import inventory
 
-OUT = REPO_ROOT / "data" / "splits" / "v1.json"
+OUT = REPO_ROOT / "data" / "splits" / "v2.json"
 
 
 def main() -> int:

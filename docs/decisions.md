@@ -361,7 +361,8 @@ and settled; where they differed, the entry says which was taken and why.
 
 ## D20. Grouped splits v1 and the test-only variants
 
-- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 4.4 (tasks)
+- **Date:** 2026-10-26 · **Status:** superseded by D22 (v1 leaked tool subtasks across splits)
+- **Amends:** Section 4.4 (tasks)
 - **Decision:** the 450 study tasks are split once into `data/splits/v1.json` (SHA-256
   `8b38f35b966e...`, recorded in the file): per family 50 training, 30 tuning, 50 ordinary test and
   20 test-only variant tasks. Whole template groups are assigned in SHA-256 order of (split
@@ -396,6 +397,21 @@ and settled; where they differed, the entry says which was taken and why.
   learned selectors and the Table 3 controls are left out of the pilot to keep its cost to a few
   dollars, and are rehearsed offline.
 - **Spending stop:** live runs take `--max-usd`; the pilot is run with `--max-usd 5`.
+
+## D22. Split v2 replaces v1
+
+- **Date:** 2026-10-27 · **Status:** active · **Supersedes:** D20's split file (its variants and
+  quotas stay)
+- **Problem:** in v1 the three tool templates used the same database seeds and every tool task was
+  its own template group. Tasks on the same seed share a database, so the first subtask of a
+  held-out `compare` task could be identical to a subtask of a training task; a check found three
+  such subtasks. Found by the M2 review (finding 7).
+- **Decision:** `compare` uses database seeds 1000-1299, which no other template uses; revenue and
+  top_product keep seeds 0-299; tool tasks are grouped by database, so the two tasks on one
+  database always share a split. Split v2 (`data/splits/v2.json`, SHA-256 `bae17926c64d...`) is
+  frozen with the same quotas and variants as D20. A test asserts that no database and no subtask
+  appears in two splits. No model run ever used v1.
+- **Consequence:** the tool family's development tasks now come in pairs on 25 + 15 databases.
 
 ## Open questions found while planning (settled by D10-D14)
 

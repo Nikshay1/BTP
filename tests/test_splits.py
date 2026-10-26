@@ -63,3 +63,25 @@ def test_whole_groups_are_never_cut_and_shortfalls_are_errors() -> None:
     ]
     with pytest.raises(ValueError, match="mix variant"):
         assign(mixed, QUOTAS)
+
+
+def test_tool_splits_share_no_database_or_subtask_across_splits() -> None:
+    import json
+
+    from bioalloc.evaluation.registry import TaskLoader
+    from bioalloc.evaluation.study_tasks import tool_candidates
+
+    result = assign(tool_candidates())
+    loader = TaskLoader()
+    seen: dict[tuple[str, str], set[str]] = {}
+    datasets: dict[str, set[str]] = {}
+    for a in result.assignments:
+        graph = loader.load(a.task_id).natural_graph
+        assert graph is not None
+        for n in graph.nodes:
+            seen.setdefault((n.instruction, json.dumps(n.inputs, sort_keys=True)), set()).add(
+                a.split
+            )
+            datasets.setdefault(str(n.inputs["dataset"]), set()).add(a.split)
+    assert all(len(s) == 1 for s in seen.values())
+    assert all(len(s) == 1 for s in datasets.values())

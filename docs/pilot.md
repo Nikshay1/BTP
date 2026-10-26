@@ -7,7 +7,7 @@ of the main study (D13). It uses training tasks only.
 
 ## What it runs
 
-`configs/pilot.json`: 30 training tasks from split v1 (10 planning, 10 tools, 10 reasoning),
+`configs/pilot.json`: 30 training tasks from split v2 (10 planning, 10 tools, 10 reasoning),
 3 repetitions, 8 systems (single agent, Direct, ant, bee and octopus alone, fixed, random,
 specialist), cap of 120,000 tokens, 60 model calls, 40 tool calls and 10 minutes per task.
 720 task runs in total. The learned selectors are not in it; they are trained in M3.
@@ -16,7 +16,7 @@ specialist), cap of 120,000 tokens, 60 model calls, 40 tool calls and 10 minutes
 
 | Item | Status |
 |---|---|
-| Design decisions recorded (D10-D21), system list fixed | done |
+| Design decisions recorded (D10-D22), system list fixed | done |
 | Executors and all Table 3 controls pass offline tests | done |
 | Ledger and trace agree on every run; tool calls and imported costs traced | done |
 | Strong (goal) and weak acceptance kept apart; acceptance never reported as correctness | done |

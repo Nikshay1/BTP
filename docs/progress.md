@@ -28,7 +28,7 @@ was checked, and what carries over.
 - Tools, typed tool calls, typed action spaces, stored decompositions, the Groq adapter with
   rate-limit retries (mocked HTTP only), selector features, LinUCB and a rule table.
 - Task suites: GSM8K and PlanBench (pinned, hashed snapshots), our deterministic tool suite, the
-  controlled synthetic suite. Split v1 of the 450 study tasks is frozen (D20).
+  controlled synthetic suite. Split v2 of the 450 study tasks is frozen (D22; v1 was replaced after the review found tool subtasks shared across splits).
 - Experiment runner, analysis and an offline rehearsal of the full pilot (720 runs).
 - Still open before the pilot: the Groq key, the VAL cross-check, a hand-labelled sample of checker
   and grader verdicts, and the independent review of the M2 batch (`docs/pilot.md`). MATH is

@@ -23,7 +23,7 @@ from pydantic import JsonValue
 
 from bioalloc.schemas import Wire
 
-SPLIT_VERSION = 1
+SPLIT_VERSION = 2
 SEED = 20261026
 QUOTAS = {"train": 50, "tune": 30, "test": 50, "test_variant": 20}
 
