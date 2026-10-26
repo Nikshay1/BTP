@@ -83,3 +83,16 @@ def test_combine_verdicts() -> None:
     assert combine([r("pass"), r("unknown")]) == "pass"
     assert combine([r("pass"), r("fail")]) == "fail"
     assert combine([r("unknown")]) == "unknown"
+
+
+def test_executor_can_run_the_public_checks() -> None:
+    events: list[str] = []
+    leg1 = INSTANCE.graph.node("leg1")
+    c = ctx(FakeTransport())
+    c.checks = tuple(ToyRoutes().checks(leg1))
+    c.emit = lambda kind, data: events.append(kind)
+    assert c.check(leg1, {"route": LEG1})[0] == "pass"
+    verdict, results = c.check(leg1, {"route": []})
+    assert verdict == "fail" and {r.check for r in results} == {"schema", "route"}
+    assert events == ["executor_check", "executor_check"]
+    assert c.llm.account.snapshot().model_calls == 0

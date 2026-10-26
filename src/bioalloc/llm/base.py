@@ -60,10 +60,15 @@ class Usage(Wire):
         return self
 
 
+FinishReason = Literal["stop", "length", "tool_calls", "content_filter", "other"]
+
+
 class LLMReply(Wire):
     content: str
     tool_calls: tuple[dict[str, JsonValue], ...] = ()
     usage: Usage
+    # "length" means the reply was cut off at max_completion_tokens.
+    finish_reason: FinishReason = "stop"
     model: str  # model identifier as returned by the provider
     request_id: str | None = None
     latency_s: NonNegativeFloat = 0.0

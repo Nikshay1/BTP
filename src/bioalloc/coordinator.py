@@ -223,6 +223,7 @@ class Coordinator:
                 seed=seed,
                 rng=random.Random(seed),
                 emit=tracer.hook(span),
+                checks=tuple(family.checks(subtask)),
             )
             output: JsonValue = None
             confidence: float | None = None

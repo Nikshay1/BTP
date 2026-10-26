@@ -18,8 +18,9 @@ from typing import Any, Protocol
 from pydantic import JsonValue
 
 from bioalloc.budget import MeteredClient
+from bioalloc.checks import RuntimeCheck, combine
 from bioalloc.llm.base import Message
-from bioalloc.schemas import ExecutorStatus, Subtask, Wire
+from bioalloc.schemas import CheckResult, ExecutorStatus, Subtask, Wire
 
 
 class Upstream(Wire):
@@ -49,10 +50,24 @@ class ExecutionContext:
     seed: int = 0
     rng: random.Random = field(default_factory=lambda: random.Random(0))
     emit: Callable[[str, dict[str, Any]], None] = lambda kind, data: None
+    # The subtask's public runtime checks, the same ones the coordinator applies afterwards.
+    checks: tuple[RuntimeCheck, ...] = ()
 
     @property
     def agent(self) -> str:
         return self.llm.agent
+
+    def check(self, subtask: Subtask, output: JsonValue) -> tuple[str, tuple[CheckResult, ...]]:
+        """Run the public runtime checks on a candidate output (e.g. to score an ant path or to
+        test an octopus goal). Costs no tokens; every call is traced."""
+        plain = {k: v.output for k, v in self.upstream.items()}
+        results = tuple(c.evaluate(subtask, output, plain) for c in self.checks)
+        verdict = combine(list(results))
+        self.emit(
+            "executor_check",
+            {"verdict": verdict, "checks": [r.model_dump(mode="json") for r in results]},
+        )
+        return verdict, results
 
 
 class Executor(Protocol):
