@@ -21,6 +21,26 @@ def build_parser() -> argparse.ArgumentParser:
     demo.add_argument("--scenario", choices=["good", "recover", "budget"], default="good")
     demo.add_argument("--seed", type=int, default=0)
     demo.add_argument("--out", type=Path, default=Path("runs/demo"))
+
+    exp = sub.add_parser("experiment", help="run or analyze an experiment")
+    exp_sub = exp.add_subparsers(dest="action", required=True)
+    run = exp_sub.add_parser("run", help="run an experiment config")
+    run.add_argument("config", type=Path)
+    run.add_argument("--out", type=Path, default=Path("runs"))
+    run.add_argument(
+        "--rehearsal",
+        action="store_true",
+        help="offline dress rehearsal with a stand-in model (no network, no key)",
+    )
+    run.add_argument(
+        "--max-usd",
+        type=float,
+        default=None,
+        help="stop starting new runs once this much has been spent (live runs)",
+    )
+    an = exp_sub.add_parser("analyze", help="summarize results.jsonl of an experiment")
+    an.add_argument("run_dir", type=Path)
+    an.add_argument("--compare", nargs=2, action="append", default=[], metavar=("A", "B"))
     return parser
 
 
@@ -51,11 +71,90 @@ def demo(scenario: str, seed: int, out: Path) -> int:
     return 0
 
 
+def read_env_key(name: str) -> str | None:
+    """A key from the environment or from a .env file in the working directory."""
+    import os
+
+    if os.environ.get(name):
+        return os.environ[name]
+    env = Path(".env")
+    if env.exists():
+        for line in env.read_text().splitlines():
+            key, _, value = line.partition("=")
+            if key.strip() == name:
+                return value.strip().strip("\"'")
+    return None
+
+
+def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float | None) -> int:
+    import asyncio
+    import json
+
+    from bioalloc.evaluation.experiment import Experiment, ExperimentConfig, RunRecord
+    from bioalloc.llm.base import Transport
+
+    config = ExperimentConfig.model_validate(json.loads(config_path.read_text()))
+    transport: Transport
+    if rehearsal:
+        from bioalloc.evaluation.rehearsal import RehearsalTransport
+
+        config = config.model_copy(update={"mode": "debug", "name": f"{config.name}-rehearsal"})
+        transport = RehearsalTransport()
+    else:
+        from bioalloc.llm.groq import GroqTransport
+
+        key = read_env_key("GROQ_API_KEY")
+        if not key:
+            print("GROQ_API_KEY is not set (environment or .env); nothing was run.")
+            return 2
+        transport = GroqTransport(key)
+    spent = 0.0
+
+    def progress(rec: RunRecord) -> None:
+        nonlocal spent
+        spent += rec.usd
+        mark = "ok " if rec.correct else "-- "
+        print(
+            f"{mark}{rec.system:<22} {rec.task_id:<32} rep{rec.repetition} "
+            f"{rec.status:<16} {rec.tokens:>7} tok  ${spent:.4f}"
+        )
+        if max_usd is not None and spent > max_usd:
+            raise SystemExit(f"spending limit ${max_usd} reached; stopping (results so far kept)")
+
+    asyncio.run(Experiment(config, transport, out).run(progress))
+    print(f"results: {out / config.name / 'results.jsonl'}")
+    return 0
+
+
+def experiment_analyze(run_dir: Path, comparisons: list[list[str]]) -> int:
+    import json
+
+    from bioalloc.evaluation.analysis import paired, summarize
+    from bioalloc.evaluation.experiment import load_results
+
+    records = load_results(run_dir / "results.jsonl")
+    cols = ("system", "runs", "success", "within_budget", "mean_tokens", "mean_calls", "mean_usd")
+    print("  ".join(f"{c:>14}" for c in cols))
+    for row in summarize(records):
+        print(
+            "  ".join(
+                f"{row[c]:>14.3f}" if isinstance(row[c], float) else f"{row[c]:>14}" for c in cols
+            )
+        )
+    for a, b in comparisons:
+        print(json.dumps(paired(records, a, b), indent=1))
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.command == "demo":
         return demo(args.scenario, args.seed, args.out)
+    if args.command == "experiment" and args.action == "run":
+        return experiment_run(args.config, args.out, args.rehearsal, args.max_usd)
+    if args.command == "experiment" and args.action == "analyze":
+        return experiment_analyze(args.run_dir, args.compare)
     parser.print_help()
     return 0
 

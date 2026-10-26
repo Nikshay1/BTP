@@ -1,0 +1,16 @@
+{
+ "name": "pilot-v1",
+ "mode": "measurement",
+ "model": "openai/gpt-oss-120b",
+ "temperature": 0.6,
+ "reasoning_effort": "low",
+ "max_completion_tokens": 2048,
+ "pricing": {"input_per_m": 0.15, "output_per_m": 0.60},
+ "systems": ["single_agent", "direct", "ant", "bee", "octopus", "fixed", "random", "specialist"],
+ "tasks": {"split": "train", "per_family": {"planning": 10, "tools": 10, "reasoning": 10}},
+ "repetitions": 3,
+ "seed": 1,
+ "budget": {"max_tokens": 120000, "max_model_calls": 60, "max_elapsed_s": 600, "max_tool_calls": 40},
+ "max_attempts": 2,
+ "concurrency": 4
+}
