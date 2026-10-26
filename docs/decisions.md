@@ -441,6 +441,17 @@ findings, each with a probe. All were checked against the code and accepted.
 | 18 | `majority` control not call-yoked to bee | **Gated**: to wire before the Table 3 control experiments | open |
 | 19 | Typed PDDL accepted without type checks | Typed lists refused | `62ddd0f` |
 
+## R3. Re-review of the R2 fixes (2026-10-27)
+
+Sol found findings 8, 9, 11 and 13 only partly fixed and five new problems in the fixes: spending
+appended to a ledger was not crash-safe or idempotent; the spending stop cancelled runs in flight;
+two runner processes could set aside each other's runs; a populated directory without provenance
+was adopted; an imported time overrun was reported as within budget; octopus ran tools on its last
+step. Fixes: actual spending is computed from the per-call traces (scanned once per run, then
+updated), the stop lets runs in flight finish, a pid lock allows one runner per directory, a
+populated directory without provenance is refused, time overruns are reported, and the last step
+runs no tools. A test now checks the frozen split file itself for tool leaks.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

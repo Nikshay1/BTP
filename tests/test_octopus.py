@@ -151,3 +151,31 @@ def test_reporting_counterpart_reports_after_tool_steps_too() -> None:
         assert out.output == {"x": 5}
         assert len([r for r in fake.requests if supervise(r)]) == supervisor_calls
         assert (account.snapshot().coordinator.total > 0) == reporting
+
+
+def test_last_step_does_not_run_tools_nobody_could_read() -> None:
+    from bioalloc.llm.base import LLMReply, ToolCall, Usage
+    from bioalloc.tasks.common import CALCULATOR
+    from bioalloc.tools import ToolService
+
+    turn = LLMReply(
+        content="",
+        model="m",
+        finish_reason="tool_calls",
+        tool_calls=(ToolCall(id="t", name="calculate", arguments='{"expression": "1+1"}'),),
+        usage=Usage(prompt_tokens=5, completion_tokens=5),
+    )
+    fake = FakeTransport().always(turn)
+    account = Account(Budget(max_tokens=10**6, max_model_calls=20))
+    ctx = ExecutionContext(
+        llm=MeteredClient(fake, account, "worker", "w"),
+        span_id="s",
+        tools=ToolService({"calculate": CALCULATOR}, ("calculate",), account),
+    )
+    out = asyncio.run(
+        Octopus(model="m", max_steps=1, report_every_step=True).execute(
+            Subtask(id="a", instruction="x"), ctx
+        )
+    )
+    assert out.incomplete is not None
+    assert account.snapshot().tool_calls == 0 and account.snapshot().coordinator.total == 0

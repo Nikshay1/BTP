@@ -88,6 +88,9 @@ class Octopus:
             if ctx.tools is not None:
                 request = request.model_copy(update={"tools": ctx.tools.wire()})
             reply = await ctx.llm.complete(request)
+            last = step == self.max_steps - 1
+            if reply.tool_calls and ctx.tools is not None and last:
+                break  # no later step could read the tool results, so they are not run
             if reply.tool_calls and ctx.tools is not None:
                 messages.append(
                     Message(

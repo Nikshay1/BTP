@@ -85,3 +85,25 @@ def test_tool_splits_share_no_database_or_subtask_across_splits() -> None:
             datasets.setdefault(str(n.inputs["dataset"]), set()).add(a.split)
     assert all(len(s) == 1 for s in seen.values())
     assert all(len(s) == 1 for s in datasets.values())
+
+
+def test_frozen_v2_has_no_tool_leak_across_splits() -> None:
+    import json
+    from pathlib import Path
+
+    from bioalloc.evaluation.registry import TaskLoader
+    from bioalloc.evaluation.splits import load
+
+    frozen = load(Path(__file__).resolve().parents[1] / "data" / "splits" / "v2.json")
+    loader = TaskLoader()
+    seen: dict[str, set[str]] = {}
+    for a in frozen:
+        if a.family != "tools":
+            continue
+        graph = loader.load(a.task_id).natural_graph
+        assert graph is not None
+        for n in graph.nodes:
+            key = n.instruction + json.dumps(n.inputs, sort_keys=True)
+            seen.setdefault(key, set()).add(a.split)
+            seen.setdefault(str(n.inputs["dataset"]), set()).add(a.split)
+    assert seen and all(len(s) == 1 for s in seen.values())

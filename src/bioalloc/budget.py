@@ -315,8 +315,10 @@ class Account:
             s.usd += cost.usd
             s.usage_complete &= cost.usage_complete
             tool_limit = acc.limits.max_tool_calls
+            time_limit = acc.limits.max_elapsed_s
             if (
-                s.tokens > acc.limits.max_tokens
+                (time_limit is not None and acc.elapsed() > time_limit)
+                or s.tokens > acc.limits.max_tokens
                 or s.model_calls > acc.limits.max_model_calls
                 or (tool_limit is not None and s.tool_calls > tool_limit)
             ):

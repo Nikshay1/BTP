@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import random
 from collections.abc import Callable
 from pathlib import Path
@@ -132,13 +133,17 @@ class SpendingLimitReached(RuntimeError):
 
 class Experiment:
     """Resumable: finished runs are skipped. Runs interrupted before their result was recorded are
-    moved aside (their trace and spending kept) and run again. Resuming requires the same
-    configuration, prompts, split file and code; anything else must be a new experiment name.
+    moved aside (their trace kept) and run again. Resuming requires the same configuration,
+    prompts, split file and code; a populated directory without that record is refused. One runner
+    process at a time may use a directory (``.lock``).
 
-    ``max_usd`` limits actual spending, recorded in ``spending.jsonl`` across restarts: each
-    decomposition is paid once, each run's own calls once, interrupted runs included. No new
-    decomposition or run starts once the limit is reached; runs already in flight finish, so the
-    overshoot is at most ``concurrency`` runs."""
+    Actual spending is computed from the per-call traces, which are written as calls happen: every
+    model call that returned (or was charged as unknown usage) in any decomposition or run trace,
+    interrupted ones included, counted once. Imported decomposition costs are not calls in a run's
+    trace, so each decomposition is paid once. With ``max_usd``, no new decomposition or run starts
+    once actual spending reaches the limit; runs already in flight finish (overshoot at most
+    ``concurrency`` runs), and the run then stops with ``SpendingLimitReached``. A call in flight at
+    a crash has no reply event and is not counted, so a crash can undercount by those calls."""
 
     def __init__(
         self,
@@ -164,6 +169,8 @@ class Experiment:
         )
         self.pricing = Pricing(**config.pricing)
         self._lock = asyncio.Lock()
+        self._spent: float | None = None
+        self._stopped = False
 
     def _client(
         self, account: Account, agent: str, tracer: Tracer | None, span: str | None
@@ -204,33 +211,65 @@ class Experiment:
                     "name instead of mixing runs"
                 )
         else:
+            populated = [
+                n for n in ("results.jsonl", "runs", "decompositions") if (self.out / n).exists()
+            ]
+            if populated:
+                raise ExperimentMismatch(
+                    f"{self.out} already holds {', '.join(populated)} but no provenance record; "
+                    "its runs cannot be shown to match this configuration"
+                )
             path.write_text(json.dumps(now, indent=1) + "\n")
 
-    def spent(self) -> float:
-        path = self.out / "spending.jsonl"
-        if not path.exists():
+    def _trace_usd(self, trace_dir: Path) -> float:
+        if not (trace_dir / "trace.jsonl").exists():
             return 0.0
-        return float(sum(json.loads(line)["usd"] for line in path.read_text().splitlines() if line))
+        return usd_from_trace(
+            list(read_trace(trace_dir)), self.pricing.input_per_m, self.pricing.output_per_m
+        )
 
-    def _record_spending(self, kind: str, key: str, usd: float) -> None:
-        with (self.out / "spending.jsonl").open("a", encoding="utf-8") as f:
-            f.write(json.dumps({"kind": kind, "key": key, "usd": usd}) + "\n")
+    def spent(self) -> float:
+        """Actual spending so far, from every trace under the experiment directory."""
+        if self._spent is None:
+            self._spent = sum(self._trace_usd(p.parent) for p in self.out.rglob("trace.jsonl"))
+        return self._spent
 
-    def _check_limit(self) -> None:
+    def _add_spending(self, trace_dir: Path) -> None:
+        # The total was taken from a scan at the start of the run (before this trace existed).
+        assert self._spent is not None, "spending must be scanned before new traces are written"
+        self._spent += self._trace_usd(trace_dir)
+
+    def _over_limit(self) -> bool:
         if self.max_usd is not None and self.spent() >= self.max_usd:
-            raise SpendingLimitReached(f"spending limit ${self.max_usd} reached")
+            self._stopped = True
+        return self._stopped
 
-    def _set_aside(self, run_dir: Path, key: str) -> None:
-        """Move an interrupted run out of the way, keeping its trace, and record its spending."""
+    def _set_aside(self, run_dir: Path) -> None:
+        """Move an interrupted run out of the way, keeping its trace (its calls stay counted)."""
         n = 0
         while (aside := run_dir.with_name(f"{run_dir.name}.interrupted.{n}")).exists():
             n += 1
-        usd = 0.0
-        if (run_dir / "trace.jsonl").exists():
-            events = list(read_trace(run_dir))
-            usd = usd_from_trace(events, self.pricing.input_per_m, self.pricing.output_per_m)
         run_dir.rename(aside)
-        self._record_spending("interrupted", key, usd)
+
+    def _acquire(self) -> None:
+        lock = self.out / ".lock"
+        try:
+            fd = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
+        except FileExistsError:
+            try:
+                pid = int(lock.read_text().strip() or 0)
+                os.kill(pid, 0)
+            except (ValueError, ProcessLookupError):
+                lock.unlink(missing_ok=True)  # stale lock from a process that is gone
+                return self._acquire()
+            except PermissionError:
+                pass
+            raise ExperimentMismatch(f"another runner (pid {pid}) is using {self.out}") from None
+        with os.fdopen(fd, "w") as f:
+            f.write(str(os.getpid()))
+
+    def _release(self) -> None:
+        (self.out / ".lock").unlink(missing_ok=True)
 
     # -- decompositions and runs --------------------------------------------------------------
 
@@ -239,10 +278,9 @@ class Experiment:
         path = self.store.path(task.task_id, rep)
         if path.exists():
             return self.store.load(task.task_id, rep)
-        self._check_limit()
         trace_dir = self.out / "decompositions" / task.task_id / f"rep{rep}-trace"
         if trace_dir.exists():
-            self._set_aside(trace_dir, f"decompose:{task.task_id}:{rep}")
+            self._set_aside(trace_dir)
         mode = self.config.decompose.get(task.family, "single")
         if task.natural_graph is not None:
             record = deterministic(task.natural_graph, rep)
@@ -265,7 +303,7 @@ class Experiment:
             assert task.public is not None
             record = deterministic(task.public.as_single_node(), rep)
         self.store.save(record)
-        self._record_spending("decomposition", f"{task.task_id}:{rep}", record.cost.usd)
+        self._add_spending(trace_dir)
         return record
 
     async def run_one(
@@ -277,9 +315,8 @@ class Experiment:
         system = build_system(system_name, self.models, base, seed)
         run_dir = self.out / "runs" / system_name / task.task_id / f"rep{rep}"
         run_id = f"{cfg.name}/{system_name}/{task.task_id}/rep{rep}"
-        self._check_limit()
         if run_dir.exists():  # started before but never recorded: interrupted
-            self._set_aside(run_dir, run_id)
+            self._set_aside(run_dir)
         manifest = start_manifest(
             run_dir,
             run_id,
@@ -313,7 +350,7 @@ class Experiment:
             finish_manifest(run_dir, manifest, "crashed", {})
             raise
         tracer.close()
-        self._record_spending("run", run_id, max(0.0, result.cost.usd - record.cost.usd))
+        self._add_spending(run_dir)
         grade = task.grade(result.answer)
         c = result.cost
         finish_manifest(
@@ -354,13 +391,26 @@ class Experiment:
             if untrained:
                 raise ValueError(f"{untrained} need a trained selector (M3); not measurable yet")
         self.out.mkdir(parents=True, exist_ok=True)
+        self._acquire()
+        try:
+            return await self._run(progress)
+        finally:
+            self._release()
+
+    async def _run(self, progress: Callable[[RunRecord], None] | None) -> list[RunRecord]:
+        cfg = self.config
         self.check_provenance()
+        self._spent = None
+        self.spent()  # scan existing traces once, before any new trace is written
         (self.out / "config.json").write_text(cfg.model_dump_json(indent=1) + "\n")
         results_path = self.out / "results.jsonl"
         done = set()
         if results_path.exists():  # resume: skip runs already recorded
             for line in results_path.read_text().splitlines():
-                r = json.loads(line)
+                try:
+                    r = json.loads(line)
+                except json.JSONDecodeError:
+                    continue  # a line torn by a crash: that run is set aside and rerun
                 done.add((r["task_id"], r["system"], r["repetition"]))
         tasks = select_tasks(cfg.tasks, self.root)
         sem = asyncio.Semaphore(cfg.concurrency)
@@ -368,6 +418,8 @@ class Experiment:
 
         async def job(task_id: str, split: str, rep: int) -> None:
             async with sem:
+                if self._over_limit():
+                    return
                 task = self.loader.load(task_id)
                 record = await self.decomposition(task, rep)
                 order = list(cfg.systems)
@@ -375,15 +427,23 @@ class Experiment:
                 for system in order:
                     if (task_id, system, rep) in done:
                         continue
+                    if self._over_limit():
+                        return
                     rec = await self.run_one(task, split, rep, system, record)
                     async with self._lock:
                         with results_path.open("a", encoding="utf-8") as f:
                             f.write(rec.model_dump_json() + "\n")
+                            f.flush()
+                            os.fsync(f.fileno())
                     records.append(rec)
                     if progress is not None:
                         progress(rec)
 
         await asyncio.gather(*(job(t, s, rep) for rep in range(cfg.repetitions) for t, s in tasks))
+        if self._stopped:
+            raise SpendingLimitReached(
+                f"spending limit ${self.max_usd} reached (spent ${self.spent():.4f})"
+            )
         return records
 
 

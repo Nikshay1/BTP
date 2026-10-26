@@ -88,12 +88,16 @@ def priced(systems: list[str], reps: int = 1) -> ExperimentConfig:
     )
 
 
-def test_interrupted_run_is_set_aside_and_charged_then_rerun(tmp_path: Path) -> None:
+def test_interrupted_run_is_set_aside_counted_once_and_rerun(tmp_path: Path) -> None:
     from bioalloc.llm.base import LLMReply, Usage
     from bioalloc.trace import Tracer as T
 
     cfg = priced(["direct"])
     run_dir = tmp_path / "t" / "runs" / "direct" / TASKS[0] / "rep0"
+    # A first runner made provenance and started a run that never finished.
+    first = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT)
+    first.out.mkdir(parents=True)
+    first.check_provenance()
     tracer = T(run_dir, "half")
     reply = LLMReply(content="x", model="m", usage=Usage(prompt_tokens=1000, completion_tokens=500))
     tracer.emit(
@@ -107,13 +111,15 @@ def test_interrupted_run_is_set_aside_and_charged_then_rerun(tmp_path: Path) -> 
         },
     )
     tracer.close()
+    interrupted_usd = (1000 * 1.0 + 500 * 2.0) / 1e6
     exp = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT)
     records = asyncio.run(exp.run())
     assert len(records) == len(TASKS)
     assert (run_dir.parent / "rep0.interrupted.0" / "trace.jsonl").exists()
-    lines = [json.loads(x) for x in (tmp_path / "t" / "spending.jsonl").read_text().splitlines()]
-    interrupted = [x for x in lines if x["kind"] == "interrupted"]
-    assert interrupted and interrupted[0]["usd"] == (1000 * 1.0 + 500 * 2.0) / 1e6
+    assert exp.spent() == pytest.approx(interrupted_usd + sum(r.usd for r in records))
+    # Recovery is idempotent: a fresh look at the directory gives the same total.
+    again = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT)
+    assert again.spent() == pytest.approx(exp.spent())
 
 
 def test_spending_counts_each_decomposition_once(tmp_path: Path) -> None:
@@ -138,14 +144,13 @@ def test_spending_counts_each_decomposition_once(tmp_path: Path) -> None:
     exp = Experiment(priced(systems), RehearsalTransport(), tmp_path, root=ROOT)
     exp.loader.load = as_reasoning  # type: ignore[method-assign]
     records = asyncio.run(exp.run())
-    decomp = [
-        json.loads(x)
-        for x in (tmp_path / "t" / "spending.jsonl").read_text().splitlines()
-        if json.loads(x)["kind"] == "decomposition"
-    ]
-    assert len(decomp) == len(TASKS) and all(d["usd"] > 0 for d in decomp)
+    from bioalloc.decomposition import DecompositionStore
+
+    store = DecompositionStore(tmp_path / "t" / "decompositions")
+    decomp_usd = [store.load(t, 0).cost.usd for t in TASKS]
+    assert all(u > 0 for u in decomp_usd)
     attributed = sum(r.usd for r in records)  # each system is charged the decomposition
-    paid_once = attributed - (len(systems) - 1) * sum(d["usd"] for d in decomp)
+    paid_once = attributed - (len(systems) - 1) * sum(decomp_usd)
     assert exp.spent() == pytest.approx(paid_once)
 
 
@@ -185,3 +190,37 @@ def test_loader_refuses_a_snapshot_that_differs_from_the_split_provenance() -> N
     loader = TaskLoader(expected={"gsm8k": {"gsm8k/public.jsonl": "0" * 64}})
     with pytest.raises((ValueError, FileNotFoundError)):
         loader.load("gsm8k-test-00001")
+
+
+def test_torn_result_line_reruns_that_run(tmp_path: Path) -> None:
+    cfg = config(["direct"])
+    asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+    results = tmp_path / "t" / "results.jsonl"
+    lines = results.read_text().splitlines()
+    results.write_text(lines[0] + "\n" + lines[1][: len(lines[1]) // 2])  # crash mid-write
+    rerun = asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+    assert len(rerun) == 1
+
+
+def test_one_runner_per_directory(tmp_path: Path) -> None:
+    import os
+
+    from bioalloc.evaluation.experiment import ExperimentMismatch
+
+    out = tmp_path / "t"
+    out.mkdir()
+    (out / ".lock").write_text(str(os.getpid()))  # a live process holds it
+    with pytest.raises(ExperimentMismatch, match="another runner"):
+        asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
+    (out / ".lock").write_text("999999999")  # a process that is gone: stale lock, taken over
+    asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
+    assert not (out / ".lock").exists()
+
+
+def test_populated_directory_without_provenance_is_refused(tmp_path: Path) -> None:
+    from bioalloc.evaluation.experiment import ExperimentMismatch
+
+    asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
+    (tmp_path / "t" / "provenance.json").unlink()
+    with pytest.raises(ExperimentMismatch, match="no provenance"):
+        asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
