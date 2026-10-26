@@ -191,7 +191,161 @@ Deferred to M2, before any comparative result is collected: the stored-decomposi
 (14), tool and check services in the execution context, typed tool-call records and tool events,
 finish reasons on replies, and Groq usage normalisation (15).
 
-## Open questions found while planning (to settle before M2)
+## Plan amendments for M2 (2026-10-26)
+
+The submitted research plan (`research-plan/main.tex`) is left as submitted. The entries below amend
+it; each names the section it changes. They settle the open questions O1-O5 raised while planning
+M1. Process as before: independent M2 plans from Claude Opus 5.5 and GPT-6.1 Sol (high), compared
+and settled; where they differed, the entry says which was taken and why.
+
+## D10. Ant: frozen initial weights, task-local learning (settles O1)
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Sections 4.2 and 4.3
+- **Decision:** the ant weights tau are a frozen development snapshot. Each task gets a private
+  copy per subtask, updated by deposit and evaporation as paths finish, and discarded when the task
+  ends; nothing is carried across tasks, systems or repetitions. In M2 the snapshot is uniform
+  (tau = 1); a learned snapshot, if any, is fitted on training data in M3.
+- **Ablations:** *no deposit* (delta = 0, same initial weights) isolates in-task reinforcement;
+  *prior only* (delta = 0 and uniform weights) removes both. With a uniform snapshot the two coincide;
+  if M3 learns a snapshot, both are reported. *No evaporation* is rho = 0. *Uniform sampler* is
+  alpha = beta = 0 over the proposed legal candidates, keeping the proposal call so that the control
+  removes the sampling bias, not the model computation.
+- **Choice vocabulary:** weights are kept over a fixed set of typed action kinds per task family
+  (e.g. Blocksworld operators, `CALCULATE`, `FINISH`), not over free-form steps, so that what is
+  learned on one path applies to the next. Reinforcement transfers across action kinds, not across
+  grounded plans; the paper states this.
+- **Reward for a path:** 1 only when a public check verifies the goal (D15), else 0. On families
+  without a goal check (GSM8K, MATH) ant therefore gets little reinforcement; that is measured and
+  reported, not hidden behind a schema-based reward.
+- **Second opinion:** both plans proposed the frozen-snapshot, private-copy rule; Sol added the
+  distinction between no-deposit and prior-only and the per-distinct-action deposit.
+
+## D11. Direct and the single agent (settles O2)
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Sections 1.2, 4.2 (Table 3) and 4.4
+- **Direct:** without tools, exactly one completion. With tools, one uninterrupted tool episode of
+  at most four completions, including reading tool results back. No resampling, critique or
+  check-driven revision inside it; the coordinator's outer retries still apply.
+- **Single agent:** one persistent worker that works through the stored task graph serially in a
+  fixed topological order, keeping its own history across nodes, with an act-observe loop, the same
+  tools, public checks, retry allowance and task budget, and no roles or selector.
+- **Why:** "one call with tools" cannot work when a tool result must be read. My first proposal
+  (the single agent takes the whole task without the decomposition) would have made decomposition a
+  confound; Sol's version keeps it identical across systems, so it was taken.
+
+## D12. Units in the compute table (settles O3)
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 5, Table 5
+- **Decision:** three units are counted separately: task runs (system x task x repetition),
+  subtask replays (executor x stored subtask context x repetition) and decompositions (task x
+  repetition, shared by all systems). The replay set is 2,400 subtask executions, not 600 task runs.
+  With D11, the main comparison has eleven systems (single agent, four executors alone including
+  Direct, fixed, random, specialist, conventional adaptive, rule-based and learned adaptive), so its
+  row is 11 x 210 x 3 = 6,930 task runs. Budgets are estimated from measured tokens per experiment,
+  and actual spending (each decomposition paid once) is kept apart from the cost charged to each
+  system.
+
+## D13. Power analysis from paired pilot data (settles O4)
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 4.4 (statistics, threats)
+- **Decision:** the "about eight points" figure is replaced by a paired, clustered analysis. For
+  systems A and B, d_i is the mean over repetitions of the success difference on task i; the minimum
+  detectable effect at 5% two-sided and 80% power is about 2.8 s_d / sqrt(n). For one binary pair
+  per task with discordance q this is about 2.8 sqrt(q/n): at n = 210, q = 0.1, 0.3, 0.5 gives about
+  6, 11 and 14 points. These are sensitivity figures. Power curves are simulated with the intended
+  analysis (paired bootstrap over template groups, three seeds, equal family weights) from pilot
+  discordance, and refreshed with development data in M3, since the learned selector does not exist
+  at the pilot. The cost claim needs the lower confidence bound of the success difference above
+  -5 points together with lower cost.
+
+## D14. Bee: inhibition before recruitment, synchronous rounds (settles O5)
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 4.2 and Table 3
+- **Decision:** k scouts answer independently; malformed or publicly invalid answers leave a scout
+  uncommitted. Quorum is tested. Each later round, on a snapshot: (1) each committed scout with a
+  rival receives one stop signal and is released with probability sigma; releases apply together;
+  (2) uncommitted scouts are recruited to an option drawn in proportion to the remaining support,
+  shown its best argument, and decide with one metered assessment call; decisions apply together;
+  (3) quorum is tested. With no supporters left, uncommitted scouts answer independently again.
+  Defaults k = 5, theta = 0.8 (quorum 4), sigma = 0.2, at most five rounds. Fallback: most support,
+  then summed confidence, then a fixed order; whether quorum was reached is traced.
+- **sigma = 0:** if every scout commits in round one the state is absorbing and the module returns
+  at once; the no-stop-signal control then equals the initial k-sample vote. This degeneration is
+  reported, not hidden.
+- **Majority-vote control:** independent full answers until the bee run's call allowance or the
+  token cap is spent (a call-yoked diagnostic). Equal calls do not mean equal tokens; both are
+  reported, and the main comparison uses equal token caps.
+- **Second opinion:** my first proposal used a confidence threshold for commitment; Sol's version
+  (validity-based commitment, explicit absorbing state) is simpler and was taken.
+
+## D15. Weak acceptance is not goal verification
+
+- **Date:** 2026-10-26 · **Status:** active
+- **Decision:** each runtime check declares the strength of its evidence: `format` (schema, type),
+  `operational` (tool status, legal actions), `agreement` (between samples) or `goal` (a public
+  checker that verifies the subtask's goal, such as a plan validator or supplied tests). Acceptance
+  keeps the D5 rules, but stopping rules inside executors (octopus, ant) and policy rewards use only
+  `goal` evidence. A schema pass alone never counts as a verified answer. An executor that has a
+  finished candidate when its budget runs out returns it as completed and traces the stopping
+  reason; `budget_exhausted` means there was no candidate.
+
+## D16. Task families for the first pilot, and the rest later
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 4.4 (tasks), if made permanent
+- **Decision:** the pilot uses PlanBench Blocksworld (and Logistics if time allows), GSM8K, a small
+  MATH subset, our own deterministic tool workflows and the controlled synthetic tasks. TravelPlanner
+  and GAIA are deferred: TravelPlanner's evaluator re-downloads data and assumes full-split
+  denominators, and GAIA is gated, restricts redistribution, and many "text" questions need the web.
+  If they are left out of the main 450 tasks, that is recorded here as a scope amendment.
+- **Data rule:** one preparation step may use the network; it pins upstream revisions, hashes every
+  file and stores a local snapshot. Runs and CI never download. Pinned so far: GSM8K
+  `openai/gsm8k@740312add88f781978c0658806c59bc2815b9866` (MIT).
+- **Planning checks:** a Python simulator of the pinned PDDL domains gives the public checks (legal
+  actions, goal reached). Grading uses the pinned VAL validator where it can be built; the simulator
+  is cross-checked against VAL on fixtures.
+
+## D17. Stored decomposition
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 4.1; completes D5.6
+- **Decision:** after splitting and before any system runs, each task x repetition gets one graph.
+  Tasks that come with a natural work graph (toy, synthetic, our tool workflows) use it directly
+  (`decomposer = deterministic`, no cost). Otherwise an LLM decomposer (actor coordinator, agent
+  `decomposer`) sees only public task material and returns a DAG of at most 8 nodes and depth 6 whose
+  final node keeps the original task's output contract. An invalid graph gets one repair call with
+  the validation errors; if still invalid, the task becomes a single node. No task is dropped or
+  regenerated for convenience. The graph is stored as canonical JSON with its SHA-256 and a
+  preparation record (requests, replies, cost). Every system parses a fresh copy, verifies the hash,
+  and starts with the decomposition's cost already charged to its budget; experiment-wide spending
+  counts it once. GSM8K and MATH subtasks are never derived from reference solutions.
+
+## D18. Baselines
+
+- **Date:** 2026-10-26 · **Status:** active · **Amends:** Section 4.4 (systems compared)
+- **Decision:** single agent (D11); each of Direct, ant, bee and octopus alone; fixed allocation
+  (planning to ant, tools to octopus, reasoning to bee, locked before test); random allocation over
+  the four, seeded by task, subtask and attempt; specialist coordinator (a metered planner gives
+  bounded per-node advice, an act-observe worker executes, a metered critic may ask for one
+  revision; all role costs count; no graph rewriting); conventional adaptive (the same LinUCB over
+  Direct, act-observe, majority vote and plan-then-execute workers); rule-based and learned bio
+  allocation. The act-observe worker shares code with octopus wherever their behaviour coincides, so
+  that the conventional baseline is not artificially weak. Octopus and an ordinary bounded
+  act-observe worker are close computationally; the paper says so, and RQ3 rests on the
+  conventional adaptive comparison and the component controls.
+
+## D19. Groq adapter (no key rotation)
+
+- **Date:** 2026-10-26 · **Status:** active
+- **Decision:** one API key, Developer tier with a spend cap (pending Nikshay's decision on the
+  key). No multi-account key rotation: limits are per organization, and the provider's acceptable
+  use policy reportedly forbids circumventing them with several accounts. A 429 is a
+  `RateLimited` rejection (nothing charged); the client waits at least `Retry-After` (otherwise
+  exponential backoff from 1 s, capped at 30 s), stays within the deadline, re-enters FIFO admission,
+  and gives up after three retries. Timeouts and 5xx errors that may have consumed tokens are not
+  resent automatically. Reasoning tokens are read from `completion_tokens_details` and counted once;
+  missing usage is treated as unknown, not zero. The seed is best effort on Groq. Tested offline with
+  a mocked HTTP transport; the first live step is a small charged capability check.
+
+## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
 the research plan.
