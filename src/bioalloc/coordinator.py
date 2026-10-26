@@ -80,6 +80,8 @@ class CoordinatorConfig:
     accept_unknown: bool = True
     # Pass rejected attempts and the reasons to the next attempt (D8).
     retry_feedback: bool = True
+    # Dispatch one subtask at a time in declaration (topological) order, e.g. for the single agent.
+    serial: bool = False
 
 
 def _action_space(family: TaskFamily, subtask: Subtask) -> ActionSpace | None:
@@ -140,7 +142,10 @@ class Coordinator:
 
         def launch() -> None:
             busy = given_up | {s.id for s in active.values()}
-            for s in graph.ready(done, started=busy):
+            ready = graph.ready(done, started=busy)
+            if self.config.serial:
+                ready = ready[:1] if not active else []
+            for s in ready:
                 task = asyncio.create_task(
                     self._solve(graph.id, s, family, done, llm, tracer, root, task_state)
                 )
@@ -228,7 +233,10 @@ class Coordinator:
             name = self.policy.select(task_id, subtask, previous)
             executor = self.executors[name]
             span = tracer.span(parent=root)
-            agent = f"{name}:{subtask.id}:{attempt}"
+            # A persistent executor (the single agent) keeps one identity across the task.
+            agent = (
+                name if getattr(executor, "persistent", False) else f"{name}:{subtask.id}:{attempt}"
+            )
             limits = self.config.dispatch_budget or llm.account.limits
             child = llm.child(limits, actor="worker", agent=agent)
             child.on_event = tracer.hook(span)

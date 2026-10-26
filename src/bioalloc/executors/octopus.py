@@ -64,10 +64,21 @@ class Octopus:
         )
 
     async def execute(self, subtask: Subtask, ctx: ExecutionContext) -> ExecutorOutcome:
+        return await self.execute_with_history(subtask, ctx, None)
+
+    async def execute_with_history(
+        self, subtask: Subtask, ctx: ExecutionContext, history: list[Message] | None
+    ) -> ExecutorOutcome:
+        """Run the loop. With ``history`` (the single agent's), earlier subtasks' messages come
+        first and this subtask's messages are appended to it, so the worker remembers."""
         messages = subtask_messages(prompts.load("solve_subtask"), subtask, ctx)
+        if history is not None:
+            messages = [messages[0], *history, *messages[1:]]
 
         def stop(reason: str, output: JsonValue = None) -> ExecutorOutcome:
             ctx.emit("executor_stop", {"reason": reason})
+            if history is not None:
+                history[:] = messages[1:]  # everything but the system prompt
             if output is None:
                 return ExecutorOutcome(output=None, incomplete=f"no answer ({reason})")
             return ExecutorOutcome(output=output)

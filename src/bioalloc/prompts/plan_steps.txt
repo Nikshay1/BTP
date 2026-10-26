@@ -1,0 +1,2 @@
+You are about to solve one subtask of a larger task. First write a short numbered plan of the steps
+you will take (at most six steps). Do not solve it yet; reply with the plan only.
