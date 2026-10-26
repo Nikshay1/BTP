@@ -21,6 +21,16 @@ uv run ruff check     # lint
 uv run mypy           # type check
 ```
 
+Run the M1 toy task end to end with the scripted fake model (no API key needed):
+
+```sh
+uv run bioalloc demo --scenario good      # both subtasks solved at the first attempt
+uv run bioalloc demo --scenario recover   # a bad first answer is rejected and reallocated
+uv run bioalloc demo --scenario budget    # the run stops cleanly when the budget runs out
+```
+
+Each run writes `runs/demo/<run-id>/trace.jsonl` and `manifest.json`.
+
 ## Contents
 
 - `research-plan/main.tex` – detailed research plan (single file, compiles with pdfLaTeX on Overleaf)
@@ -29,5 +39,6 @@ uv run mypy           # type check
 - `docs/research-plan-explained.md` – the research plan explained in simple words
 - `docs/mentor-questions.md` – questions for the guide, with their answers and the decisions that follow
 - `docs/decisions.md` – log of design and research decisions, with dates and reasons
+- `docs/architecture.md` – how the framework works, written for reuse in the report and paper
 - `src/bioalloc/` – the framework (Python package)
 - `tests/` – unit and end-to-end tests
