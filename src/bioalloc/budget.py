@@ -72,6 +72,7 @@ def reserve_prompt_tokens(request: LLMRequest) -> int:
     """Conservative estimate of a request's prompt tokens, covering every part that is sent."""
     tokens = sum(_chars_to_tokens(len(m.content)) + 4 for m in request.messages)
     extras: list[object] = [*request.tools]
+    extras += [tc.model_dump() for m in request.messages for tc in m.tool_calls]
     if request.response_format is not None:
         extras.append(request.response_format)
     tokens += sum(_chars_to_tokens(len(json.dumps(x))) for x in extras)
@@ -179,10 +180,16 @@ class Account:
             held_c = acc.reserved_calls if include_reservations else 0
             tokens.append(acc.limits.max_tokens - acc.spent.tokens - held_t)
             calls.append(acc.limits.max_model_calls - acc.spent.model_calls - held_c)
+        tool_left = [
+            a.limits.max_tool_calls - a.spent.tool_calls
+            for a in self._chain()
+            if a.limits.max_tool_calls is not None
+        ]
         return Budget(
             max_tokens=max(min(tokens), 0),
             max_model_calls=max(min(calls), 0),
             max_elapsed_s=self.time_left(),
+            max_tool_calls=max(min(tool_left), 0) if tool_left else None,
         )
 
     def any_overrun(self) -> bool:
@@ -288,6 +295,11 @@ class Account:
         self._notify()
 
     def record_tool_call(self) -> None:
+        """Count one tool execution attempt. Raises if a tool-call limit is already reached."""
+        for acc in self._chain():
+            limit = acc.limits.max_tool_calls
+            if limit is not None and acc.spent.tool_calls >= limit:
+                raise BudgetExceeded("tool call limit reached")
         for acc in self._chain():
             acc.spent.tool_calls += 1
 

@@ -18,12 +18,23 @@ from bioalloc.schemas import Wire
 RunMode = Literal["debug", "measurement"]
 
 
+class ToolCall(Wire):
+    """A tool call requested by the model. ``arguments`` is the raw JSON text it produced."""
+
+    id: str
+    name: str
+    arguments: str
+
+
 class Message(Wire):
     role: Literal["system", "user", "assistant", "tool"]
     content: str
-    # Agent that wrote this content, or None for task text and fixed templates. Used to count
-    # communication tokens (decision D6).
+    # Agent that wrote this content, or None for task text, fixed templates and tool output. Used to
+    # count communication tokens (decision D6).
     source: str | None = None
+    # Assistant messages: the tool calls the model made. Tool messages: the call answered.
+    tool_calls: tuple[ToolCall, ...] = ()
+    tool_call_id: str | None = None
 
 
 class LLMRequest(Wire):
@@ -65,7 +76,7 @@ FinishReason = Literal["stop", "length", "tool_calls", "content_filter", "other"
 
 class LLMReply(Wire):
     content: str
-    tool_calls: tuple[dict[str, JsonValue], ...] = ()
+    tool_calls: tuple[ToolCall, ...] = ()
     usage: Usage
     # "length" means the reply was cut off at max_completion_tokens.
     finish_reason: FinishReason = "stop"

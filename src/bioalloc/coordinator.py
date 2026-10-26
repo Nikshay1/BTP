@@ -15,6 +15,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import random
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import Literal
 
@@ -36,6 +37,7 @@ from bioalloc.schemas import (
     Wire,
 )
 from bioalloc.tasks.base import TaskFamily
+from bioalloc.tools import Tool, ToolService
 from bioalloc.trace import Tracer
 
 RunStatus = Literal["completed", "failed", "budget_exhausted"]
@@ -92,11 +94,13 @@ class Coordinator:
         policy: Policy,
         config: CoordinatorConfig | None = None,
         seed: int = 0,
+        tools: Mapping[str, Tool] | None = None,
     ) -> None:
         self.executors = executors
         self.policy = policy
         self.config = config or CoordinatorConfig()
         self.seed = seed
+        self.tools = dict(tools or {})
 
     async def run(
         self, graph: TaskGraph, family: TaskFamily, llm: MeteredClient, tracer: Tracer
@@ -224,15 +228,22 @@ class Coordinator:
                 rng=random.Random(seed),
                 emit=tracer.hook(span),
                 checks=tuple(family.checks(subtask)),
+                tools=(
+                    ToolService(self.tools, subtask.allowed_tools, child.account, tracer.hook(span))
+                    if subtask.allowed_tools
+                    else None
+                ),
             )
             output: JsonValue = None
             confidence: float | None = None
+            incomplete: str | None = None
             status: ExecutorStatus
             try:
                 outcome = await asyncio.wait_for(
                     executor.execute(subtask, ctx), child.account.time_left()
                 )
                 output, status, confidence = outcome.output, outcome.status, outcome.confidence
+                incomplete = outcome.incomplete
             except BudgetExceeded:
                 status = "budget_exhausted"
             except (TransportTimeout, TimeoutError):
@@ -253,6 +264,15 @@ class Coordinator:
                 checks = tuple(
                     c.evaluate(subtask, output, plain_upstream) for c in family.checks(subtask)
                 )
+                if incomplete is not None:
+                    checks += (
+                        CheckResult(
+                            check="generation",
+                            verdict="fail",
+                            reason=incomplete,
+                            evidence="operational",
+                        ),
+                    )
                 verdict = combine(list(checks))
             else:
                 verdict = "fail"

@@ -19,8 +19,9 @@ from pydantic import JsonValue
 
 from bioalloc.budget import MeteredClient
 from bioalloc.checks import RuntimeCheck, combine
-from bioalloc.llm.base import Message
+from bioalloc.llm.base import LLMReply, LLMRequest, Message
 from bioalloc.schemas import CheckResult, ExecutorStatus, Subtask, Wire
+from bioalloc.tools import ToolService
 
 
 class Upstream(Wire):
@@ -52,6 +53,8 @@ class ExecutionContext:
     emit: Callable[[str, dict[str, Any]], None] = lambda kind, data: None
     # The subtask's public runtime checks, the same ones the coordinator applies afterwards.
     checks: tuple[RuntimeCheck, ...] = ()
+    # Tools the subtask allows, or None if it allows none.
+    tools: ToolService | None = None
 
     @property
     def agent(self) -> str:
@@ -83,6 +86,20 @@ class ExecutorOutcome:
     output: JsonValue
     status: ExecutorStatus = "completed"
     confidence: float | None = None
+    # Set when the output comes from an unfinished generation (cut off at the token limit, or a
+    # tool episode that ran out of completions). The coordinator then rejects it whatever it parses
+    # to, so that a JSON fragment cannot pass as an answer.
+    incomplete: str | None = None
+
+
+def incompleteness(episode: Episode) -> str | None:
+    if not episode.finished:
+        return "the tool episode ended before a final answer"
+    if episode.reply.finish_reason == "length":
+        return "the reply was cut off at the completion limit"
+    if episode.reply.finish_reason == "content_filter":
+        return "the reply was filtered by the provider"
+    return None
 
 
 def subtask_messages(system: str, subtask: Subtask, ctx: ExecutionContext) -> list[Message]:
@@ -113,6 +130,49 @@ def subtask_messages(system: str, subtask: Subtask, ctx: ExecutionContext) -> li
             Message(role="user", content=f"That answer was rejected by the checks: {reasons}")
         )
     return messages
+
+
+@dataclass(frozen=True)
+class Episode:
+    reply: LLMReply
+    messages: tuple[Message, ...]
+    completions: int
+    finished: bool  # False if the completion limit was reached while the model still wanted tools
+
+
+async def tool_episode(ctx: ExecutionContext, base: LLMRequest, max_completions: int) -> Episode:
+    """One uninterrupted tool-use episode (D11): complete, run any requested tools, read the
+    results back, and repeat until the model answers without tools or ``max_completions`` is hit.
+    Without tools in the context this is exactly one completion."""
+    messages = list(base.messages)
+    tools = ctx.tools.wire() if ctx.tools is not None else ()
+    for n in range(1, max_completions + 1):
+        request = base.model_copy(
+            update={
+                "messages": tuple(messages),
+                "tools": tools,
+                "sample_id": f"{base.sample_id}/{n}",
+            }
+        )
+        reply = await ctx.llm.complete(request)
+        if not reply.tool_calls or ctx.tools is None:
+            return Episode(reply, tuple(messages), n, True)
+        if n == max_completions:
+            break  # results could never be read back, so the tools are not run
+        messages.append(
+            Message(
+                role="assistant",
+                content=reply.content,
+                source=ctx.agent,
+                tool_calls=reply.tool_calls,
+            )
+        )
+        for tc in reply.tool_calls:
+            result = await ctx.tools.call(tc)
+            messages.append(
+                Message(role="tool", content=result.message_content(), tool_call_id=tc.id)
+            )
+    return Episode(reply, tuple(messages), max_completions, False)
 
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)

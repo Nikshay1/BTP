@@ -36,6 +36,7 @@ class Budget(Wire):
     max_tokens: NonNegativeInt
     max_model_calls: NonNegativeInt
     max_elapsed_s: NonNegativeFloat | None = None
+    max_tool_calls: NonNegativeInt | None = None
 
 
 class Tokens(Wire):

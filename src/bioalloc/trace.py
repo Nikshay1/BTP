@@ -133,7 +133,7 @@ def span_tree(events: list[TraceEvent], root: str) -> list[TraceEvent]:
 
 def tokens_from_trace(events: list[TraceEvent]) -> dict[str, int]:
     """Recompute call and token totals from the trace alone, to cross-check the ledger."""
-    totals = {"model_calls": 0, "tokens": 0, "communication": 0}
+    totals = {"model_calls": 0, "tokens": 0, "communication": 0, "tool_calls": 0}
     for e in events:
         data: dict[str, Any] = e.data
         if e.kind == "llm_reply":
@@ -141,6 +141,8 @@ def tokens_from_trace(events: list[TraceEvent]) -> dict[str, int]:
             totals["model_calls"] += 1
             totals["tokens"] += int(usage["prompt_tokens"]) + int(usage["completion_tokens"])
             totals["communication"] += int(data["communication_tokens"])
+        elif e.kind == "tool_call":
+            totals["tool_calls"] += 1
         elif e.kind == "llm_error" and data.get("usage") == "unknown":
             totals["model_calls"] += 1
             totals["tokens"] += int(data["charged_prompt_tokens"])
