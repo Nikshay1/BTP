@@ -5,7 +5,7 @@ be lifted into the system and method sections of the report and the paper. The r
 (`research-plan/main.pdf`) states what is studied; this file states how the code does it. Design
 choices are justified in `docs/decisions.md` (cited as D1, D2, ...).
 
-Last updated: 26 October 2026 (milestone M1).
+Last updated: 26 October 2026 (M2, up to the pilot).
 
 ## Overview
 
@@ -37,12 +37,17 @@ TaskGraph ──> Coordinator ──select──> Policy
 | `llm/` | `LLMRequest`/`LLMReply` contracts, the `Transport` protocol, a scripted `FakeTransport`, and a debug-only response cache. |
 | `budget.py` | Budget accounts (a tree, one node per dispatch) and the `MeteredClient`, the only path from an executor to a model. |
 | `trace.py` | Append-only JSON Lines trace grouped in spans, and the run manifest. |
-| `executors/` | The common executor interface and the executors. M1 has `Direct`. |
+| `executors/` | The common interface and the executors: `Direct`, `Octopus`, `Ant`, `Bee`, their Table 3 controls, the conventional workers (`act_observe`, `PlanThenExecute`, `MajorityVote`), `SingleAgent` and `Specialist`. |
+| `actions.py` | Typed action spaces: the fixed choice vocabulary a family offers to step-wise executors (D10). |
+| `tools.py` | The restricted tool service: allowed tools only, validated arguments, bounded time and output, every attempt counted and traced. |
+| `decomposition.py` | Stored decompositions: one graph per task and repetition, hashed and replayed with its cost imported (D17). |
+| `features.py` | Selector features computed in trusted code before execution. |
+| `llm/groq.py` | The Groq transport for GPT-OSS-120B, with error classes mapped to the ledger (D19). |
 | `checks.py` | Runtime checks (`pass`, `fail`, `unknown`) and how verdicts combine. |
-| `policies.py` | Allocation policies. M1 has `Constant` and `Uniform` (random). |
+| `policies.py` | Allocation policies: `Constant`, `Uniform` (random), `FixedByContract`, `RuleTable`, `LinUCB`. |
 | `coordinator.py` | Select, dispatch, check, accept or reallocate, aggregate. |
-| `tasks/` | Public side of each task family: its runtime checks and aggregator. |
-| `evaluation/` | Task generators, reference answers, graders and the run harness. Nothing outside it may import it (tested). |
+| `tasks/` | Public side of each family (checks with evidence strength, aggregator, normalizer, action space, tools): toy routes, synthetic routes, GSM8K, PlanBench (with a STRIPS simulator), our tool suite. |
+| `evaluation/` | Data preparation, generators, references, graders, splits, the task and system registry, the experiment runner, analysis and the rehearsal model. Nothing outside it may import it (tested). |
 | `prompts/` | Shared prompt templates; their hashes go into every manifest. |
 
 ## Executor interface
@@ -133,3 +138,27 @@ output. The public route check verifies endpoints and edges; only the grader kno
 route is cheapest. `bioalloc demo` runs three scripted scenarios: `good`, `recover` (an invalid
 first answer is rejected and reallocated) and `budget` (the run stops cleanly when the call budget
 is spent).
+
+## Executors (M2)
+
+| Executor | Control flow | Calls per dispatch |
+|---|---|---|
+| Direct | one completion, or one tool episode of at most four completions (D11) | 1-4 |
+| Octopus | private act-observe loop; each step a tool episode; check-driven correction; stops on goal verification, an unrejected answer, or the step limit | up to 12 steps |
+| Octopus, reporting | the same, with a metered coordinator call after every step | + 1 per step |
+| Ant | paths of typed actions; model ranks candidates; sampling by tau^alpha (1/rank)^beta; reward only for goal verification; evaporation and once-per-kind deposit; task-private weights (D10) | 1 per choice, up to 8 paths |
+| Bee | k = 5 independent scouts; synchronous rounds of inhibition then recruitment; quorum 4 (D14) | 5 + assessments |
+| MajorityVote | independent answers, plurality vote; call-yoked variant | k |
+| PlanThenExecute | one planning call, then Direct's episode | 2-5 |
+| SingleAgent | one persistent act-observe worker over the whole graph, serial, one identity | per subtask |
+| Specialist | planner advice once per task, act-observe executor, critic with at most one revision | varies |
+
+## Experiments
+
+`bioalloc experiment run CONFIG` runs tasks x repetitions x systems from a JSON config. For each
+task and repetition one decomposition is prepared and stored, then every system runs on a fresh
+copy with the decomposition's cost already charged, in an order shuffled per task. Each run has
+its own trace and manifest; one line per run goes to `results.jsonl`, and a stopped experiment
+resumes where it left off. `--rehearsal` swaps in a stand-in model for an offline dress
+rehearsal; `--max-usd` stops a live run at a spending limit. `bioalloc experiment analyze` prints
+per-system summaries and paired comparisons (D13).

@@ -6,10 +6,10 @@ B.Tech final-year project (2026-27), Department of Computer Science and Engineer
 
 ## Status
 
-M1 done (26 October 2026): the coordinator, the common executor interface, runtime checks and
-logging work end to end with the Direct executor on a toy task, using a scripted fake model. Next
-is M2 (December 2026): the core executors, the task suites, the baselines and a pilot on the real
-backbone. See `docs/progress.md` for milestones and `docs/decisions.md` for every design decision.
+M1 done; M2 built up to the pilot (26 October 2026). All executors, controls and baselines, four
+task suites with frozen splits, the Groq adapter, the experiment runner and analysis work offline;
+the pilot on the real backbone waits for an API key. See `docs/progress.md`, `docs/pilot.md` and
+`docs/decisions.md`.
 
 ## Development
 
@@ -32,6 +32,14 @@ uv run bioalloc demo --scenario budget    # the run stops cleanly when the budge
 
 Each run writes `runs/demo/<run-id>/trace.jsonl` and `manifest.json`.
 
+Prepare the datasets once (needs the network), then rehearse the pilot offline:
+
+```sh
+uv run --group prep python scripts/prepare_data.py gsm8k planbench
+uv run bioalloc experiment run configs/pilot.json --rehearsal
+uv run bioalloc experiment analyze runs/pilot-v1-rehearsal
+```
+
 ## Contents
 
 - `research-plan/main.tex` – detailed research plan (single file, compiles with pdfLaTeX on Overleaf)
@@ -42,5 +50,9 @@ Each run writes `runs/demo/<run-id>/trace.jsonl` and `manifest.json`.
 - `docs/decisions.md` – log of design and research decisions, with dates and reasons
 - `docs/architecture.md` – how the framework works, written for reuse in the report and paper
 - `docs/progress.md` – milestone status and what carries over
+- `docs/pilot.md` – what the pilot runs, its readiness checklist and how to run it
+- `configs/` – experiment configurations
+- `data/manifests/`, `data/splits/` – dataset hashes and the frozen study splits
+- `scripts/` – data preparation and split building
 - `src/bioalloc/` – the framework (Python package)
 - `tests/` – unit and end-to-end tests
