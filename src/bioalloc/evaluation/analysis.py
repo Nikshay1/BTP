@@ -3,8 +3,9 @@
 * ``summarize``: per system (and family) success rate, budget compliance, tokens by role, calls,
   dollars and time.
 * ``paired``: the paired comparison of two systems. For task i, d_i is the mean over repetitions
-  of the success difference; the interval comes from a bootstrap that resamples template groups
-  (all tasks and repetitions of a group together). Also reported: the discordance rate q (share
+  of the success difference; families get equal weight, and the interval comes from a bootstrap
+  that resamples template groups (all tasks and repetitions of a group together) within each
+  family. Also reported: the discordance rate q (share
   of task-repetition pairs on which the systems disagree) and the minimum detectable effect at 5%
   two-sided and 80% power, 2.8 * s_d / sqrt(n) (D13). These are sensitivity figures.
 * ``cost_projection``: measured mean tokens and dollars per run, scaled to a planned number of runs.
@@ -59,10 +60,15 @@ def paired(
     a: str,
     b: str,
     groups: Mapping[str, str] | None = None,
+    families: Mapping[str, str] | None = None,
     resamples: int = 2000,
     seed: int = 0,
 ) -> dict[str, Any]:
-    """Paired comparison of systems a and b on the tasks and repetitions both ran."""
+    """Paired comparison of systems a and b on the tasks and repetitions both ran.
+
+    With ``families``, the estimate gives each family equal weight (the mean of per-family mean
+    differences, D13) and the bootstrap resamples template groups within each family; without it,
+    all tasks are pooled. Groups default to one per task."""
     outcome: dict[tuple[str, int], dict[str, bool]] = defaultdict(dict)
     for r in records:
         if r["system"] in (a, b):
@@ -77,27 +83,36 @@ def paired(
         discordant += v[a] != v[b]
     d = {t: statistics.fmean(xs) for t, xs in per_task.items()}
     n = len(d)
-    mean = statistics.fmean(d.values())
     s_d = statistics.stdev(d.values()) if n > 1 else 0.0
-    group_of = groups or {t: t for t in d}
-    by_group: dict[str, list[float]] = defaultdict(list)
+    group_of = groups or {}
+    family_of = families or {}
+    # family -> group -> per-task differences
+    strata: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
     for t, diff in d.items():
-        by_group[group_of.get(t, t)].append(diff)
-    names = sorted(by_group)
+        strata[family_of.get(t, "all") if families else "all"][group_of.get(t, t)].append(diff)
+
+    def estimate(by_family: Mapping[str, Sequence[float]]) -> float:
+        return statistics.fmean(statistics.fmean(xs) for xs in by_family.values())
+
+    point = estimate({f: [x for xs in g.values() for x in xs] for f, g in strata.items()})
     rng = random.Random(seed)
     boot = []
     for _ in range(resamples):
-        sample = [x for g in rng.choices(names, k=len(names)) for x in by_group[g]]
-        boot.append(statistics.fmean(sample))
+        sample: dict[str, list[float]] = {}
+        for fam, by_group in strata.items():
+            names = sorted(by_group)
+            sample[fam] = [x for g in rng.choices(names, k=len(names)) for x in by_group[g]]
+        boot.append(estimate(sample))
     boot.sort()
     q = discordant / len(pairs)
     return {
         "a": a,
         "b": b,
         "tasks": n,
-        "groups": len(names),
+        "groups": sum(len(g) for g in strata.values()),
+        "families": sorted(strata),
         "pairs": len(pairs),
-        "difference": mean,
+        "difference": point,
         "ci95": (boot[int(0.025 * resamples)], boot[int(0.975 * resamples) - 1]),
         "discordance": q,
         "s_d": s_d,

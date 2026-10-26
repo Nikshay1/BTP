@@ -4,6 +4,8 @@ import asyncio
 import json
 from pathlib import Path
 
+import pytest
+
 from bioalloc.cli import main
 from bioalloc.evaluation.analysis import summarize
 from bioalloc.evaluation.experiment import Experiment, ExperimentConfig, TaskSelection, load_results
@@ -78,3 +80,108 @@ def test_pilot_config_is_valid() -> None:
     cfg = ExperimentConfig.model_validate(json.loads((ROOT / "configs" / "pilot.json").read_text()))
     assert cfg.mode == "measurement" and set(cfg.systems) <= set(SYSTEMS)
     assert cfg.tasks.split == "train"
+
+
+def priced(systems: list[str], reps: int = 1) -> ExperimentConfig:
+    return config(systems, reps).model_copy(
+        update={"pricing": {"input_per_m": 1.0, "output_per_m": 2.0}}
+    )
+
+
+def test_interrupted_run_is_set_aside_and_charged_then_rerun(tmp_path: Path) -> None:
+    from bioalloc.llm.base import LLMReply, Usage
+    from bioalloc.trace import Tracer as T
+
+    cfg = priced(["direct"])
+    run_dir = tmp_path / "t" / "runs" / "direct" / TASKS[0] / "rep0"
+    tracer = T(run_dir, "half")
+    reply = LLMReply(content="x", model="m", usage=Usage(prompt_tokens=1000, completion_tokens=500))
+    tracer.emit(
+        tracer.span(),
+        "llm_reply",
+        {
+            "agent": "a",
+            "actor": "worker",
+            "communication_tokens": 0,
+            "reply": reply.model_dump(mode="json"),
+        },
+    )
+    tracer.close()
+    exp = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT)
+    records = asyncio.run(exp.run())
+    assert len(records) == len(TASKS)
+    assert (run_dir.parent / "rep0.interrupted.0" / "trace.jsonl").exists()
+    lines = [json.loads(x) for x in (tmp_path / "t" / "spending.jsonl").read_text().splitlines()]
+    interrupted = [x for x in lines if x["kind"] == "interrupted"]
+    assert interrupted and interrupted[0]["usd"] == (1000 * 1.0 + 500 * 2.0) / 1e6
+
+
+def test_spending_counts_each_decomposition_once(tmp_path: Path) -> None:
+    from bioalloc.decomposition import PublicTask
+    from bioalloc.evaluation.registry import StudyTask, TaskLoader
+
+    real = TaskLoader()
+
+    def as_reasoning(task_id: str) -> StudyTask:
+        t = real.load(task_id)
+        first = t.natural_graph.nodes[0]  # type: ignore[union-attr]
+        public = PublicTask(
+            id=task_id,
+            instruction=first.instruction,
+            inputs=first.inputs,
+            output_schema=first.output_schema,
+            contract=first.contract,
+        )
+        return StudyTask(task_id, "reasoning", t.task_family, t.grade, public=public)
+
+    systems = ["direct", "octopus", "bee"]
+    exp = Experiment(priced(systems), RehearsalTransport(), tmp_path, root=ROOT)
+    exp.loader.load = as_reasoning  # type: ignore[method-assign]
+    records = asyncio.run(exp.run())
+    decomp = [
+        json.loads(x)
+        for x in (tmp_path / "t" / "spending.jsonl").read_text().splitlines()
+        if json.loads(x)["kind"] == "decomposition"
+    ]
+    assert len(decomp) == len(TASKS) and all(d["usd"] > 0 for d in decomp)
+    attributed = sum(r.usd for r in records)  # each system is charged the decomposition
+    paid_once = attributed - (len(systems) - 1) * sum(d["usd"] for d in decomp)
+    assert exp.spent() == pytest.approx(paid_once)
+
+
+def test_spending_limit_stops_new_runs(tmp_path: Path) -> None:
+    from bioalloc.evaluation.experiment import SpendingLimitReached
+
+    cfg = priced(["direct", "octopus", "bee"]).model_copy(update={"concurrency": 1})
+    exp = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT, max_usd=0.0005)
+    with pytest.raises(SpendingLimitReached):
+        asyncio.run(exp.run())
+    done = load_results(tmp_path / "t" / "results.jsonl")
+    assert 0 < len(done) < 3 * len(TASKS)
+    # Resuming with a higher limit finishes the rest and keeps the ledger.
+    exp2 = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT, max_usd=1.0)
+    asyncio.run(exp2.run())
+    assert len(load_results(tmp_path / "t" / "results.jsonl")) == 3 * len(TASKS)
+
+
+def test_resume_with_a_different_config_is_refused(tmp_path: Path) -> None:
+    from bioalloc.evaluation.experiment import ExperimentMismatch
+
+    asyncio.run(Experiment(config(["direct"]), RehearsalTransport(), tmp_path, root=ROOT).run())
+    changed = config(["direct"]).model_copy(update={"temperature": 0.1})
+    with pytest.raises(ExperimentMismatch, match="config"):
+        asyncio.run(Experiment(changed, RehearsalTransport(), tmp_path, root=ROOT).run())
+
+
+def test_measurement_refuses_untrained_selectors(tmp_path: Path) -> None:
+    cfg = config(["bio_adaptive"]).model_copy(update={"mode": "measurement"})
+    with pytest.raises(ValueError, match="trained selector"):
+        asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+
+
+def test_loader_refuses_a_snapshot_that_differs_from_the_split_provenance() -> None:
+    from bioalloc.evaluation.registry import TaskLoader
+
+    loader = TaskLoader(expected={"gsm8k": {"gsm8k/public.jsonl": "0" * 64}})
+    with pytest.raises((ValueError, FileNotFoundError)):
+        loader.load("gsm8k-test-00001")

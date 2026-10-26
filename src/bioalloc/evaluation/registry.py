@@ -58,15 +58,30 @@ _TOOL_ID = re.compile(r"^tools-v\d+-(?P<template>[a-z_]+)-s(?P<seed>\d+)$")
 
 
 class TaskLoader:
-    """Loads study tasks by id from the prepared snapshots and generators (cached)."""
+    """Loads study tasks by id from the prepared snapshots and generators (cached).
 
-    def __init__(self) -> None:
+    With ``expected`` (the snapshot hashes the split file was built from), each snapshot is
+    verified against its manifest and against those hashes before its first use, so a run can
+    never silently measure edited tasks or references."""
+
+    def __init__(self, expected: dict[str, Any] | None = None) -> None:
         self._gsm8k: dict[str, gsm8k_data.GSM8KItem] | None = None
         self._plans: dict[str, planbench_data.PlanItem] | None = None
+        self.expected = expected
+
+    def _verify(self, name: str) -> None:
+        if self.expected is None:
+            return
+        from bioalloc.evaluation.data import verify_prepared
+
+        prepared = verify_prepared(name)["prepared"]
+        if name in self.expected and prepared != self.expected[name]:
+            raise ValueError(f"the {name} snapshot differs from the one the splits were built from")
 
     def load(self, task_id: str) -> StudyTask:
         if task_id.startswith("gsm8k-"):
             if self._gsm8k is None:
+                self._verify("gsm8k")
                 self._gsm8k = {i.task.id: i for i in gsm8k_data.load()}
             item = self._gsm8k[task_id]
             return StudyTask(
@@ -74,6 +89,7 @@ class TaskLoader:
             )
         if task_id.startswith("planbench-"):
             if self._plans is None:
+                self._verify("planbench")
                 self._plans = {i.task.id: i for i in planbench_data.load()}
             plan = self._plans[task_id]
             return StudyTask(
@@ -120,6 +136,8 @@ class System:
 
 
 CORE = ("direct", "ant", "bee", "octopus")
+# Systems whose policy must be trained first (M3); measured runs refuse them without an artifact.
+NEEDS_TRAINING = ("conventional_adaptive", "bio_adaptive", "bio_rules")
 ORDINARY = ("direct", "act_observe", "majority", "plan_then_execute")
 # Fixed allocation, locked before any test run (D18): planning -> ant, tools -> octopus,
 # reasoning -> bee.

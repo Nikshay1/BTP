@@ -90,7 +90,13 @@ def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float
     import asyncio
     import json
 
-    from bioalloc.evaluation.experiment import Experiment, ExperimentConfig, RunRecord
+    from bioalloc.evaluation.experiment import (
+        Experiment,
+        ExperimentConfig,
+        ExperimentMismatch,
+        RunRecord,
+        SpendingLimitReached,
+    )
     from bioalloc.llm.base import Transport
 
     config = ExperimentConfig.model_validate(json.loads(config_path.read_text()))
@@ -108,21 +114,27 @@ def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float
             print("GROQ_API_KEY is not set (environment or .env); nothing was run.")
             return 2
         transport = GroqTransport(key)
-    spent = 0.0
+    experiment = Experiment(config, transport, out, max_usd=max_usd)
 
     def progress(rec: RunRecord) -> None:
-        nonlocal spent
-        spent += rec.usd
         mark = "ok " if rec.correct else "-- "
         print(
             f"{mark}{rec.system:<22} {rec.task_id:<32} rep{rec.repetition} "
-            f"{rec.status:<16} {rec.tokens:>7} tok  ${spent:.4f}"
+            f"{rec.status:<16} {rec.tokens:>7} tok  spent ${experiment.spent():.4f}"
         )
-        if max_usd is not None and spent > max_usd:
-            raise SystemExit(f"spending limit ${max_usd} reached; stopping (results so far kept)")
 
-    asyncio.run(Experiment(config, transport, out).run(progress))
-    print(f"results: {out / config.name / 'results.jsonl'}")
+    try:
+        asyncio.run(experiment.run(progress))
+    except SpendingLimitReached as exc:
+        print(f"{exc}; stopped. Finished runs are kept; rerun to resume with a higher limit.")
+        return 3
+    except ExperimentMismatch as exc:
+        print(f"refused: {exc}")
+        return 4
+    print(
+        f"results: {out / config.name / 'results.jsonl'}"
+        f"  (actual spending ${experiment.spent():.4f})"
+    )
     return 0
 
 
@@ -133,6 +145,14 @@ def experiment_analyze(run_dir: Path, comparisons: list[list[str]]) -> int:
     from bioalloc.evaluation.experiment import load_results
 
     records = load_results(run_dir / "results.jsonl")
+    # Template groups and families come from the split file the experiment used.
+    from bioalloc.evaluation.data import REPO_ROOT
+    from bioalloc.evaluation.splits import load as load_split
+
+    config = json.loads((run_dir / "config.json").read_text())
+    assignments = load_split(REPO_ROOT / config["tasks"]["split_file"])
+    groups = {x.task_id: x.group for x in assignments}
+    families = {x.task_id: x.family for x in assignments}
     cols = ("system", "runs", "success", "within_budget", "mean_tokens", "mean_calls", "mean_usd")
     print("  ".join(f"{c:>14}" for c in cols))
     for row in summarize(records):
@@ -142,7 +162,7 @@ def experiment_analyze(run_dir: Path, comparisons: list[list[str]]) -> int:
             )
         )
     for a, b in comparisons:
-        print(json.dumps(paired(records, a, b), indent=1))
+        print(json.dumps(paired(records, a, b, groups=groups, families=families), indent=1))
     return 0
 
 

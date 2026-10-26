@@ -67,3 +67,17 @@ def test_cost_projection() -> None:
     assert p["projected_tokens"] == 1_000_000 and p[
         "projected_usd_with_30pct_allowance"
     ] == pytest.approx(1.3)
+
+
+def test_families_get_equal_weight() -> None:
+    # Family f: 30 tasks, a beats b on all. Family g: 10 tasks, no difference.
+    rs = []
+    for t in range(30):
+        rs += [rec(f"f{t}", "a", 0, True), rec(f"f{t}", "b", 0, False)]
+    for t in range(10):
+        rs += [rec(f"g{t}", "a", 0, True), rec(f"g{t}", "b", 0, True)]
+    pooled = paired(rs, "a", "b", resamples=200)
+    fams = {f"f{t}": "f" for t in range(30)} | {f"g{t}": "g" for t in range(10)}
+    weighted = paired(rs, "a", "b", families=fams, resamples=200)
+    assert pooled["difference"] == pytest.approx(0.75)
+    assert weighted["difference"] == pytest.approx(0.5) and weighted["families"] == ["f", "g"]

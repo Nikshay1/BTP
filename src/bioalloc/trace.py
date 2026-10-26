@@ -159,6 +159,21 @@ def tokens_from_trace(events: list[TraceEvent]) -> dict[str, int]:
     return totals
 
 
+def usd_from_trace(events: list[TraceEvent], input_per_m: float, output_per_m: float) -> float:
+    """Dollars spent according to a trace alone (used for runs interrupted before they finished)."""
+    prompt = completion = 0
+    for e in events:
+        data: dict[str, Any] = e.data
+        if e.kind == "llm_reply":
+            usage = data["reply"]["usage"]
+            prompt += int(usage["prompt_tokens"])
+            completion += int(usage["completion_tokens"])
+        elif e.kind == "llm_error" and data.get("usage") == "unknown":
+            prompt += int(data["charged_prompt_tokens"])
+            completion += int(data["charged_completion_tokens"])
+    return (prompt * input_per_m + completion * output_per_m) / 1e6
+
+
 class Manifest(Wire):
     schema_version: int = SCHEMA_VERSION
     run_id: str
