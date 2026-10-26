@@ -1,0 +1,2742 @@
+{
+ "split_version": 1,
+ "seed": 20261026,
+ "quotas": {
+  "train": 50,
+  "tune": 30,
+  "test": 50,
+  "test_variant": 20
+ },
+ "sha256": "8b38f35b966eec60699a22cd806fde033bdf24178673c248f325fbc7d4a1c544",
+ "provenance": {
+  "gsm8k": {
+   "gsm8k/private.jsonl": "4e631b54679a2846f26f54f4381535c18df8a5d57631159cfaf973dddc328950",
+   "gsm8k/public.jsonl": "5ade8f1237d14d6769f6f51254e93c8ebabc015e363801d8ed6103e85092c9fa"
+  },
+  "planbench": {
+   "planbench/public.jsonl": "28e8ccffe6db5993b5435bbba47bc83c4bd771cb508bdeacecd521fe53f6f7fd"
+  }
+ },
+ "groups_per_split": {
+  "planning": {
+   "train": 35,
+   "tune": 21,
+   "test": 28,
+   "test_variant": 20
+  },
+  "reasoning": {
+   "train": 50,
+   "tune": 30,
+   "test": 50,
+   "test_variant": 20
+  },
+  "tools": {
+   "train": 50,
+   "tune": 30,
+   "test": 50,
+   "test_variant": 20
+  }
+ },
+ "assignments": [
+  {
+   "family": "reasoning",
+   "group": "gsm8k:f78edc10aba75fbb",
+   "split": "train",
+   "task_id": "gsm8k-test-00000"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:bf86614a1138628d",
+   "split": "test",
+   "task_id": "gsm8k-test-00001"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:92e8af667512936f",
+   "split": "test",
+   "task_id": "gsm8k-test-00002"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:7ad5928a8a426431",
+   "split": "test",
+   "task_id": "gsm8k-test-00016"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:0e4d0454881478f9",
+   "split": "test",
+   "task_id": "gsm8k-test-00026"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:020dd59bc4aa1d39",
+   "split": "train",
+   "task_id": "gsm8k-test-00028"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:618a6f39e74d476d",
+   "split": "test",
+   "task_id": "gsm8k-test-00032"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c721c3ad10f82ca7",
+   "split": "test",
+   "task_id": "gsm8k-test-00033"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:d5bb80a1b211b54f",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00041"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e9f36dca63ccec0f",
+   "split": "tune",
+   "task_id": "gsm8k-test-00049"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:78e9ac72cea95318",
+   "split": "train",
+   "task_id": "gsm8k-test-00050"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:cece9c6b93dc83e3",
+   "split": "train",
+   "task_id": "gsm8k-test-00072"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:6d88df08f428fa88",
+   "split": "train",
+   "task_id": "gsm8k-test-00075"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:f9ede15174524774",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00090"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e914bcb49395467c",
+   "split": "tune",
+   "task_id": "gsm8k-test-00093"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:28e17fd734f9740c",
+   "split": "test",
+   "task_id": "gsm8k-test-00094"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c292f0f24ceef877",
+   "split": "test",
+   "task_id": "gsm8k-test-00113"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:36cbe68a98f70f08",
+   "split": "test",
+   "task_id": "gsm8k-test-00136"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:31c318d3ba3f0adc",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00150"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:0a054c8c33b168ec",
+   "split": "test",
+   "task_id": "gsm8k-test-00154"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:40c5cdd7f4153640",
+   "split": "test",
+   "task_id": "gsm8k-test-00164"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:2526c9a31d12414b",
+   "split": "tune",
+   "task_id": "gsm8k-test-00178"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:7a42ccfc6dc07377",
+   "split": "train",
+   "task_id": "gsm8k-test-00179"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:3c9cd4c5ca000cde",
+   "split": "tune",
+   "task_id": "gsm8k-test-00187"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:d0887fd6decd9389",
+   "split": "train",
+   "task_id": "gsm8k-test-00189"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:8382d54d1634bd79",
+   "split": "train",
+   "task_id": "gsm8k-test-00197"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:9c3976a8894a1ab9",
+   "split": "train",
+   "task_id": "gsm8k-test-00221"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c2cc0b619a2fd26f",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00229"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:a3a75f971a540115",
+   "split": "test",
+   "task_id": "gsm8k-test-00234"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:8ca46c6367a36e26",
+   "split": "tune",
+   "task_id": "gsm8k-test-00235"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e2c78372886b7a52",
+   "split": "train",
+   "task_id": "gsm8k-test-00236"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:1c9c49b47174b246",
+   "split": "tune",
+   "task_id": "gsm8k-test-00244"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:12acec401ed5c5b5",
+   "split": "test",
+   "task_id": "gsm8k-test-00247"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:30cd489d92541838",
+   "split": "tune",
+   "task_id": "gsm8k-test-00250"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:1d1ac99130650635",
+   "split": "test",
+   "task_id": "gsm8k-test-00257"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c5b39034211930fa",
+   "split": "train",
+   "task_id": "gsm8k-test-00260"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ad5ec2611425f86c",
+   "split": "train",
+   "task_id": "gsm8k-test-00270"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c945ac73f2e410e5",
+   "split": "train",
+   "task_id": "gsm8k-test-00289"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ef897d7b4590fab2",
+   "split": "tune",
+   "task_id": "gsm8k-test-00292"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:327d66421367c31c",
+   "split": "test",
+   "task_id": "gsm8k-test-00302"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:630f2236f984518c",
+   "split": "test",
+   "task_id": "gsm8k-test-00321"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:7099bc5d360098ec",
+   "split": "test",
+   "task_id": "gsm8k-test-00324"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:f417d4d91459fe46",
+   "split": "test",
+   "task_id": "gsm8k-test-00337"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:52784f070c5aa073",
+   "split": "train",
+   "task_id": "gsm8k-test-00342"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c8a24d1ba0f3e8d4",
+   "split": "tune",
+   "task_id": "gsm8k-test-00355"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:4d7967fdfcc561da",
+   "split": "test",
+   "task_id": "gsm8k-test-00358"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:08905a8d723456fa",
+   "split": "tune",
+   "task_id": "gsm8k-test-00378"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:4e7329e86238cc57",
+   "split": "test",
+   "task_id": "gsm8k-test-00380"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:d9ebd162d798e024",
+   "split": "test",
+   "task_id": "gsm8k-test-00381"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e457598102bb10cb",
+   "split": "train",
+   "task_id": "gsm8k-test-00387"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:2b757ca685dd2fd3",
+   "split": "train",
+   "task_id": "gsm8k-test-00397"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:5f6dbfd0a88633ba",
+   "split": "test",
+   "task_id": "gsm8k-test-00400"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:8f4b910275be5158",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00419"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:3fb92d8c98d9dd54",
+   "split": "test",
+   "task_id": "gsm8k-test-00427"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:9a6fc10a5e6e7ade",
+   "split": "test",
+   "task_id": "gsm8k-test-00429"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:554e55760c45efe3",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00465"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:0b988d6f1723b7d1",
+   "split": "train",
+   "task_id": "gsm8k-test-00471"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:65187c236a93b278",
+   "split": "test",
+   "task_id": "gsm8k-test-00483"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:35441025b11ea2a3",
+   "split": "train",
+   "task_id": "gsm8k-test-00486"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ba9f5e07675110fc",
+   "split": "train",
+   "task_id": "gsm8k-test-00496"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:87dc7a63329be885",
+   "split": "test",
+   "task_id": "gsm8k-test-00500"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:5c1ced38ae69208c",
+   "split": "train",
+   "task_id": "gsm8k-test-00509"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:f886c6eb0d2ffb53",
+   "split": "test",
+   "task_id": "gsm8k-test-00517"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:b7928f6c80294db0",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00522"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:2da25ed0d5ce7169",
+   "split": "test",
+   "task_id": "gsm8k-test-00538"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:6819b7adf3114610",
+   "split": "train",
+   "task_id": "gsm8k-test-00541"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c4e3659a728da9af",
+   "split": "test",
+   "task_id": "gsm8k-test-00555"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:351791cf4d58de84",
+   "split": "tune",
+   "task_id": "gsm8k-test-00561"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:bbf495e766ece8a2",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00575"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:48f4b909356802b0",
+   "split": "train",
+   "task_id": "gsm8k-test-00581"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:47c080d47c2b56ef",
+   "split": "tune",
+   "task_id": "gsm8k-test-00584"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:66501366073ccded",
+   "split": "train",
+   "task_id": "gsm8k-test-00586"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e707feb83826dc56",
+   "split": "tune",
+   "task_id": "gsm8k-test-00594"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:a0c8a0c4fa897d67",
+   "split": "train",
+   "task_id": "gsm8k-test-00611"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:909a95c53b2d42dc",
+   "split": "tune",
+   "task_id": "gsm8k-test-00613"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:89bde8c3c32330c8",
+   "split": "train",
+   "task_id": "gsm8k-test-00619"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:7d2952a8293b6109",
+   "split": "train",
+   "task_id": "gsm8k-test-00620"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:881e07e916ccffdc",
+   "split": "test",
+   "task_id": "gsm8k-test-00625"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:40f8a42054262853",
+   "split": "train",
+   "task_id": "gsm8k-test-00646"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:13dda3a008f00f76",
+   "split": "test",
+   "task_id": "gsm8k-test-00647"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:2149a9e3de88c3e7",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00658"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:b8788051ec6868f2",
+   "split": "tune",
+   "task_id": "gsm8k-test-00671"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ba928725930d0664",
+   "split": "train",
+   "task_id": "gsm8k-test-00673"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:73300ac7e3230492",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00677"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:02d2b348c2be1c7f",
+   "split": "test",
+   "task_id": "gsm8k-test-00683"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e11cfe0be8d0d4ed",
+   "split": "train",
+   "task_id": "gsm8k-test-00684"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:60d60f8c0c3ac925",
+   "split": "tune",
+   "task_id": "gsm8k-test-00687"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:545afc1b1e8b3bec",
+   "split": "train",
+   "task_id": "gsm8k-test-00688"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c6b81d7dda19aa94",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00702"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:729fdc0d07a5d675",
+   "split": "train",
+   "task_id": "gsm8k-test-00706"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:fb540973672d7256",
+   "split": "train",
+   "task_id": "gsm8k-test-00709"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ecf7cf4ab1168ffd",
+   "split": "tune",
+   "task_id": "gsm8k-test-00718"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:9be85b5722054caf",
+   "split": "train",
+   "task_id": "gsm8k-test-00731"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:d8fcb8e98083b5be",
+   "split": "test",
+   "task_id": "gsm8k-test-00733"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:bf97d342464263ba",
+   "split": "test",
+   "task_id": "gsm8k-test-00734"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ce34b49ed454514b",
+   "split": "tune",
+   "task_id": "gsm8k-test-00735"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:06c3f81552cc3bfd",
+   "split": "train",
+   "task_id": "gsm8k-test-00736"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:7c1a193d8e87f3fc",
+   "split": "tune",
+   "task_id": "gsm8k-test-00758"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c906a2c8291c8d4c",
+   "split": "test",
+   "task_id": "gsm8k-test-00761"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:50ac7398b39d870b",
+   "split": "train",
+   "task_id": "gsm8k-test-00769"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:b263f96a01a3cf03",
+   "split": "train",
+   "task_id": "gsm8k-test-00776"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:32a23a7a12542dd7",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00777"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:395b8cbb919b451f",
+   "split": "train",
+   "task_id": "gsm8k-test-00779"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:a9f31715a873cc53",
+   "split": "tune",
+   "task_id": "gsm8k-test-00781"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:415137ac98e315c5",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00783"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:877af4af12f2c962",
+   "split": "train",
+   "task_id": "gsm8k-test-00801"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e92da44c076f95c5",
+   "split": "test",
+   "task_id": "gsm8k-test-00827"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:6266257b2739fa6b",
+   "split": "train",
+   "task_id": "gsm8k-test-00830"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:2604fb1bf316611f",
+   "split": "tune",
+   "task_id": "gsm8k-test-00831"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:682b416de84e43a0",
+   "split": "test",
+   "task_id": "gsm8k-test-00836"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c14a80cea398ea83",
+   "split": "tune",
+   "task_id": "gsm8k-test-00846"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:a0ad5d68ac2508f6",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00857"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c81022fce0408401",
+   "split": "train",
+   "task_id": "gsm8k-test-00864"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:f5a54123ddcdcfb8",
+   "split": "tune",
+   "task_id": "gsm8k-test-00865"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:a90b382eaeffe22d",
+   "split": "test",
+   "task_id": "gsm8k-test-00872"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:94731e4e3062da99",
+   "split": "test",
+   "task_id": "gsm8k-test-00884"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e2e5dde37e265db0",
+   "split": "tune",
+   "task_id": "gsm8k-test-00888"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:15c5c96533d62f17",
+   "split": "train",
+   "task_id": "gsm8k-test-00913"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:0ba93856ac080bfc",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00920"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:4a6cdb6f7d673b57",
+   "split": "tune",
+   "task_id": "gsm8k-test-00922"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:c05d581df38250f4",
+   "split": "tune",
+   "task_id": "gsm8k-test-00923"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:522b8171eaeb6e5c",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00924"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:9497a61736a69493",
+   "split": "tune",
+   "task_id": "gsm8k-test-00947"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:6ebdee149d276b0f",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-00948"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:7f8708e061916b29",
+   "split": "test",
+   "task_id": "gsm8k-test-00970"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:66db35d3a4e1e409",
+   "split": "train",
+   "task_id": "gsm8k-test-00974"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:554b76f6f51ee297",
+   "split": "test",
+   "task_id": "gsm8k-test-01014"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:313f92b86876aba8",
+   "split": "train",
+   "task_id": "gsm8k-test-01028"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:cc4c1d0920c6b6be",
+   "split": "train",
+   "task_id": "gsm8k-test-01031"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:106f873e9940ccb8",
+   "split": "train",
+   "task_id": "gsm8k-test-01046"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:64ab9518984c46f4",
+   "split": "test",
+   "task_id": "gsm8k-test-01051"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:864bfeebf2995d75",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-01069"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e1e8ac67deca45c7",
+   "split": "tune",
+   "task_id": "gsm8k-test-01084"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ecc2d3501c8d8023",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-01087"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:d047e65e38785871",
+   "split": "test",
+   "task_id": "gsm8k-test-01089"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:885f54b75b068b45",
+   "split": "tune",
+   "task_id": "gsm8k-test-01093"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e44d4cf14145f890",
+   "split": "train",
+   "task_id": "gsm8k-test-01109"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:a0b24960950187a3",
+   "split": "test",
+   "task_id": "gsm8k-test-01117"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:b3a4996a104a7b1e",
+   "split": "train",
+   "task_id": "gsm8k-test-01149"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:f4623a68f6011650",
+   "split": "tune",
+   "task_id": "gsm8k-test-01167"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e43527395b7cb45d",
+   "split": "train",
+   "task_id": "gsm8k-test-01178"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:4f68f8b76c8090e6",
+   "split": "test",
+   "task_id": "gsm8k-test-01194"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:431f7c975fbba525",
+   "split": "test",
+   "task_id": "gsm8k-test-01197"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:e5574fd0b81da181",
+   "split": "test",
+   "task_id": "gsm8k-test-01202"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:2b2663f95c2b4882",
+   "split": "test_variant",
+   "task_id": "gsm8k-test-01217"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:20352f8038475a85",
+   "split": "test",
+   "task_id": "gsm8k-test-01219"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:6b350731b4993967",
+   "split": "test",
+   "task_id": "gsm8k-test-01245"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:ed06e6384d0c17d1",
+   "split": "test",
+   "task_id": "gsm8k-test-01255"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:8408803f12915a03",
+   "split": "train",
+   "task_id": "gsm8k-test-01293"
+  },
+  {
+   "family": "reasoning",
+   "group": "gsm8k:cfd8940471e54aed",
+   "split": "train",
+   "task_id": "gsm8k-test-01302"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:9ee09ac39492803f",
+   "split": "train",
+   "task_id": "planbench-blocksworld-002"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:0695d5be1850c941",
+   "split": "test",
+   "task_id": "planbench-blocksworld-003"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:37a51f4e4fb58da6",
+   "split": "test",
+   "task_id": "planbench-blocksworld-012"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:83f86d210a5a173f",
+   "split": "train",
+   "task_id": "planbench-blocksworld-015"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:37a51f4e4fb58da6",
+   "split": "test",
+   "task_id": "planbench-blocksworld-016"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:014a73c37cfadf57",
+   "split": "train",
+   "task_id": "planbench-blocksworld-025"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:dcf4d8a4815a3729",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-033"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:dcf4d8a4815a3729",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-039"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:52f939e2aca6949b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-043"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1c6bf1e3b16b078b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-050"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b245c016e4d9171b",
+   "split": "train",
+   "task_id": "planbench-blocksworld-054"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:40dff7db56e8ff81",
+   "split": "test",
+   "task_id": "planbench-blocksworld-077"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:ff083cca215b4289",
+   "split": "train",
+   "task_id": "planbench-blocksworld-079"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:dcf4d8a4815a3729",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-080"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:4c92fc809b1bcafb",
+   "split": "train",
+   "task_id": "planbench-blocksworld-081"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:214a5f0e9204f310",
+   "split": "test",
+   "task_id": "planbench-blocksworld-098"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:3f94a4531925b4c7",
+   "split": "test",
+   "task_id": "planbench-blocksworld-109"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b90287cf8b74ba7b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-110"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1b88471b00ba3899",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-117"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:6d00c28bf79001be",
+   "split": "train",
+   "task_id": "planbench-blocksworld-122"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:39475554859f0c87",
+   "split": "test",
+   "task_id": "planbench-blocksworld-124"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:6d00c28bf79001be",
+   "split": "train",
+   "task_id": "planbench-blocksworld-131"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:214a5f0e9204f310",
+   "split": "test",
+   "task_id": "planbench-blocksworld-133"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:0e5c270a1719ae51",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-134"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:83f86d210a5a173f",
+   "split": "train",
+   "task_id": "planbench-blocksworld-147"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:0695d5be1850c941",
+   "split": "test",
+   "task_id": "planbench-blocksworld-148"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1283c0e0be0d1adb",
+   "split": "test",
+   "task_id": "planbench-blocksworld-162"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:dcf4d8a4815a3729",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-167"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1b88471b00ba3899",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-168"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:39475554859f0c87",
+   "split": "test",
+   "task_id": "planbench-blocksworld-170"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b794bbc15aad0d9c",
+   "split": "train",
+   "task_id": "planbench-blocksworld-173"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b245c016e4d9171b",
+   "split": "train",
+   "task_id": "planbench-blocksworld-187"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:3f94a4531925b4c7",
+   "split": "test",
+   "task_id": "planbench-blocksworld-196"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:0e5c270a1719ae51",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-199"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:9ee09ac39492803f",
+   "split": "train",
+   "task_id": "planbench-blocksworld-203"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:cc52e25943c677a2",
+   "split": "train",
+   "task_id": "planbench-blocksworld-204"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:4c92fc809b1bcafb",
+   "split": "train",
+   "task_id": "planbench-blocksworld-207"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:d455d1b7bdf8aa8e",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-208"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:e07ced276250d382",
+   "split": "train",
+   "task_id": "planbench-blocksworld-210"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:a2ea9e69bef47e79",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-214"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:37a51f4e4fb58da6",
+   "split": "test",
+   "task_id": "planbench-blocksworld-219"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:260a26bfb8402b13",
+   "split": "train",
+   "task_id": "planbench-blocksworld-221"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:3643eb57ad2bfe36",
+   "split": "train",
+   "task_id": "planbench-blocksworld-228"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:a1712895f8199fb8",
+   "split": "train",
+   "task_id": "planbench-blocksworld-232"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:d455d1b7bdf8aa8e",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-234"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1c6bf1e3b16b078b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-239"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1b88471b00ba3899",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-264"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1c6bf1e3b16b078b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-266"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:4c92fc809b1bcafb",
+   "split": "train",
+   "task_id": "planbench-blocksworld-267"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:dcf4d8a4815a3729",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-269"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:214a5f0e9204f310",
+   "split": "test",
+   "task_id": "planbench-blocksworld-274"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b245c016e4d9171b",
+   "split": "train",
+   "task_id": "planbench-blocksworld-288"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:214a5f0e9204f310",
+   "split": "test",
+   "task_id": "planbench-blocksworld-290"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:cfb9503fec04e121",
+   "split": "train",
+   "task_id": "planbench-blocksworld-291"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:40dff7db56e8ff81",
+   "split": "test",
+   "task_id": "planbench-blocksworld-302"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:4a308e626e7d9d96",
+   "split": "test",
+   "task_id": "planbench-blocksworld-303"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:a1712895f8199fb8",
+   "split": "train",
+   "task_id": "planbench-blocksworld-306"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:4a308e626e7d9d96",
+   "split": "test",
+   "task_id": "planbench-blocksworld-308"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:260a26bfb8402b13",
+   "split": "train",
+   "task_id": "planbench-blocksworld-318"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:5718be0803b776dd",
+   "split": "train",
+   "task_id": "planbench-blocksworld-320"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b90287cf8b74ba7b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-332"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1c6bf1e3b16b078b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-333"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1283c0e0be0d1adb",
+   "split": "test",
+   "task_id": "planbench-blocksworld-335"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1fc169435de1691a",
+   "split": "train",
+   "task_id": "planbench-blocksworld-340"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:75d0c5f147d66d61",
+   "split": "test",
+   "task_id": "planbench-blocksworld-341"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:0695d5be1850c941",
+   "split": "test",
+   "task_id": "planbench-blocksworld-343"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:e07ced276250d382",
+   "split": "train",
+   "task_id": "planbench-blocksworld-346"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:40dff7db56e8ff81",
+   "split": "test",
+   "task_id": "planbench-blocksworld-349"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:d455d1b7bdf8aa8e",
+   "split": "tune",
+   "task_id": "planbench-blocksworld-364"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:a1712895f8199fb8",
+   "split": "train",
+   "task_id": "planbench-blocksworld-366"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:cc52e25943c677a2",
+   "split": "train",
+   "task_id": "planbench-blocksworld-379"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:0695d5be1850c941",
+   "split": "test",
+   "task_id": "planbench-blocksworld-393"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:0695d5be1850c941",
+   "split": "test",
+   "task_id": "planbench-blocksworld-402"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b90287cf8b74ba7b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-406"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:cfb9503fec04e121",
+   "split": "train",
+   "task_id": "planbench-blocksworld-410"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b90287cf8b74ba7b",
+   "split": "test",
+   "task_id": "planbench-blocksworld-420"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:a1712895f8199fb8",
+   "split": "train",
+   "task_id": "planbench-blocksworld-422"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:cc52e25943c677a2",
+   "split": "train",
+   "task_id": "planbench-blocksworld-437"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:40dff7db56e8ff81",
+   "split": "test",
+   "task_id": "planbench-blocksworld-439"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:d5abde1a93391706",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-446"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:ff4004914f30eae4",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-448"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:9ef66d44eb3845b8",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-449"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:e9d48f385ac07fc8",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-452"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:f31201b5ca818a7b",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-453"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:1aeb52b69907214a",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-454"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:ed460b4efc1d618a",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-456"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:c829b9fa2768fa70",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-458"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:15fb3079deb5763e",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-462"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:089f893b8b49f67c",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-464"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:bdc957732920963f",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-467"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:b2acaba657c34167",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-469"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:833747845685818c",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-470"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:437661888a37d847",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-480"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:6de10f539444bc89",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-482"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:243626810c1fdc6c",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-484"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:877e8ff92e585ae4",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-489"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:d2e3cdd15038dd83",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-493"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:ece8ed4b92f52f31",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-494"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:blocksworld:714662c17c70a964",
+   "split": "test_variant",
+   "task_id": "planbench-blocksworld-499"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:7c48ca9f3425b187",
+   "split": "tune",
+   "task_id": "planbench-logistics-017"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:76bdfc0a37c9924f",
+   "split": "train",
+   "task_id": "planbench-logistics-024"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:ddff7975a463e660",
+   "split": "tune",
+   "task_id": "planbench-logistics-031"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:4add735bfb686653",
+   "split": "train",
+   "task_id": "planbench-logistics-034"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:27e8295c4cfb5bd3",
+   "split": "train",
+   "task_id": "planbench-logistics-044"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:557a5d88ad6994d9",
+   "split": "test",
+   "task_id": "planbench-logistics-052"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:7e28a8583af8e01b",
+   "split": "train",
+   "task_id": "planbench-logistics-055"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:cd31b0541c9003af",
+   "split": "train",
+   "task_id": "planbench-logistics-057"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:0151979e0dd53b9a",
+   "split": "test",
+   "task_id": "planbench-logistics-060"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:ede1ae7e61c0da21",
+   "split": "tune",
+   "task_id": "planbench-logistics-064"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:1954220a185113e6",
+   "split": "test",
+   "task_id": "planbench-logistics-078"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:f99bd499e223a773",
+   "split": "tune",
+   "task_id": "planbench-logistics-085"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:4229d89bd771fe80",
+   "split": "test",
+   "task_id": "planbench-logistics-107"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:9ce609e96ad58d48",
+   "split": "test",
+   "task_id": "planbench-logistics-108"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:180da1adf304fb1f",
+   "split": "test",
+   "task_id": "planbench-logistics-112"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:b94d6e7eed4409c9",
+   "split": "train",
+   "task_id": "planbench-logistics-120"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:de2d3e75523ade17",
+   "split": "tune",
+   "task_id": "planbench-logistics-121"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:abcead297d155165",
+   "split": "test",
+   "task_id": "planbench-logistics-124"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:c74ca7748840063d",
+   "split": "test",
+   "task_id": "planbench-logistics-130"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:1af8a46489825f7d",
+   "split": "tune",
+   "task_id": "planbench-logistics-132"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:8af5d2a5d7858c2d",
+   "split": "train",
+   "task_id": "planbench-logistics-135"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:2e974d09e212d186",
+   "split": "train",
+   "task_id": "planbench-logistics-144"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:5a59e66e779245e3",
+   "split": "test",
+   "task_id": "planbench-logistics-149"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:fec4274402f4ba5b",
+   "split": "test",
+   "task_id": "planbench-logistics-159"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:18d2a667b8575712",
+   "split": "train",
+   "task_id": "planbench-logistics-169"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:7d3acd068f20bacd",
+   "split": "tune",
+   "task_id": "planbench-logistics-176"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:2e9daf903469e6b9",
+   "split": "train",
+   "task_id": "planbench-logistics-181"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:e2b70642367e6499",
+   "split": "train",
+   "task_id": "planbench-logistics-182"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:7e41e97688368334",
+   "split": "tune",
+   "task_id": "planbench-logistics-184"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:e2b13755d458fa3f",
+   "split": "tune",
+   "task_id": "planbench-logistics-185"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:8255cf5d2fa18bd2",
+   "split": "train",
+   "task_id": "planbench-logistics-188"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:6715fd023e202eb9",
+   "split": "tune",
+   "task_id": "planbench-logistics-192"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:fe57007044823839",
+   "split": "tune",
+   "task_id": "planbench-logistics-207"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:bc5a8c4a9e3e3875",
+   "split": "tune",
+   "task_id": "planbench-logistics-212"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:2bd5ea52b0f38b3b",
+   "split": "test",
+   "task_id": "planbench-logistics-214"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:7bfab85c9dc035b8",
+   "split": "train",
+   "task_id": "planbench-logistics-226"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:6badeab478397461",
+   "split": "tune",
+   "task_id": "planbench-logistics-231"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:ea8e56ded5b7e7d5",
+   "split": "test",
+   "task_id": "planbench-logistics-236"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:f7e1ebeb144e6d43",
+   "split": "train",
+   "task_id": "planbench-logistics-239"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:fd4abc28c0aab63a",
+   "split": "test",
+   "task_id": "planbench-logistics-240"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:14f6d6678b34c323",
+   "split": "train",
+   "task_id": "planbench-logistics-243"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:f61803bc863fcfa4",
+   "split": "train",
+   "task_id": "planbench-logistics-246"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:4799cdb62d016531",
+   "split": "train",
+   "task_id": "planbench-logistics-248"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:57bfae2c08cfb7aa",
+   "split": "tune",
+   "task_id": "planbench-logistics-250"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:09a77878a15fdfce",
+   "split": "tune",
+   "task_id": "planbench-logistics-255"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:c3ba495478657ec0",
+   "split": "test",
+   "task_id": "planbench-logistics-257"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:96c2b82fe0eaa2ae",
+   "split": "train",
+   "task_id": "planbench-logistics-261"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:44c7ba41914cb6cc",
+   "split": "train",
+   "task_id": "planbench-logistics-270"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:3d25425baa02b3c5",
+   "split": "test",
+   "task_id": "planbench-logistics-276"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:7ff316e6da66d129",
+   "split": "tune",
+   "task_id": "planbench-logistics-278"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logistics:dfcd44ca8f9c4e8c",
+   "split": "test",
+   "task_id": "planbench-logistics-282"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s105",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s105"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s114",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s114"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s167",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s167"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s169",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s169"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s178",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s178"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s187",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s187"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s194",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s194"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s210",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s210"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s231",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s231"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s239",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s239"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s240",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s240"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s255",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s255"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s278",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s278"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s28",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s28"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s284",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s284"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s290",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s290"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s50",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s50"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s53",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s53"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s58",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s58"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-compare-s90",
+   "split": "test_variant",
+   "task_id": "tools-v1-compare-s90"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s100",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s100"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s104",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s104"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s105",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s105"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s109",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s109"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s11",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s11"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s110",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s110"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s114",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s114"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s117",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s117"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s132",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s132"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s137",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s137"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s14",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s14"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s143",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s143"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s144",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s144"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s148",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s148"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s15",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s15"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s155",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s155"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s16",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s16"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s172",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s172"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s173",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s173"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s179",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s179"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s181",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s181"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s197",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s197"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s210",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s210"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s212",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s212"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s22",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s22"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s223",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s223"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s231",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s231"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s237",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s237"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s24",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s24"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s241",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s241"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s243",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s243"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s244",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s244"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s245",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s245"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s248",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s248"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s254",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s254"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s256",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s256"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s259",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s259"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s268",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s268"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s27",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s27"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s270",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s270"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s276",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s276"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s287",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s287"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s289",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s289"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s290",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s290"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s291",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s291"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s32",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s32"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s40",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s40"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s45",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s45"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s63",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s63"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s64",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s64"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s68",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s68"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s69",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s69"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s70",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s70"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s73",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s73"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s75",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s75"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s77",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s77"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s79",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s79"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s82",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s82"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s83",
+   "split": "train",
+   "task_id": "tools-v1-revenue-s83"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s91",
+   "split": "tune",
+   "task_id": "tools-v1-revenue-s91"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s93",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s93"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s96",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s96"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-revenue-s97",
+   "split": "test",
+   "task_id": "tools-v1-revenue-s97"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s1",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s1"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s10",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s10"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s101",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s101"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s108",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s108"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s119",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s119"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s12",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s12"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s128",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s128"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s13",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s13"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s131",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s131"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s133",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s133"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s137",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s137"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s14",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s14"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s140",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s140"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s142",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s142"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s152",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s152"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s154",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s154"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s157",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s157"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s165",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s165"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s166",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s166"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s171",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s171"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s179",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s179"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s193",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s193"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s197",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s197"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s204",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s204"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s207",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s207"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s21",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s21"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s217",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s217"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s22",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s22"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s221",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s221"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s225",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s225"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s226",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s226"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s231",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s231"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s237",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s237"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s239",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s239"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s24",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s24"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s241",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s241"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s243",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s243"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s249",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s249"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s250",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s250"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s257",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s257"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s259",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s259"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s267",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s267"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s268",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s268"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s269",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s269"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s270",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s270"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s271",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s271"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s28",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s28"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s282",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s282"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s283",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s283"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s285",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s285"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s290",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s290"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s291",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s291"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s298",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s298"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s32",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s32"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s38",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s38"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s45",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s45"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s46",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s46"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s47",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s47"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s5",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s5"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s51",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s51"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s56",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s56"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s61",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s61"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s68",
+   "split": "test",
+   "task_id": "tools-v1-top_product-s68"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s72",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s72"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s8",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s8"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s83",
+   "split": "train",
+   "task_id": "tools-v1-top_product-s83"
+  },
+  {
+   "family": "tools",
+   "group": "toolsuite:tools-v1-top_product-s99",
+   "split": "tune",
+   "task_id": "tools-v1-top_product-s99"
+  }
+ ]
+}
