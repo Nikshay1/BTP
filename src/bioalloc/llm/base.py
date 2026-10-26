@@ -101,7 +101,15 @@ class RequestRejected(LLMError):
 
 
 class RateLimited(RequestRejected):
-    pass
+    """HTTP 429. ``retry_after`` is the provider's requested wait in seconds, if it gave one."""
+
+    def __init__(self, message: str, retry_after: float | None = None) -> None:
+        super().__init__(message)
+        self.retry_after = retry_after
+
+
+class ConnectionFailed(RequestRejected):
+    """The connection could not be opened, so the request never reached the provider."""
 
 
 class Transport(Protocol):

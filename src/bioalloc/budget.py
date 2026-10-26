@@ -37,7 +37,7 @@ import json
 import math
 import time
 from collections import deque
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from itertools import count
 from typing import Any
@@ -45,6 +45,7 @@ from typing import Any
 from bioalloc.llm.base import (
     LLMReply,
     LLMRequest,
+    RateLimited,
     RequestRejected,
     RunMode,
     Transport,
@@ -339,6 +340,10 @@ class MeteredClient:
     pricing: Pricing = field(default_factory=Pricing)
     mode: RunMode = "debug"
     on_event: EventHook | None = None
+    # Rate-limit handling (D19): wait at least Retry-After, else exponential backoff from 1 s capped
+    # at 30 s; give up after this many retries.
+    max_rate_limit_retries: int = 3
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep
 
     def child(
         self, limits: Budget, *, actor: Actor | None = None, agent: str | None = None
@@ -351,6 +356,8 @@ class MeteredClient:
             pricing=self.pricing,
             mode=self.mode,
             on_event=self.on_event,
+            max_rate_limit_retries=self.max_rate_limit_retries,
+            sleep=self.sleep,
         )
 
     def _emit(self, kind: str, data: dict[str, Any]) -> None:
@@ -379,6 +386,25 @@ class MeteredClient:
             self.account._notify()
 
     async def complete(self, request: LLMRequest) -> LLMReply:
+        """One model call. A rate-limited attempt releases its reservation, waits, and goes through
+        admission again; it is an HTTP retry, not a model call, and is traced as such."""
+        for retry in range(self.max_rate_limit_retries + 1):
+            try:
+                return await self._complete_once(request)
+            except RateLimited as exc:
+                if retry == self.max_rate_limit_retries:
+                    raise
+                delay = exc.retry_after if exc.retry_after is not None else min(30.0, 2.0**retry)
+                left = self.account.time_left()
+                if left is not None and delay >= left:
+                    raise TransportTimeout("deadline reached while rate limited") from exc
+                self._emit(
+                    "rate_limited", {"agent": self.agent, "retry": retry + 1, "delay_s": delay}
+                )
+                await self.sleep(delay)
+        raise AssertionError("unreachable")
+
+    async def _complete_once(self, request: LLMRequest) -> LLMReply:
         prompt_est = reserve_prompt_tokens(request)
         rid = await self._admit(prompt_est, request.max_completion_tokens)
         reserved = prompt_est + request.max_completion_tokens
