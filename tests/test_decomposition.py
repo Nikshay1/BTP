@@ -173,3 +173,20 @@ def test_a_plan_that_drops_the_inputs_still_keeps_them_on_the_final_node() -> No
     }
     g = graph_from_proposal(TASK, lossy)
     assert g.node("s1").inputs == {} and g.node("s2").inputs == TASK.inputs
+
+
+def test_imported_cost_counts_against_calls_tools_and_time() -> None:
+    from bioalloc.schemas import Cost
+
+    now = [0.0]
+    account = Account(
+        Budget(max_tokens=10**6, max_model_calls=1, max_tool_calls=1, max_elapsed_s=10),
+        clock=lambda: now[0],
+    )
+    account.import_cost(Cost(model_calls=2, tool_calls=2, elapsed_s=20.0))
+    assert account.overrun and account.snapshot().overrun and account.exhausted()
+    fresh = Account(
+        Budget(max_tokens=10**6, max_model_calls=5, max_elapsed_s=10), clock=lambda: now[0]
+    )
+    fresh.import_cost(Cost(model_calls=1, elapsed_s=4.0))
+    assert not fresh.overrun and fresh.time_left() == 6.0 and fresh.snapshot().elapsed_s == 4.0

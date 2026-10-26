@@ -75,3 +75,23 @@ def test_accepted_result_is_returned_without_revision(tmp_path: Path) -> None:
     result = run(fake, tmp_path)
     assert result.status == "completed"
     assert not any(any(m.source == "critic" for m in r.messages) for r in fake.requests)
+
+
+def test_finished_answer_survives_a_critic_that_cannot_run(tmp_path: Path) -> None:
+    fake = make_fake(critic_rejects_first=False)
+    # planner + worker fit; the critic's call does not.
+    llm = MeteredClient(
+        fake, Account(Budget(max_tokens=10**6, max_model_calls=2)), "coordinator", "coordinator"
+    )
+    from bioalloc.coordinator import CoordinatorConfig
+    from bioalloc.graph import TaskGraph
+
+    one = TaskGraph(id="one", nodes=(INST.graph.nodes[0],), final_nodes=("leg1",))
+    result = asyncio.run(
+        Coordinator(
+            {"specialist": Specialist(model="m")},
+            Constant("specialist"),
+            CoordinatorConfig(max_attempts=1),
+        ).run(one, ToyRoutes(), llm, Tracer(tmp_path, "r"))
+    )
+    assert result.attempts[0].result.status == "completed" and result.attempts[0].accepted

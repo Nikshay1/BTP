@@ -19,6 +19,7 @@ import json
 from dataclasses import dataclass
 
 from bioalloc import prompts
+from bioalloc.budget import BudgetExceeded
 from bioalloc.executors.base import ExecutionContext, ExecutorOutcome, parse_json, subtask_messages
 from bioalloc.executors.octopus import Octopus
 from bioalloc.llm.base import LLMRequest, Message
@@ -94,9 +95,12 @@ class Specialist:
             Message(role="user", content="Worker's answer:"),
             Message(role="user", content=json.dumps(outcome.output), source=ctx.agent),
         ]
-        verdict = parse_json(
-            (await critic.complete(self._request(review, ctx, "critic", 512))).content
-        )
+        try:
+            reply = await critic.complete(self._request(review, ctx, "critic", 512))
+        except BudgetExceeded:
+            ctx.emit("specialist_review", {"skipped": "budget"})
+            return outcome  # keep the finished answer (D15)
+        verdict = parse_json(reply.content)
         accept = isinstance(verdict, dict) and verdict.get("accept") is True
         critique = str(verdict.get("critique", ""))[:800] if isinstance(verdict, dict) else ""
         ctx.emit("specialist_review", {"accept": accept, "critique": critique})
@@ -108,4 +112,10 @@ class Specialist:
             Message(role="user", content=json.dumps(outcome.output), source=ctx.agent),
             Message(role="user", content=f"Reviewer: {critique}", source="critic"),
         ]
-        return await self._worker().execute_with_history(subtask, ctx, revision_context)
+        try:
+            revised = await self._worker().execute_with_history(subtask, ctx, revision_context)
+        except BudgetExceeded:
+            ctx.emit("specialist_revision", {"skipped": "budget"})
+            return outcome
+        # An unfinished revision does not replace a finished answer.
+        return outcome if revised.incomplete is not None else revised

@@ -139,6 +139,8 @@ class Account:
     _reservations: dict[int, _Reservation] = field(default_factory=dict, init=False)
     _ids: count[int] = field(default_factory=count, init=False)
     _changed: asyncio.Event | None = field(default=None, init=False)
+    # Wall time spent before this account existed but charged to it (imported preparation, D17).
+    imported_elapsed: float = field(default=0.0, init=False)
     # Calls waiting for admission, in arrival order (used at the root only).
     _queue: deque[object] = field(default_factory=deque, init=False)
 
@@ -162,7 +164,7 @@ class Account:
         return self._chain()[-1]
 
     def elapsed(self) -> float:
-        return self.clock() - self.started
+        return self.clock() - self.started + self.imported_elapsed
 
     def time_left(self) -> float | None:
         left = [
@@ -297,8 +299,10 @@ class Account:
 
     def import_cost(self, cost: Cost) -> None:
         """Charge an already-settled cost, e.g. the shared decomposition every system starts with
-        (D17). It counts against the limits like any other spending."""
+        (D17). It counts against every limit like any other spending: tokens, model calls, tool
+        calls and, through its elapsed time, the deadline. Exceeding a limit marks an overrun."""
         for acc in self._chain():
+            acc.imported_elapsed += cost.elapsed_s
             s = acc.spent
             s.coordinator_prompt += cost.coordinator.prompt
             s.coordinator_completion += cost.coordinator.completion
@@ -310,7 +314,12 @@ class Account:
             s.tool_calls += cost.tool_calls
             s.usd += cost.usd
             s.usage_complete &= cost.usage_complete
-            if s.tokens > acc.limits.max_tokens:
+            tool_limit = acc.limits.max_tool_calls
+            if (
+                s.tokens > acc.limits.max_tokens
+                or s.model_calls > acc.limits.max_model_calls
+                or (tool_limit is not None and s.tool_calls > tool_limit)
+            ):
                 acc.overrun = True
         if cost.overrun or any(a.overrun for a in self._chain()):
             for acc in self._chain():
