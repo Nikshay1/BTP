@@ -46,7 +46,8 @@ class AntParams:
     tau0: float = 1.0
     tau_min: float = 0.01
     max_paths: int = 8
-    max_choices: int = 12
+    # Long enough for the longest plan in the task pool plus FINISH; the task budget binds first.
+    max_choices: int = 30
     min_finished: int = 2
     patience: int = 3
 
@@ -157,9 +158,28 @@ class Ant:
                 return _Candidate(
                     output, goal_verified(results), verdict == "fail", tokens
                 ), kinds_used
-            state, observation = space.apply(state, action)
+            state, observation = await self._act(ctx, space, state, action, path, step)
             history.append(f"{action.kind} {json.dumps(action.args)} -> {observation}")
         return None, kinds_used
+
+    async def _act(
+        self,
+        ctx: ExecutionContext,
+        space: ActionSpace,
+        state: Any,
+        action: Action,
+        path: int,
+        step: int,
+    ) -> tuple[Any, str]:
+        """Apply a chosen action. Tool-backed actions go through the metered tool service, with
+        the same limits, counting and tracing as for every other executor."""
+        call = space.tool_call(state, action, f"{ctx.agent}/path{path}/step{step}")
+        if call is None:
+            return space.apply(state, action)
+        if ctx.tools is None:
+            return state, f"{action.kind} needs a tool this subtask does not allow"
+        result = await ctx.tools.call(call)  # BudgetExceeded at the tool limit ends the search
+        return space.observe(state, action, result)
 
     async def _propose(
         self,
@@ -178,7 +198,7 @@ class Ant:
         messages.append(
             Message(
                 role="user",
-                content=f"Allowed action kinds: {list(space.kinds)}\n\n"
+                content=f"Allowed actions and their arguments:\n{space.describe_actions()}\n\n"
                 f"State: {space.describe(state)}\n\nSteps so far on this attempt:\n{steps}",
             )
         )

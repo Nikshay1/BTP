@@ -142,6 +142,15 @@ class Counter:
         def describe(self, state: int) -> str:
             return f"value={state}"
 
+        def describe_actions(self) -> str:
+            return "INC {}\nDEC {}\nFINISH {}"
+
+        def tool_call(self, state: int, action: Action, call_id: str) -> None:
+            return None
+
+        def observe(self, state: int, action: Action, result: Any) -> tuple[int, str]:
+            raise AssertionError("local actions only")
+
     class Goal:
         name = "goal"
         evidence = "goal"

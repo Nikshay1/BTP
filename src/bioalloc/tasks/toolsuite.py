@@ -23,10 +23,11 @@ from pydantic import JsonValue
 from bioalloc.actions import FINISH, Action
 from bioalloc.checks import RuntimeCheck, SchemaCheck
 from bioalloc.graph import TaskGraph
+from bioalloc.llm.base import ToolCall
 from bioalloc.schemas import Subtask
-from bioalloc.tasks.common import CALCULATOR, CalcError, calculate, normalize_number
+from bioalloc.tasks.common import CALCULATOR, normalize_number
 from bioalloc.tasks.gsm8k import NumericAnswerCheck
-from bioalloc.tools import Tool, ToolSpec
+from bioalloc.tools import Tool, ToolResult, ToolSpec
 
 DB_VERSION = 1
 CITIES = ("Agra", "Bhopal", "Cochin", "Delhi", "Indore", "Jaipur")
@@ -175,6 +176,9 @@ class _State:
 
 
 class ToolActions:
+    """QUERY and CALCULATE are tool-backed (the query and calculator tools); FINISH gives the
+    subtask's JSON answer."""
+
     kinds: tuple[str, ...] = ("QUERY", "CALCULATE", FINISH)
 
     def __init__(self, subtask: Subtask) -> None:
@@ -183,36 +187,62 @@ class ToolActions:
     def start(self, subtask: Subtask, upstream: Mapping[str, JsonValue]) -> _State:
         return _State({f"upstream_{k}": v for k, v in upstream.items()})
 
+    def describe_actions(self) -> str:
+        return (
+            'QUERY {"name": "<result name>", "table": "<table>", "where": {"<column>": <value or '
+            'list of values>}, "columns": ["<column>", ...]} (runs the query tool on this '
+            "subtask's dataset)\n"
+            'CALCULATE {"name": "<result name>", "expression": "<arithmetic>"} (runs the '
+            "calculator)\n"
+            'FINISH {"output": <the subtask\'s JSON answer, in its output schema>}'
+        )
+
     def legal(self, state: _State, action: Action) -> str | None:
         a = action.args
         if action.kind == FINISH:
             return None if "output" in a else "FINISH needs 'output' (the subtask's JSON answer)"
         if not isinstance(a.get("name"), str):
             return "needs a string 'name' for the result"
-        try:
-            self._run(state, action)
-        except (KeyError, ValueError, CalcError) as exc:
-            return str(exc)
-        return None
-
-    def _run(self, state: _State, action: Action) -> JsonValue:
-        a = action.args
         if action.kind == "QUERY":
-            where = a.get("where", {})
-            columns = a.get("columns")
-            if not isinstance(where, dict) or (
-                columns is not None and not isinstance(columns, list)
-            ):
-                raise ValueError("'where' must be an object and 'columns' a list")
-            return _json(run_query(self.dataset, str(a.get("table")), where, columns))  # type: ignore[arg-type]
+            if not isinstance(a.get("table"), str):
+                return "QUERY needs a string 'table'"
+            if not isinstance(a.get("where", {}), dict):
+                return "'where' must be an object"
+            if "columns" in a and not isinstance(a["columns"], list):
+                return "'columns' must be a list"
+            return None
         if action.kind == "CALCULATE":
-            return calculate(str(a.get("expression", "")))
-        raise ValueError(f"unknown action {action.kind}")
+            return None if isinstance(a.get("expression"), str) else "needs an 'expression'"
+        return f"unknown action {action.kind}"
 
     def apply(self, state: _State, action: Action) -> tuple[_State, str]:
-        value = self._run(state, action)
+        raise ValueError(f"{action.kind} is tool-backed")
+
+    def tool_call(self, state: _State, action: Action, call_id: str) -> ToolCall | None:
+        a = action.args
+        if action.kind == "QUERY":
+            args: dict[str, JsonValue] = {
+                "dataset": self.dataset,
+                "table": a["table"],
+                "where": a.get("where", {}),
+            }
+            if "columns" in a:
+                args["columns"] = a["columns"]
+            return ToolCall(id=call_id, name="query", arguments=json.dumps(args))
+        if action.kind == "CALCULATE":
+            return ToolCall(
+                id=call_id, name="calculate", arguments=json.dumps({"expression": a["expression"]})
+            )
+        return None
+
+    def observe(self, state: _State, action: Action, result: ToolResult) -> tuple[_State, str]:
+        if not result.ok:
+            return state, f"{action.kind} failed: {result.error}"
         name = str(action.args["name"])
-        return _State({**state.results, name: value}), f"{name} = {json.dumps(value)[:500]}"
+        return (
+            _State({**state.results, name: result.output}),
+            f"{name} = {json.dumps(result.output)[:500]}",
+        )
 
     def finish(self, state: _State, action: Action) -> JsonValue:
         return action.args.get("output")

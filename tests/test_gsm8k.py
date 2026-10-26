@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from bioalloc.actions import Action
@@ -10,6 +12,7 @@ from bioalloc.evaluation.gsm8k_data import (
 )
 from bioalloc.tasks.common import CalcError, calculate, normalize_number
 from bioalloc.tasks.gsm8k import CONTRACT, GSM8K
+from bioalloc.tools import ToolResult
 
 
 @pytest.mark.parametrize(
@@ -106,12 +109,19 @@ def test_family_checks_normalizer_and_actions() -> None:
     space = fam.action_space(node)
     s = space.start(node, {})
     s, obs = space.apply(s, Action(kind="NOTE", args={"name": "eggs", "value": 16}))
-    s, obs = space.apply(
-        s, Action(kind="CALCULATE", args={"name": "left", "expression": "eggs - 3 - 4"})
-    )
-    assert obs == "left = 9"
-    assert space.legal(s, Action(kind="CALCULATE", args={"name": "x", "expression": "eggs / 0"}))
-    assert space.finish(s, Action(kind="FINISH", args={"answer": "left"})) == {"answer": 9}
+    calc = Action(kind="CALCULATE", args={"name": "left", "expression": "eggs - 3 - 4 + max(1, 2)"})
+    assert space.legal(s, calc) is None
+    call = space.tool_call(s, calc, "c1")
+    assert call is not None and call.name == "calculate"
+    # Quantity names are substituted as whole words; 'max' is left alone.
+    assert json.loads(call.arguments) == {"expression": "(16) - 3 - 4 + max(1, 2)"}
+    s, obs = space.observe(s, calc, ToolResult(call_id="c1", name="calculate", ok=True, output=11))
+    assert obs == "left = 11"
+    failed = ToolResult(call_id="c2", name="calculate", ok=False, error="division by zero")
+    s2, obs = space.observe(s, calc, failed)
+    assert s2 is s and "failed" in obs
+    assert space.finish(s, Action(kind="FINISH", args={"answer": "left"})) == {"answer": 11}
+    assert "answer" in space.describe_actions()
     assert "calculate" in fam.tools()
 
 

@@ -133,6 +133,21 @@ class OperatorActions:
     def finish(self, state: _PlanState, action: Action) -> JsonValue:
         return {"plan": list(state.plan)}
 
+    def tool_call(self, state: _PlanState, action: Action, call_id: str) -> None:
+        return None
+
+    def observe(self, state: _PlanState, action: Action, result: object) -> tuple[_PlanState, str]:
+        raise ValueError("planning actions are local")
+
+    def describe_actions(self) -> str:
+        lines = []
+        for name in sorted(self.domain.operators):
+            op = self.domain.operators[name]
+            params = ", ".join(p.lstrip("?") for p in op.params)
+            lines.append(f'{name.upper()} {{"objects": [{params}]}} (objects in this order)')
+        lines.append("FINISH {} (when the goal holds)")
+        return "\n".join(lines)
+
     def describe(self, state: _PlanState) -> str:
         facts = sorted(" ".join(a) for a in state.facts)
         goal = [" ".join(g) for g in self.problem.goal]

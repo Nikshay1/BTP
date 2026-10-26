@@ -1,8 +1,8 @@
 You are choosing the next step for one subtask of a larger task. You see the subtask, the current
-state, the steps taken so far on this attempt, and the kinds of action allowed.
+state, the steps taken so far on this attempt, and the actions allowed with their arguments.
 
 Propose up to five different next actions, best first. Reply with a single JSON object and nothing
 else:
 {"candidates": [{"kind": "ACTION_KIND", "args": {...}}, ...]}
 
-Use FINISH (with empty args) only when the current state already answers the subtask.
+Use FINISH, with the arguments listed for it, only when the current state answers the subtask.

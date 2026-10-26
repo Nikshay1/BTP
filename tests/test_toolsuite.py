@@ -113,6 +113,8 @@ def test_revenue_workflow_end_to_end_through_real_tools(tmp_path: Path) -> None:
 
 
 def test_ant_actions_query_and_calculate() -> None:
+    from bioalloc.tools import ToolService
+
     inst = make_instance("revenue", 4)
     node = inst.graph.nodes[0]
     space = ToolSuite().action_space(node)
@@ -121,7 +123,44 @@ def test_ant_actions_query_and_calculate() -> None:
         kind="QUERY", args={"name": "c", "table": "customers", "where": {}, "columns": ["id"]}
     )
     assert space.legal(s, q) is None
-    s, obs = space.apply(s, q)
+    call = space.tool_call(s, q, "q1")
+    assert call is not None and call.name == "query"
+    assert json.loads(call.arguments)["dataset"] == "shop-v1-4"
+    svc = ToolService(
+        ToolSuite().tools(), ("query",), Account(Budget(max_tokens=1, max_model_calls=1))
+    )
+    s, obs = space.observe(s, q, asyncio.run(svc.call(call)))
     assert obs.startswith("c = [")
-    assert space.legal(s, Action(kind="QUERY", args={"name": "x", "table": "nope"}))
+    # Legality is structural only: an unknown table is legal until the tool says otherwise.
+    assert space.legal(s, Action(kind="QUERY", args={"name": "x", "table": "nope"})) is None
+    assert space.legal(s, Action(kind="QUERY", args={"name": "x"}))
     assert space.finish(s, Action(kind="FINISH", args={"output": {"items": [1]}})) == {"items": [1]}
+
+
+def test_ant_tool_actions_are_metered_and_limited(tmp_path: Path) -> None:
+    from bioalloc.coordinator import CoordinatorConfig
+    from bioalloc.executors.ant import Ant, AntParams
+
+    inst = make_instance("revenue", 4)
+    first = inst.graph.nodes[0]
+    graph = inst.graph.model_copy(update={"nodes": (first,), "final_nodes": (first.id,)})
+    query = {
+        "candidates": [
+            {"kind": "QUERY", "args": {"name": "c", "table": "customers", "columns": ["id"]}}
+        ]
+    }
+    finish = {"candidates": [{"kind": "FINISH", "args": {"output": {"items": [1]}}}]}
+    for limit, expect_calls in ((None, 1), (0, 0)):
+        replies = iter([query, finish] * 20)
+        fake = FakeTransport().respond(lambda r: True, lambda r, it=replies: json.dumps(next(it)))
+        budget = Budget(max_tokens=10**6, max_model_calls=40, max_tool_calls=limit)
+        llm = MeteredClient(fake, Account(budget), "coordinator", "coordinator")
+        ant = Ant(model="m", params=AntParams(max_paths=1))
+        result = asyncio.run(
+            Coordinator({"ant": ant}, Constant("ant"), CoordinatorConfig(max_attempts=1)).run(
+                graph, ToolSuite(), llm, Tracer(tmp_path / str(limit), "r")
+            )
+        )
+        assert result.cost.tool_calls == expect_calls
+        if limit == 0:
+            assert result.status == "budget_exhausted"

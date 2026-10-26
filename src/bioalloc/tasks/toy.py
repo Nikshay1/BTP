@@ -128,6 +128,15 @@ class RouteActions:
     def finish(self, state: list[str], action: Action) -> JsonValue:
         return {"route": list(state)}
 
+    def tool_call(self, state: list[str], action: Action, call_id: str) -> None:
+        return None
+
+    def observe(self, state: list[str], action: Action, result: object) -> tuple[list[str], str]:
+        raise ValueError("route actions are local")
+
+    def describe_actions(self) -> str:
+        return 'MOVE {"to": "<next node along an existing edge>"}\nFINISH {} (only at the goal)'
+
     def describe(self, state: list[str]) -> str:
         here = state[-1] if state else "?"
         out = sorted((v, w) for (u, v), w in self.costs.items() if u == here)

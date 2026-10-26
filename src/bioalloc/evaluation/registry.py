@@ -167,8 +167,7 @@ def executor_pool(m: ModelSettings) -> dict[str, Executor]:
         "single_agent": SingleAgent(model=m.model, **kw),
         "specialist": Specialist(model=m.model, **kw),
     }
-    ant_kw = {k: v for k, v in kw.items() if k != "max_completion_tokens"}
-    pool.update(ant_controls(m.model, **ant_kw))
+    pool.update(ant_controls(m.model, **kw))
     return pool
 
 

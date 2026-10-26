@@ -10,6 +10,7 @@ calculator is offered to every other executor as a tool.
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass, field
 
@@ -18,9 +19,10 @@ from pydantic import JsonValue
 from bioalloc.actions import FINISH, Action
 from bioalloc.checks import RuntimeCheck, SchemaCheck
 from bioalloc.graph import TaskGraph
+from bioalloc.llm.base import ToolCall
 from bioalloc.schemas import CheckResult, Evidence, Subtask
-from bioalloc.tasks.common import CALCULATOR, CalcError, calculate, normalize_number
-from bioalloc.tools import Tool
+from bioalloc.tasks.common import CALCULATOR, normalize_number
+from bioalloc.tools import Tool, ToolResult
 
 CONTRACT = "gsm8k_answer"
 ANSWER_SCHEMA: dict[str, JsonValue] = {
@@ -61,10 +63,21 @@ class _State:
 
 
 class ArithmeticActions:
+    """NOTE records a quantity read from the problem; CALCULATE evaluates an expression over
+    numbers and known quantity names with the calculator tool; FINISH gives the answer."""
+
     kinds: tuple[str, ...] = ("NOTE", "CALCULATE", FINISH)
 
     def start(self, subtask: Subtask, upstream: Mapping[str, JsonValue]) -> _State:
         return _State()
+
+    def describe_actions(self) -> str:
+        return (
+            'NOTE {"name": "<new quantity name>", "value": <number from the problem>}\n'
+            'CALCULATE {"name": "<new quantity name>", "expression": "<arithmetic over numbers '
+            'and known quantity names>"} (runs the calculator)\n'
+            'FINISH {"answer": <number, or the name of a known quantity>}'
+        )
 
     def legal(self, state: _State, action: Action) -> str | None:
         a = action.args
@@ -74,10 +87,6 @@ class ArithmeticActions:
         if action.kind == "CALCULATE":
             if not isinstance(a.get("name"), str) or not isinstance(a.get("expression"), str):
                 return "CALCULATE needs a string 'name' and a string 'expression'"
-            try:
-                calculate(self._substitute(state, str(a["expression"])))
-            except CalcError as exc:
-                return str(exc)
             return None
         if action.kind == FINISH:
             target = a.get("answer")
@@ -87,21 +96,34 @@ class ArithmeticActions:
         return f"unknown action {action.kind}"
 
     def _substitute(self, state: _State, expression: str) -> str:
-        for name in sorted(state.quantities, key=len, reverse=True):
-            expression = expression.replace(name, f"({state.quantities[name]})")
-        return expression
+        names = sorted(state.quantities, key=len, reverse=True)
+        if not names:
+            return expression
+        pattern = re.compile(r"\b(" + "|".join(re.escape(n) for n in names) + r")\b")
+        return pattern.sub(lambda m: f"({state.quantities[m.group(1)]})", expression)
 
     def apply(self, state: _State, action: Action) -> tuple[_State, str]:
-        a = action.args
-        name = str(a["name"])
-        if action.kind == "NOTE":
-            value = a["value"]
-            assert isinstance(value, int | float)
-            state = _State({**state.quantities, name: value}, [*state.notes, name])
-            return state, f"{name} = {value}"
-        value = calculate(self._substitute(state, str(a["expression"])))
-        state = _State({**state.quantities, name: value}, [*state.notes, name])
-        return state, f"{name} = {value}"
+        name = str(action.args["name"])
+        value = action.args["value"]
+        assert isinstance(value, int | float)
+        return _State({**state.quantities, name: value}, [*state.notes, name]), f"{name} = {value}"
+
+    def tool_call(self, state: _State, action: Action, call_id: str) -> ToolCall | None:
+        if action.kind != "CALCULATE":
+            return None
+        expression = self._substitute(state, str(action.args["expression"]))
+        return ToolCall(
+            id=call_id, name="calculate", arguments=json.dumps({"expression": expression})
+        )
+
+    def observe(self, state: _State, action: Action, result: ToolResult) -> tuple[_State, str]:
+        name = str(action.args["name"])
+        if not result.ok or not isinstance(result.output, int | float):
+            return state, f"calculation failed: {result.error}"
+        return (
+            _State({**state.quantities, name: result.output}, [*state.notes, name]),
+            f"{name} = {result.output}",
+        )
 
     def finish(self, state: _State, action: Action) -> JsonValue:
         target = action.args.get("answer")
