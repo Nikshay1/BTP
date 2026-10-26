@@ -246,7 +246,9 @@ def test_seeds_do_not_depend_on_completion_order(tmp_path: Path) -> None:
     assert a_slow == b_slow and None not in a_slow.values() and len(set(a_slow.values())) == 2
     policy = Uniform(["x", "y", "z"], seed=1)
     s = Subtask(id="a", instruction="a")
-    assert [policy.select(s, []) for _ in range(5)] == [policy.select(s, [])] * 5
+    assert [policy.select("t", s, []) for _ in range(5)] == [policy.select("t", s, [])] * 5
+    draws = {policy.select(f"task{i}", s, []) for i in range(30)}
+    assert len(draws) > 1  # the same subtask id in different tasks gets independent draws
 
 
 # Finding 13: raw task inputs are never counted as communication.
@@ -540,3 +542,12 @@ def test_mixed_cancelled_and_failed_batch_is_fully_observed(tmp_path: Path) -> N
     asyncio.run(go())
     gc.collect()
     assert unobserved == []
+
+
+def test_fixed_policy_maps_contracts_to_executors() -> None:
+    from bioalloc.policies import FixedByContract
+
+    p = FixedByContract({"pddl_plan": "ant", "gsm8k_answer": "bee"}, default="direct")
+    assert p.select("t", Subtask(id="a", instruction="x", contract="pddl_plan"), []) == "ant"
+    assert p.select("t", Subtask(id="a", instruction="x", contract="gsm8k_answer"), []) == "bee"
+    assert p.select("t", Subtask(id="a", instruction="x"), []) == "direct"

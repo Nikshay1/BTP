@@ -225,7 +225,7 @@ class Coordinator:
         for attempt in range(self.config.max_attempts):
             if llm.account.exhausted():
                 return _Solved(None, records, True)
-            name = self.policy.select(subtask, previous)
+            name = self.policy.select(task_id, subtask, previous)
             executor = self.executors[name]
             span = tracer.span(parent=root)
             agent = f"{name}:{subtask.id}:{attempt}"
