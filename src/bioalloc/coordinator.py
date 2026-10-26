@@ -15,7 +15,7 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import random
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any, Literal
 
@@ -24,7 +24,13 @@ from pydantic import JsonValue
 from bioalloc.actions import ActionSpace
 from bioalloc.budget import BudgetExceeded, MeteredClient
 from bioalloc.checks import combine
-from bioalloc.executors.base import ExecutionContext, Executor, Feedback, Upstream
+from bioalloc.executors.base import (
+    ExecutionContext,
+    Executor,
+    Feedback,
+    Upstream,
+    canonical_option,
+)
 from bioalloc.graph import TaskGraph
 from bioalloc.llm.base import LLMError, TransportTimeout
 from bioalloc.policies import Attempt, Policy
@@ -79,6 +85,13 @@ class CoordinatorConfig:
 def _action_space(family: TaskFamily, subtask: Subtask) -> ActionSpace | None:
     get = getattr(family, "action_space", None)
     return get(subtask) if get is not None else None
+
+
+def _normalizer(family: TaskFamily, subtask: Subtask) -> Callable[[JsonValue], str | None]:
+    get = getattr(family, "normalize", None)
+    if get is None:
+        return canonical_option
+    return lambda output: get(subtask, output)
 
 
 def derive_seed(*parts: object) -> int:
@@ -243,6 +256,7 @@ class Coordinator:
                 ),
                 actions=_action_space(family, subtask),
                 task_state=task_state,
+                normalize=_normalizer(family, subtask),
             )
             output: JsonValue = None
             confidence: float | None = None

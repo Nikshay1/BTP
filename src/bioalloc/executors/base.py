@@ -61,6 +61,9 @@ class ExecutionContext:
     # State private to one task run, shared by attempts within it and dropped afterwards
     # (e.g. ant weights, D10). Never shared across tasks, systems or repetitions.
     task_state: dict[str, Any] = field(default_factory=dict)
+    # Maps a candidate output to the option it supports, or None if it is not a usable answer.
+    # Families give a target-independent normalizer; the default is canonical JSON (D14).
+    normalize: Callable[[JsonValue], str | None] = field(default_factory=lambda: canonical_option)
 
     @property
     def agent(self) -> str:
@@ -179,6 +182,13 @@ async def tool_episode(ctx: ExecutionContext, base: LLMRequest, max_completions:
                 Message(role="tool", content=result.message_content(), tool_call_id=tc.id)
             )
     return Episode(reply, tuple(messages), max_completions, False)
+
+
+def canonical_option(output: JsonValue) -> str | None:
+    """Default normalizer: canonical JSON; raw unparsed text and empty outputs are not options."""
+    if output is None or isinstance(output, str):
+        return None
+    return json.dumps(output, sort_keys=True, separators=(",", ":"))
 
 
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)

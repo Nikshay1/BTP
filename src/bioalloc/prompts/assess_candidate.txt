@@ -1,0 +1,5 @@
+You are solving one subtask of a larger task. Another worker has proposed an answer to it. Decide
+whether you accept that answer as correct.
+
+Reply with a single JSON object and nothing else:
+{"accept": true or false, "confidence": a number from 0 to 1}
