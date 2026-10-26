@@ -52,7 +52,9 @@ def test_good_run_completes_and_passes_leg1_result_to_leg2(tmp_path: Path) -> No
     assert grade(INSTANCE, result.answer).correct
     assert [r.messages[1].content.split()[1] for r in fake.requests] == ["Find", "Continue"]
     leg2_request: LLMRequest = fake.requests[1]
-    assert leg2_request.messages[-1].content == f"Result of subtask leg1:\n{route(LEG1)}"
+    assert leg2_request.messages[-2].content == "Result of subtask leg1:"
+    assert leg2_request.messages[-1].content == route(LEG1)
+    assert leg2_request.messages[-1].source == "direct:leg1:0"
     assert result.cost.model_calls == 2 and result.cost.coordinator.total == 0
 
 

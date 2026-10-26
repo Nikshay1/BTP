@@ -8,23 +8,26 @@ left.
 Admission. A call whose reservation does not fit is not sent. If it would fit once calls already
 in flight have settled (their reservations are worst cases and usually larger than what they end
 up costing), the call waits for them instead of failing; it fails only when the budget itself is
-spent. Siblings therefore draw from one shared pool, first come first served, and the same rule
-applies to every system compared.
+spent. Waiting calls are admitted strictly in arrival order, so a large call cannot be overtaken
+indefinitely by smaller ones. Siblings therefore draw from one shared pool, first come first
+served, and the same rule applies to every system compared.
 
 Reservations are estimates. The prompt size of a call is not known exactly before sending (it
 depends on the provider's tokenizer), so a reservation uses three characters per token over the
 whole request plus its maximum completion. If a provider still reports more and the total crosses
-a limit, the overrun is recorded in the cost (``Cost.overrun``), no further calls are admitted,
-and the run is reported as over budget.
+a limit, the overrun is recorded in the cost of that account and of every ancestor
+(``Cost.overrun``), no further calls are admitted under the account that overran, and the run is
+reported as over budget.
 
 Deadlines. With a wall-time limit, waiting for admission and waiting for a reply are both bounded
 by the time left on the tightest ancestor; a call cut off by the deadline raises
 ``TransportTimeout``.
 
-Unknown usage. A call that was sent but produced no reply (timeout, cancellation, transport error)
-may still have been billed. It is charged its full reservation, prompt estimate as prompt tokens
-and maximum completion as completion tokens, and the cost is marked ``usage_complete=False``.
-Only a ``RequestRejected`` error releases the reservation without charge.
+Unknown usage. A call that reached the transport but produced no reply (timeout, cancellation,
+transport error) may still have been billed. It is charged its full reservation, prompt estimate
+as prompt tokens and maximum completion as completion tokens, and the cost is marked
+``usage_complete=False``. A ``RequestRejected`` error, or a call cut off before it reached the
+transport, releases the reservation without charge.
 """
 
 from __future__ import annotations
@@ -33,6 +36,7 @@ import asyncio
 import json
 import math
 import time
+from collections import deque
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from itertools import count
@@ -97,6 +101,8 @@ class _Spent:
     tool_calls: int = 0
     usd: float = 0.0
     usage_complete: bool = True
+    # Some account in this subtree (this one or a dispatch below it) went over its token limit.
+    limit_exceeded: bool = False
 
     @property
     def tokens(self) -> int:
@@ -131,6 +137,8 @@ class Account:
     _reservations: dict[int, _Reservation] = field(default_factory=dict, init=False)
     _ids: count[int] = field(default_factory=count, init=False)
     _changed: asyncio.Event | None = field(default=None, init=False)
+    # Calls waiting for admission, in arrival order (used at the root only).
+    _queue: deque[object] = field(default_factory=deque, init=False)
 
     def __post_init__(self) -> None:
         self.started = self.clock()
@@ -259,6 +267,9 @@ class Account:
             s.usd += usd
             if s.tokens > acc.limits.max_tokens:
                 acc.overrun = True
+        if any(a.overrun for a in self._chain()):
+            for acc in self._chain():
+                acc.spent.limit_exceeded = True
         self._notify()
 
     def settle_unknown(self, rid: int, actor: Actor, pricing: Pricing) -> _Reservation:
@@ -292,7 +303,7 @@ class Account:
             elapsed_s=self.elapsed(),
             usd=s.usd,
             usage_complete=s.usage_complete,
-            overrun=self.overrun,
+            overrun=s.limit_exceeded,
         )
 
 
@@ -335,16 +346,25 @@ class MeteredClient:
             self.on_event(kind, data)
 
     async def _admit(self, prompt: int, completion: int) -> int:
-        while True:
-            try:
-                return self.account.reserve(prompt, completion)
-            except BudgetExceeded:
-                if not self.account.would_fit_after_settling(prompt + completion):
-                    raise
-            try:
-                await self.account.wait_for_change(self.account.time_left())
-            except TimeoutError:
-                raise BudgetExceeded("time limit reached while waiting for budget") from None
+        """Reserve a call, waiting in arrival order behind earlier calls of the same task."""
+        root = self.account.root
+        ticket = object()
+        root._queue.append(ticket)
+        try:
+            while True:
+                if root._queue[0] is ticket:
+                    try:
+                        return self.account.reserve(prompt, completion)
+                    except BudgetExceeded:
+                        if not self.account.would_fit_after_settling(prompt + completion):
+                            raise
+                try:
+                    await self.account.wait_for_change(self.account.time_left())
+                except TimeoutError:
+                    raise BudgetExceeded("time limit reached while waiting for budget") from None
+        finally:
+            root._queue.remove(ticket)
+            self.account._notify()
 
     async def complete(self, request: LLMRequest) -> LLMReply:
         prompt_est = reserve_prompt_tokens(request)
@@ -359,13 +379,23 @@ class MeteredClient:
                 "request": request.model_dump(mode="json"),
             },
         )
+        sent = False
+
+        async def send() -> LLMReply:
+            nonlocal sent
+            sent = True
+            return await self.transport.send(request)
+
         try:
-            reply = await asyncio.wait_for(self.transport.send(request), self.account.time_left())
-        except RequestRejected as exc:
-            self.account.cancel(rid)
-            self._emit("llm_error", {"agent": self.agent, "error": repr(exc), "usage": "none"})
-            raise
+            reply = await asyncio.wait_for(send(), self.account.time_left())
         except BaseException as exc:
+            if isinstance(exc, RequestRejected) or not sent:
+                # Never processed: rejected by the provider, or cut off before it was sent.
+                self.account.cancel(rid)
+                self._emit("llm_error", {"agent": self.agent, "error": repr(exc), "usage": "none"})
+                if isinstance(exc, TimeoutError):
+                    raise TransportTimeout("deadline reached before the request was sent") from exc
+                raise
             # Sent, but no reply: timeout, deadline, cancellation or transport failure.
             res = self.account.settle_unknown(rid, self.actor, self.pricing)
             self._emit(

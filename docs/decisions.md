@@ -71,9 +71,11 @@ named milestone).
   1. Executors never see the provider transport. Every call goes through a metered client that
      reserves budget before the call and settles it from the provider's reported usage after. A
      call whose reservation does not fit is not sent. The reservation is a conservative estimate,
-     not a guarantee: if the provider reports more than estimated and a limit is crossed, the
-     overrun is recorded in the cost, no further calls are admitted, and the run is reported as
-     over budget (`within_budget = false`).
+     not a guarantee: if the provider reports more than estimated and a limit is crossed (the
+     task's or a single dispatch's), the overrun is recorded in the cost of that account and every
+     ancestor, no further calls are admitted under the account that overran, and the run is
+     reported as over budget (`within_budget = false`). A call cut off by a deadline before it
+     reached the transport is not charged.
   2. Tokens are recorded by actor (coordinator or worker) and by purpose (local or inter-agent
      communication), as Section 4.4 of the plan requires (D6).
   3. Reference answers live only in the evaluation package; `Subtask` has no field meant for them
@@ -118,8 +120,10 @@ named milestone).
 - **Decision:** a dispatch is not given a fixed share of the task budget. All dispatches of a task
   draw from the task's pool. A call that does not fit only because other calls are in flight (their
   reservations are worst cases) waits for them to settle; it is refused only when the budget
-  itself is spent. A subtask refused for lack of budget is not retried. Ready subtasks are
-  dispatched as soon as their dependencies are accepted, not in waves.
+  itself is spent. Waiting calls are admitted strictly in arrival order. A subtask refused for lack
+  of budget is not retried. Ready subtasks are dispatched as soon as their dependencies are
+  accepted, not in waves. When a run is cancelled or an executor raises, every other worker of the
+  run is cancelled and settles its accounting before the run returns.
 - **Why:** the M1 review (R1, findings 1 and 7) showed that the first version could abandon a
   subtask with 98% of the budget unspent, because sibling reservations were mistaken for spent
   budget, and could delay a ready subtask behind an unrelated slow one. The rule is the same for
@@ -130,8 +134,10 @@ named milestone).
 
 - **Date:** 2026-10-26 · **Status:** active
 - **Decision:** when a result is rejected, the next attempt at that subtask receives the rejected
-  output and the public reasons the runtime checks gave. Reading the rejected output counts as
-  communication; the check reasons do not (no agent wrote them). Every system, baselines included,
+  output and the public reasons the runtime checks gave, including the reasons of checks that could
+  only say `unknown` when unknown results are not accepted. Reading the rejected output counts as
+  communication; the fixed wrapper text and the check reasons do not (no agent wrote them). The
+  same holds for upstream results: only the output itself is attributed to the upstream agent. Every system, baselines included,
   gets the same attempt allowance and the same feedback (`CoordinatorConfig.retry_feedback`).
 - **Why:** blind resampling would make "recovery" depend only on sampling luck, and a deployed
   system would pass the error back. The review (R1, finding 10) pointed out that the first version
@@ -154,24 +160,30 @@ named milestone).
 ## R1. Review of the M1 implementation (2026-10-26)
 
 GPT-6.1 Sol (high effort) reviewed the eight M1 commits and reported 15 findings, verified with
-probes. All were checked against the code and accepted. Fixed before calling M1 done, each with a
-regression test in `tests/test_review_regressions.py` that fails when the fix is reverted:
+probes. All were checked against the code and accepted. A second review of the fixes found five of
+them only partly fixed and six new problems; those were fixed in a second round. Regression tests
+are in `tests/test_review_regressions.py`. Each was mutation-checked: the fix was reverted and the
+test confirmed to fail. The exception is the "every task exception is retrieved" property of
+round 2, which only shows as an asyncio log warning and is covered by code inspection.
 
-| # | Finding | Fix |
-|---|---|---|
-| 1 | Sibling reservations treated as spent budget | Admission waits for in-flight calls (D7) |
-| 2 | Wall-time limit not enforced while waiting | Waits bounded by the tightest deadline |
-| 3 | Cancellation leaked reservations | Sent-but-unanswered calls always settle as unknown usage |
-| 4 | Empty route crashed the run | Checks made total over any output |
-| 5 | Overrun reported as a normal success | `Cost.overrun`, `RunResult.within_budget` |
-| 6 | Reused run directory mixed two runs' traces | Unique run ids; traces opened exclusively |
-| 7 | Subtasks dispatched in waves | Event-driven dispatch (D7) |
-| 8 | Measurement mode did not stop cached replies | Enforced in the metered client (D5.4) |
-| 9 | Reward collapsed weak acceptance into success | Structured feedback (D9) |
-| 10 | Retries were blind | Feedback-assisted retries (D8) |
-| 11 | Model seeds unset; random policy order-dependent | Seeds derived from task, subtask and attempt |
-| 12 | Unknown usage priced at the input rate | Charged as prompt estimate plus maximum completion |
-| 13 | Raw inputs counted as communication | One message per source |
+| # | Finding | Fix | Round |
+|---|---|---|---|
+| 1 | Sibling reservations treated as spent budget | Admission waits for in-flight calls (D7) | 1 |
+| 2 | Wall-time limit not enforced while waiting | Waits bounded by the tightest deadline, dispatch caps included | 1, 2 |
+| 3 | Cancellation leaked reservations | Calls that reached the transport settle as unknown usage; cancelling a run cancels its workers | 1, 2 |
+| 4 | Empty route crashed the run | Checks made total over any output | 1 |
+| 5 | Overrun reported as a normal success | `Cost.overrun` propagates from any dispatch to the run; `RunResult.within_budget` | 1, 2 |
+| 6 | Reused run directory mixed two runs' traces | Unique run ids; traces opened exclusively | 1 |
+| 7 | Subtasks dispatched in waves | Event-driven dispatch (D7) | 1 |
+| 8 | Measurement mode did not stop cached replies | Enforced in the metered client (D5.4) | 1 |
+| 9 | Reward collapsed weak acceptance into success | Structured feedback (D9) | 1 |
+| 10 | Retries were blind | Feedback-assisted retries (D8); `unknown` reasons kept | 1, 2 |
+| 11 | Model seeds unset; random policy order-dependent | Seeds derived from task, subtask and attempt | 1 |
+| 12 | Unknown usage priced at the input rate | Charged as prompt estimate plus maximum completion | 1 |
+| 13 | Raw inputs counted as communication | One message per source; wrappers separate from agent text | 1, 2 |
+| N1 | Executor exception left siblings unobserved | All finished tasks retrieved, others cancelled, first error raised | 2 |
+| N2 | Call cut off before sending was charged | Charged only if it reached the transport | 2 |
+| N3 | Admission not first come first served | FIFO admission queue per task | 2 |
 
 Deferred to M2, before any comparative result is collected: the stored-decomposition protocol
 (14), tool and check services in the execution context, typed tool-call records and tool events,

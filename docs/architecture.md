@@ -72,17 +72,19 @@ shared by every system, including the baselines (research plan, Section 4.1).
   sent. If the reservation does not fit in what the dispatch and all its ancestors have left, the
   call is not sent.
 - If it would fit once calls already in flight have settled, it waits for them; concurrent
-  subtasks share one pool, first come first served (D7). It is refused (`BudgetExceeded`) only when
-  the budget itself is spent.
+  subtasks share one pool and waiting calls are admitted in arrival order (D7). It is refused
+  (`BudgetExceeded`) only when the budget itself is spent.
 - After the reply the reservation is released and the provider's reported usage is charged to the
   dispatch and all its ancestors. Reasoning tokens are recorded as a subset of completion tokens.
-- A call that was sent but got no reply (timeout, deadline, cancellation, transport error) is
-  charged its full reservation, split into prompt and completion, and the cost is marked
-  `usage_complete=False`. Only a `RequestRejected` error is released without charge.
+- A call that reached the transport but got no reply (timeout, deadline, cancellation, transport
+  error) is charged its full reservation, split into prompt and completion, and the cost is marked
+  `usage_complete=False`. A `RequestRejected` error, or a call cut off before it was sent, is
+  released without charge.
 - With a wall-time limit, waiting for admission, for a reply and for a whole executor are all
-  bounded by the time left.
-- Reservations are estimates. If reported usage still crosses a limit, `Cost.overrun` is set, no
-  further calls are admitted and the run is reported with `within_budget = false`.
+  bounded by the time left on the tightest account (dispatch cap or task).
+- Reservations are estimates. If reported usage still crosses a limit, of the task or of one
+  dispatch, `Cost.overrun` is set on that account and its ancestors, no further calls are admitted
+  under it, and the run is reported with `within_budget = false`.
 - In `measurement` mode a cached reply is refused (D5.4).
 - Failed attempts, retries and (from M2) decomposition all count against the same task budget.
 
@@ -100,7 +102,8 @@ branches. A rejected result is reallocated: the policy chooses again, with the r
 earlier attempt, and the executor receives the rejected output and the public reasons for
 rejection (D8). The attempt allowance is the same for every system. A subtask refused for lack of
 budget is not retried. After each attempt the policy receives a structured record (D9) and defines
-its own reward from it.
+its own reward from it. If the run is cancelled or an executor raises, the remaining workers are
+cancelled and settle their accounting before the run returns.
 
 ## Runtime checks and acceptance
 

@@ -117,21 +117,34 @@ class Coordinator:
                 )
                 active[task] = s
 
-        launch()
-        while active:
-            finished, _ = await asyncio.wait(active, return_when=asyncio.FIRST_COMPLETED)
-            for task in finished:
-                subtask = active.pop(task)
-                solved = task.result()
-                records += solved.records
-                out_of_budget |= solved.out_of_budget
-                if solved.accepted is None:
-                    given_up.add(subtask.id)
-                    blocked = sorted(graph.descendants(subtask.id))
-                    tracer.emit(root, "subtask_failed", {"subtask": subtask.id, "blocked": blocked})
-                else:
-                    done[subtask.id] = solved.accepted
+        try:
             launch()
+            while active:
+                finished, _ = await asyncio.wait(active, return_when=asyncio.FIRST_COMPLETED)
+                # Retrieve every finished task before raising, so no exception goes unobserved.
+                outcomes = [(active.pop(t), t) for t in finished]
+                errors = [t.exception() for _, t in outcomes if t.exception() is not None]
+                if errors:
+                    raise errors[0]  # type: ignore[misc]
+                for subtask, task in outcomes:
+                    solved = task.result()
+                    records += solved.records
+                    out_of_budget |= solved.out_of_budget
+                    if solved.accepted is None:
+                        given_up.add(subtask.id)
+                        blocked = sorted(graph.descendants(subtask.id))
+                        tracer.emit(
+                            root, "subtask_failed", {"subtask": subtask.id, "blocked": blocked}
+                        )
+                    else:
+                        done[subtask.id] = solved.accepted
+                launch()
+        finally:
+            # On cancellation or error, stop every worker and let it settle its accounting.
+            for task in active:
+                task.cancel()
+            if active:
+                await asyncio.gather(*active, return_exceptions=True)
 
         complete = all(f in done for f in graph.final_nodes)
         status: RunStatus = (
@@ -209,7 +222,7 @@ class Coordinator:
             status: ExecutorStatus
             try:
                 outcome = await asyncio.wait_for(
-                    executor.execute(subtask, ctx), llm.account.time_left()
+                    executor.execute(subtask, ctx), child.account.time_left()
                 )
                 output, status, confidence = outcome.output, outcome.status, outcome.confidence
             except BudgetExceeded:
@@ -261,6 +274,8 @@ class Coordinator:
                 return _Solved(None, records, True)
             previous.append(summary)
             if status == "completed":
-                reasons = tuple(c.reason or c.verdict for c in checks if c.verdict == "fail")
+                reasons = tuple(
+                    f"{c.check}: {c.reason or c.verdict}" for c in checks if c.verdict != "pass"
+                )
                 feedback.append(Feedback(agent=agent, output=output, reasons=reasons))
         return _Solved(None, records, llm.account.exhausted())

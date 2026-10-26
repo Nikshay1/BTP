@@ -88,21 +88,11 @@ def subtask_messages(system: str, subtask: Subtask, ctx: ExecutionContext) -> li
     for dep in subtask.depends_on:
         up = ctx.upstream.get(dep)
         if up is not None:
-            messages.append(
-                Message(
-                    role="user",
-                    content=f"Result of subtask {dep}:\n{json.dumps(up.output)}",
-                    source=up.agent,
-                )
-            )
+            messages.append(Message(role="user", content=f"Result of subtask {dep}:"))
+            messages.append(Message(role="user", content=json.dumps(up.output), source=up.agent))
     for fb in ctx.feedback:
-        messages.append(
-            Message(
-                role="user",
-                content=f"An earlier attempt answered:\n{json.dumps(fb.output)}",
-                source=fb.agent,
-            )
-        )
+        messages.append(Message(role="user", content="An earlier attempt answered:"))
+        messages.append(Message(role="user", content=json.dumps(fb.output), source=fb.agent))
         reasons = "; ".join(fb.reasons) or "no reason given"
         messages.append(
             Message(role="user", content=f"That answer was rejected by the checks: {reasons}")
