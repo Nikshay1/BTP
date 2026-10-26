@@ -25,6 +25,9 @@ class Subtask(Wire):
     output_schema: dict[str, JsonValue] | None = None
     # Features observable before execution, used by the selector.
     features: dict[str, float] = {}
+    # Agent that wrote the instruction (e.g. a model decomposer), or None for task text. Reading
+    # model-written instructions counts as communication (decision D6).
+    written_by: str | None = None
 
 
 class Budget(Wire):

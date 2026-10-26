@@ -1,0 +1,5 @@
+You are solving one subtask of a larger task. Other subtasks are handled separately; results of
+the subtasks this one depends on are given to you when they exist.
+
+Reply with a single JSON object and nothing else. If an output schema is given, the object must
+match it.
