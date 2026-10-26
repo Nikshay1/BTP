@@ -34,8 +34,12 @@ specialist), cap of 120,000 tokens, 60 model calls, 40 tool calls and 10 minutes
 
 1. Put the key in `.env` at the repository root (never committed): `GROQ_API_KEY=...`, and set a
    monthly spend limit in the Groq console.
-2. First a tiny capability check (a few calls) to confirm the API behaves as the adapter assumes
-   (seed, reasoning-token reporting, limits). This step is still to be written as a script.
+2. First a tiny capability check (four calls, well under a cent) to confirm the API behaves as the
+   adapter assumes (usage and reasoning-token reporting, finish reasons, seed, tool read-back):
+
+   ```sh
+   uv run python scripts/capability_check.py
+   ```
 3. Then the pilot, with a hard spending stop:
 
    ```sh
