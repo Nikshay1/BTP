@@ -1,15 +1,15 @@
 """Download pinned upstream datasets and build local snapshots (needs network once).
 
-Usage: uv run --group prep python scripts/prepare_data.py gsm8k
+Usage: uv run --group prep python scripts/prepare_data.py [gsm8k] [planbench]
 """
 
 from __future__ import annotations
 
 import sys
 
-from bioalloc.evaluation import gsm8k_data
+from bioalloc.evaluation import gsm8k_data, planbench_data
 
-PREPARERS = {"gsm8k": gsm8k_data.prepare}
+PREPARERS = {"gsm8k": gsm8k_data.prepare, "planbench": planbench_data.prepare}
 
 
 def main(names: list[str]) -> int:

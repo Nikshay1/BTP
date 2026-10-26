@@ -303,6 +303,20 @@ and settled; where they differed, the entry says which was taken and why.
 - **Planning checks:** a Python simulator of the pinned PDDL domains gives the public checks (legal
   actions, goal reached). Grading uses the pinned VAL validator where it can be built; the simulator
   is cross-checked against VAL on fixtures.
+- **Update 2026-10-26 (PlanBench subset):** PlanBench at commit `fc638a1` is prepared from the
+  instance sets its own configs name as the main ones (`generated_basic`: Blocksworld 1-500,
+  Logistics 1-285; 523 template groups). The first preparation used the `generated` directories by
+  mistake; a check of the template groups showed that every Blocksworld instance there stacks all
+  blocks from the table into one tower, so the 501 files hold only 10 distinct problems (one per
+  block count). They are PlanBench's plan-generalization set and are not used. Grouping was verified
+  by exact isomorphism tests on sampled groups (122 pairs, no mismatch).
+- **Consequence for the test-only variant:** the main Blocksworld set has only 4 and 5 blocks
+  (445 and 55 instances), so "a larger-object-count bucket absent from development" means the
+  5-block instances. To be fixed with the splits.
+- **VAL status:** building VAL from source (KCL-Planning/VAL, commit `3c7a1f3`) was blocked by
+  this environment's permission rules for running external code. Until Nikshay builds it, the
+  simulator is both the public check and the grader, and the paper must say so; the cross-check
+  against VAL is a pilot-readiness item.
 
 ## D17. Stored decomposition
 

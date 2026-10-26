@@ -60,6 +60,34 @@ def fetch(url: str, sha256: str, dest: Path) -> Path:
     return dest
 
 
+def fetch_unpinned(urls: dict[str, Path]) -> dict[str, str]:
+    """Download files whose upstream publishes no hashes (e.g. a pinned git commit on GitHub) in
+    one parallel curl run. Returns the SHA-256 of each file, to be recorded in the manifest; later
+    preparations compare against that record."""
+    for dest in urls.values():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+    config = "\n".join(f'url = "{u}"\noutput = "{d}"' for u, d in urls.items())
+    subprocess.run(
+        [
+            "curl",
+            "--fail",
+            "--location",
+            "--silent",
+            "--show-error",
+            "--parallel",
+            "--parallel-max",
+            "16",
+            "--max-time",
+            "300",
+            "--config",
+            "-",
+        ],
+        input=config.encode(),
+        check=True,
+    )
+    return {u: file_sha256(d) for u, d in urls.items()}
+
+
 def write_jsonl(path: Path, rows: list[dict[str, JsonValue]]) -> str:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
