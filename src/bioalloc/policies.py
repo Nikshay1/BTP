@@ -1,26 +1,34 @@
 """Allocation policies: which executor gets a subtask.
 
-M1 has the non-learning policies used as baselines (constant, random, fixed by family). The
-rule table and the LinUCB selector of the research plan (Section 4.3) are added in M3 behind the
-same interface.
+M1 has the non-learning policies used as baselines (constant, random). The rule table and the
+LinUCB selector of the research plan (Section 4.3) are added in M3 behind the same interface. A
+policy receives the full record of every finished attempt through ``update`` and defines its own
+reward from it, so that acceptance by runtime checks, check strength, confidence and cost stay
+separate signals rather than one number fixed by the coordinator.
 """
 
 from __future__ import annotations
 
 import random
 from collections.abc import Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Protocol
 
-from bioalloc.schemas import Subtask, Wire
+from bioalloc.schemas import CheckResult, ExecutorStatus, Subtask, Wire
 
 
 class Attempt(Wire):
-    """What a policy may know about an earlier attempt at the same subtask."""
+    """What a policy may know about a finished attempt. Never contains grading information."""
 
+    subtask_id: str
+    attempt: int
     executor: str
-    status: str
+    status: ExecutorStatus
     verdict: str
+    accepted: bool
+    checks: tuple[CheckResult, ...] = ()
+    confidence: float | None = None
+    tokens: int = 0
 
 
 class Policy(Protocol):
@@ -28,7 +36,7 @@ class Policy(Protocol):
 
     def select(self, subtask: Subtask, previous: Sequence[Attempt]) -> str: ...
 
-    def update(self, subtask: Subtask, executor: str, reward: float) -> None: ...
+    def update(self, subtask: Subtask, attempt: Attempt) -> None: ...
 
 
 @dataclass
@@ -41,20 +49,22 @@ class Constant:
     def select(self, subtask: Subtask, previous: Sequence[Attempt]) -> str:
         return self.executor
 
-    def update(self, subtask: Subtask, executor: str, reward: float) -> None:
+    def update(self, subtask: Subtask, attempt: Attempt) -> None:
         pass
 
 
 @dataclass
 class Uniform:
-    """Random allocation baseline; a retry may draw the same executor again."""
+    """Random allocation baseline. Each draw depends only on the seed, the subtask and the attempt
+    number, so it does not change with the order in which concurrent subtasks finish."""
 
     executors: Sequence[str]
-    rng: random.Random = field(default_factory=lambda: random.Random(0))
+    seed: int = 0
     name: str = "random"
 
     def select(self, subtask: Subtask, previous: Sequence[Attempt]) -> str:
-        return self.rng.choice(list(self.executors))
+        rng = random.Random(f"{self.seed}:{subtask.id}:{len(previous)}")
+        return rng.choice(list(self.executors))
 
-    def update(self, subtask: Subtask, executor: str, reward: float) -> None:
+    def update(self, subtask: Subtask, attempt: Attempt) -> None:
         pass

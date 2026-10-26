@@ -3,7 +3,7 @@ import asyncio
 import pytest
 
 from bioalloc.budget import Account, BudgetExceeded, MeteredClient, Pricing, communication_tokens
-from bioalloc.llm.base import LLMError, LLMRequest, Message, TransportTimeout
+from bioalloc.llm.base import LLMError, LLMRequest, Message, RequestRejected, TransportTimeout
 from bioalloc.llm.fake import FakeTransport
 from bioalloc.schemas import Budget
 
@@ -64,9 +64,11 @@ def test_concurrent_reservations_cannot_overspend_parent() -> None:
     parent = Account(Budget(max_tokens=100, max_model_calls=10))
     a = parent.child(Budget(max_tokens=100, max_model_calls=10))
     b = parent.child(Budget(max_tokens=100, max_model_calls=10))
-    a.reserve(60)
+    a.reserve(30, 30)
     with pytest.raises(BudgetExceeded):
-        b.reserve(60)
+        b.reserve(30, 30)
+    # It would fit once the call in flight settles, so the client waits rather than fails.
+    assert b.would_fit_after_settling(60)
 
 
 def test_failed_attempts_consume_budget_and_timeouts_charge_the_reservation() -> None:
@@ -81,11 +83,20 @@ def test_failed_attempts_consume_budget_and_timeouts_charge_the_reservation() ->
     assert c.account.snapshot().model_calls == 2
 
 
-def test_error_with_no_reply_releases_reservation() -> None:
-    c = client(FakeTransport().always(LLMError("bad request")))
-    with pytest.raises(LLMError):
+def test_rejected_request_releases_reservation_without_charge() -> None:
+    c = client(FakeTransport().always(RequestRejected("bad request")))
+    with pytest.raises(RequestRejected):
         asyncio.run(c.complete(req()))
     assert c.account.reserved_tokens == 0 and c.account.snapshot().model_calls == 0
+
+
+def test_other_errors_are_charged_as_unknown_usage() -> None:
+    c = client(FakeTransport().always(LLMError("connection reset")))
+    with pytest.raises(LLMError):
+        asyncio.run(c.complete(req()))
+    cost = c.account.snapshot()
+    assert c.account.reserved_tokens == 0
+    assert cost.model_calls == 1 and cost.usage_complete is False
 
 
 def test_time_limit() -> None:
@@ -93,20 +104,21 @@ def test_time_limit() -> None:
     account = Account(
         Budget(max_tokens=1000, max_model_calls=10, max_elapsed_s=5), clock=lambda: now[0]
     )
-    account.reserve(10)
+    account.reserve(5, 5)
     now[0] = 6.0
     assert account.exhausted()
     with pytest.raises(BudgetExceeded, match="time"):
-        account.reserve(10)
+        account.reserve(5, 5)
 
 
 def test_overrun_blocks_further_calls() -> None:
     account = Account(Budget(max_tokens=100, max_model_calls=10))
-    rid = account.reserve(90)
+    rid = account.reserve(80, 10)
     account.settle(rid, "worker", prompt=95, completion=10, communication=0, reasoning=0, usd=0)
     assert account.overrun and account.exhausted()
+    assert account.snapshot().overrun
     with pytest.raises(BudgetExceeded, match="overran"):
-        account.reserve(1)
+        account.reserve(1, 0)
 
 
 def test_communication_share_follows_provenance() -> None:
@@ -115,8 +127,9 @@ def test_communication_share_follows_provenance() -> None:
         Message(role="user", content="b" * 50, source="w2"),
         Message(role="assistant", content="c" * 100, source="w1"),
     )
-    assert communication_tokens(msgs, prompt_tokens=100, agent="w1") == 25
-    assert communication_tokens(msgs, prompt_tokens=100, agent="w2") == 50
+    r = LLMRequest(model="m", messages=msgs, max_completion_tokens=1)
+    assert communication_tokens(r, prompt_tokens=100, agent="w1") == 25
+    assert communication_tokens(r, prompt_tokens=100, agent="w2") == 50
 
 
 def test_events_are_emitted() -> None:

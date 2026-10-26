@@ -1,18 +1,36 @@
 """Budget accounts and the metered model client.
 
 Every model call is reserved against a budget before it is sent and settled from the provider's
-reported usage afterwards. A call whose reservation does not fit is never sent. Accounts form a
-tree: a dispatch gets a child account whose spending also counts against every ancestor, so an
-executor can never spend more than the task has left.
+reported usage afterwards. Accounts form a tree: a dispatch gets a child account whose spending
+also counts against every ancestor, so an executor can never be admitted beyond what the task has
+left.
 
-The prompt size of a call is not known exactly before sending (it depends on the provider's
-tokenizer), so reservations use a conservative estimate of three characters per token. If a
-provider still reports more than the estimate and the total crosses a limit, the account records
-an overrun; no further calls are allowed and the overrun is visible in the cost record.
+Admission. A call whose reservation does not fit is not sent. If it would fit once calls already
+in flight have settled (their reservations are worst cases and usually larger than what they end
+up costing), the call waits for them instead of failing; it fails only when the budget itself is
+spent. Siblings therefore draw from one shared pool, first come first served, and the same rule
+applies to every system compared.
+
+Reservations are estimates. The prompt size of a call is not known exactly before sending (it
+depends on the provider's tokenizer), so a reservation uses three characters per token over the
+whole request plus its maximum completion. If a provider still reports more and the total crosses
+a limit, the overrun is recorded in the cost (``Cost.overrun``), no further calls are admitted,
+and the run is reported as over budget.
+
+Deadlines. With a wall-time limit, waiting for admission and waiting for a reply are both bounded
+by the time left on the tightest ancestor; a call cut off by the deadline raises
+``TransportTimeout``.
+
+Unknown usage. A call that was sent but produced no reply (timeout, cancellation, transport error)
+may still have been billed. It is charged its full reservation, prompt estimate as prompt tokens
+and maximum completion as completion tokens, and the cost is marked ``usage_complete=False``.
+Only a ``RequestRejected`` error releases the reservation without charge.
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
 import math
 import time
 from collections.abc import Callable
@@ -20,7 +38,14 @@ from dataclasses import dataclass, field
 from itertools import count
 from typing import Any
 
-from bioalloc.llm.base import LLMReply, LLMRequest, Message, Transport, TransportTimeout
+from bioalloc.llm.base import (
+    LLMReply,
+    LLMRequest,
+    RequestRejected,
+    RunMode,
+    Transport,
+    TransportTimeout,
+)
 from bioalloc.schemas import Actor, Budget, Cost, Tokens
 
 Clock = Callable[[], float]
@@ -28,11 +53,25 @@ EventHook = Callable[[str, dict[str, Any]], None]
 
 
 class BudgetExceeded(Exception):
-    """A call or dispatch would not fit in the remaining budget. Nothing was sent."""
+    """A call does not fit in what is left of the budget. Nothing was sent."""
 
 
-def reserve_prompt_tokens(messages: tuple[Message, ...]) -> int:
-    return sum(math.ceil(len(m.content) / 3) + 4 for m in messages)
+class CachedReplyInMeasurement(RuntimeError):
+    """A measured run received a cached reply; measured runs must hit the provider."""
+
+
+def _chars_to_tokens(n: int) -> int:
+    return math.ceil(n / 3)
+
+
+def reserve_prompt_tokens(request: LLMRequest) -> int:
+    """Conservative estimate of a request's prompt tokens, covering every part that is sent."""
+    tokens = sum(_chars_to_tokens(len(m.content)) + 4 for m in request.messages)
+    extras: list[object] = [*request.tools]
+    if request.response_format is not None:
+        extras.append(request.response_format)
+    tokens += sum(_chars_to_tokens(len(json.dumps(x))) for x in extras)
+    return tokens
 
 
 @dataclass(frozen=True)
@@ -69,6 +108,16 @@ class _Spent:
         )
 
 
+@dataclass(frozen=True)
+class _Reservation:
+    prompt: int
+    completion: int
+
+    @property
+    def tokens(self) -> int:
+        return self.prompt + self.completion
+
+
 @dataclass
 class Account:
     limits: Budget
@@ -79,14 +128,15 @@ class Account:
     reserved_tokens: int = field(default=0, init=False)
     reserved_calls: int = field(default=0, init=False)
     overrun: bool = field(default=False, init=False)
-    _reservations: dict[int, tuple[int, int]] = field(default_factory=dict, init=False)
+    _reservations: dict[int, _Reservation] = field(default_factory=dict, init=False)
     _ids: count[int] = field(default_factory=count, init=False)
+    _changed: asyncio.Event | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         self.started = self.clock()
 
     def child(self, limits: Budget) -> Account:
-        """A sub-account; its limits are further capped by what this account has left."""
+        """A sub-account; its limits are further capped by what every ancestor has left."""
         return Account(limits=limits, parent=self, clock=self.clock)
 
     def _chain(self) -> list[Account]:
@@ -97,57 +147,92 @@ class Account:
             acc = acc.parent
         return chain
 
+    @property
+    def root(self) -> Account:
+        return self._chain()[-1]
+
     def elapsed(self) -> float:
         return self.clock() - self.started
 
-    def remaining(self) -> Budget:
+    def time_left(self) -> float | None:
+        left = [
+            a.limits.max_elapsed_s - a.elapsed()
+            for a in self._chain()
+            if a.limits.max_elapsed_s is not None
+        ]
+        return max(min(left), 0.0) if left else None
+
+    def remaining(self, *, include_reservations: bool = True) -> Budget:
         """What can still be reserved here, taking every ancestor into account."""
-        tokens = calls = None
-        time_left: float | None = None
+        tokens: list[int] = []
+        calls: list[int] = []
         for acc in self._chain():
-            t = acc.limits.max_tokens - acc.spent.tokens - acc.reserved_tokens
-            c = acc.limits.max_model_calls - acc.spent.model_calls - acc.reserved_calls
-            tokens = t if tokens is None else min(tokens, t)
-            calls = c if calls is None else min(calls, c)
-            if acc.limits.max_elapsed_s is not None:
-                left = acc.limits.max_elapsed_s - acc.elapsed()
-                time_left = left if time_left is None else min(time_left, left)
-        assert tokens is not None and calls is not None
+            held_t = acc.reserved_tokens if include_reservations else 0
+            held_c = acc.reserved_calls if include_reservations else 0
+            tokens.append(acc.limits.max_tokens - acc.spent.tokens - held_t)
+            calls.append(acc.limits.max_model_calls - acc.spent.model_calls - held_c)
         return Budget(
-            max_tokens=max(tokens, 0),
-            max_model_calls=max(calls, 0),
-            max_elapsed_s=None if time_left is None else max(time_left, 0.0),
+            max_tokens=max(min(tokens), 0),
+            max_model_calls=max(min(calls), 0),
+            max_elapsed_s=self.time_left(),
         )
 
-    def exhausted(self) -> bool:
-        r = self.remaining()
-        out_of_time = r.max_elapsed_s is not None and r.max_elapsed_s <= 0
-        return any(a.overrun for a in self._chain()) or r.max_model_calls == 0 or out_of_time
+    def any_overrun(self) -> bool:
+        return any(a.overrun for a in self._chain())
 
-    def reserve(self, tokens: int) -> int:
-        """Reserve one model call of up to ``tokens`` tokens. Raises if it does not fit."""
-        if any(a.overrun for a in self._chain()):
-            raise BudgetExceeded("an earlier call overran the budget")
-        r = self.remaining()
+    def exhausted(self) -> bool:
+        """True when no further call can ever be admitted (ignores calls in flight)."""
+        r = self.remaining(include_reservations=False)
+        out_of_time = r.max_elapsed_s is not None and r.max_elapsed_s <= 0
+        return self.any_overrun() or r.max_model_calls == 0 or r.max_tokens == 0 or out_of_time
+
+    def _refusal(self, tokens: int, *, include_reservations: bool) -> str | None:
+        if self.any_overrun():
+            return "an earlier call overran the budget"
+        r = self.remaining(include_reservations=include_reservations)
         if r.max_elapsed_s is not None and r.max_elapsed_s <= 0:
-            raise BudgetExceeded("time limit reached")
+            return "time limit reached"
         if r.max_model_calls < 1:
-            raise BudgetExceeded("model call limit reached")
+            return "model call limit reached"
         if tokens > r.max_tokens:
-            raise BudgetExceeded(f"call needs up to {tokens} tokens, {r.max_tokens} left")
+            return f"call needs up to {tokens} tokens, {r.max_tokens} left"
+        return None
+
+    def reserve(self, prompt: int, completion: int) -> int:
+        """Reserve one model call. Raises ``BudgetExceeded`` if it does not fit right now."""
+        reason = self._refusal(prompt + completion, include_reservations=True)
+        if reason is not None:
+            raise BudgetExceeded(reason)
         rid = next(self._ids)
-        self._reservations[rid] = (tokens, 1)
+        self._reservations[rid] = _Reservation(prompt, completion)
         for acc in self._chain():
-            acc.reserved_tokens += tokens
+            acc.reserved_tokens += prompt + completion
             acc.reserved_calls += 1
         return rid
 
-    def _release(self, rid: int) -> int:
-        tokens, calls = self._reservations.pop(rid)
+    def would_fit_after_settling(self, tokens: int) -> bool:
+        """Whether a refused call would fit once the calls in flight have settled."""
+        held = any(a.reserved_calls for a in self._chain())
+        return held and self._refusal(tokens, include_reservations=False) is None
+
+    async def wait_for_change(self, timeout: float | None) -> None:
+        root = self.root
+        if root._changed is None:
+            root._changed = asyncio.Event()
+        await asyncio.wait_for(root._changed.wait(), timeout)
+
+    def _notify(self) -> None:
+        root = self.root
+        if root._changed is not None:
+            root._changed.set()
+            root._changed = None
+
+    def _release(self, rid: int) -> _Reservation:
+        res = self._reservations.pop(rid)
         for acc in self._chain():
-            acc.reserved_tokens -= tokens
-            acc.reserved_calls -= calls
-        return tokens
+            acc.reserved_tokens -= res.tokens
+            acc.reserved_calls -= 1
+        return res
 
     def settle(
         self,
@@ -174,17 +259,22 @@ class Account:
             s.usd += usd
             if s.tokens > acc.limits.max_tokens:
                 acc.overrun = True
+        self._notify()
 
-    def settle_unknown(self, rid: int, actor: Actor, pricing: Pricing) -> None:
-        """Charge the full reservation for a call whose usage is unknown (e.g. a timeout)."""
-        tokens = self._reservations[rid][0]
-        self.settle(rid, actor, tokens, 0, 0, 0, pricing.usd(tokens, 0))
+    def settle_unknown(self, rid: int, actor: Actor, pricing: Pricing) -> _Reservation:
+        """Charge the full reservation for a call that was sent but whose usage is unknown."""
+        res = self._reservations[rid]
+        self.settle(
+            rid, actor, res.prompt, res.completion, 0, 0, pricing.usd(res.prompt, res.completion)
+        )
         for acc in self._chain():
             acc.spent.usage_complete = False
+        return res
 
     def cancel(self, rid: int) -> None:
-        """Release a reservation for a call that was never sent."""
+        """Release a reservation for a call that was never processed."""
         self._release(rid)
+        self._notify()
 
     def record_tool_call(self) -> None:
         for acc in self._chain():
@@ -202,15 +292,16 @@ class Account:
             elapsed_s=self.elapsed(),
             usd=s.usd,
             usage_complete=s.usage_complete,
+            overrun=self.overrun,
         )
 
 
-def communication_tokens(messages: tuple[Message, ...], prompt_tokens: int, agent: str) -> int:
+def communication_tokens(request: LLMRequest, prompt_tokens: int, agent: str) -> int:
     """Share of a call's prompt tokens spent reading content written by another agent (D6)."""
-    total = sum(len(m.content) for m in messages)
+    total = sum(len(m.content) for m in request.messages)
     if total == 0:
         return 0
-    foreign = sum(len(m.content) for m in messages if m.source not in (None, agent))
+    foreign = sum(len(m.content) for m in request.messages if m.source not in (None, agent))
     return round(prompt_tokens * foreign / total)
 
 
@@ -223,6 +314,7 @@ class MeteredClient:
     actor: Actor
     agent: str
     pricing: Pricing = field(default_factory=Pricing)
+    mode: RunMode = "debug"
     on_event: EventHook | None = None
 
     def child(
@@ -234,6 +326,7 @@ class MeteredClient:
             actor=actor or self.actor,
             agent=agent or self.agent,
             pricing=self.pricing,
+            mode=self.mode,
             on_event=self.on_event,
         )
 
@@ -241,39 +334,60 @@ class MeteredClient:
         if self.on_event is not None:
             self.on_event(kind, data)
 
+    async def _admit(self, prompt: int, completion: int) -> int:
+        while True:
+            try:
+                return self.account.reserve(prompt, completion)
+            except BudgetExceeded:
+                if not self.account.would_fit_after_settling(prompt + completion):
+                    raise
+            try:
+                await self.account.wait_for_change(self.account.time_left())
+            except TimeoutError:
+                raise BudgetExceeded("time limit reached while waiting for budget") from None
+
     async def complete(self, request: LLMRequest) -> LLMReply:
-        reservation = reserve_prompt_tokens(request.messages) + request.max_completion_tokens
-        rid = self.account.reserve(reservation)
+        prompt_est = reserve_prompt_tokens(request)
+        rid = await self._admit(prompt_est, request.max_completion_tokens)
+        reserved = prompt_est + request.max_completion_tokens
         self._emit(
             "llm_request",
             {
                 "agent": self.agent,
                 "actor": self.actor,
-                "reserved_tokens": reservation,
+                "reserved_tokens": reserved,
                 "request": request.model_dump(mode="json"),
             },
         )
         try:
-            reply = await self.transport.send(request)
-        except TransportTimeout as exc:
-            self.account.settle_unknown(rid, self.actor, self.pricing)
+            reply = await asyncio.wait_for(self.transport.send(request), self.account.time_left())
+        except RequestRejected as exc:
+            self.account.cancel(rid)
+            self._emit("llm_error", {"agent": self.agent, "error": repr(exc), "usage": "none"})
+            raise
+        except BaseException as exc:
+            # Sent, but no reply: timeout, deadline, cancellation or transport failure.
+            res = self.account.settle_unknown(rid, self.actor, self.pricing)
             self._emit(
                 "llm_error",
                 {
                     "agent": self.agent,
+                    "actor": self.actor,
                     "error": repr(exc),
                     "usage": "unknown",
-                    "charged_tokens": reservation,
+                    "charged_prompt_tokens": res.prompt,
+                    "charged_completion_tokens": res.completion,
                 },
             )
+            if isinstance(exc, TimeoutError) and not isinstance(exc, TransportTimeout):
+                raise TransportTimeout("deadline reached while waiting for the reply") from exc
             raise
-        except Exception as exc:
-            # No reply and no evidence of consumption: release the reservation.
+        if reply.from_cache and self.mode == "measurement":
             self.account.cancel(rid)
-            self._emit("llm_error", {"agent": self.agent, "error": repr(exc), "usage": "none"})
-            raise
+            self._emit("llm_error", {"agent": self.agent, "error": "cached reply", "usage": "none"})
+            raise CachedReplyInMeasurement("measured runs must not use cached replies")
         u = reply.usage
-        comm = communication_tokens(request.messages, u.prompt_tokens, self.agent)
+        comm = communication_tokens(request, u.prompt_tokens, self.agent)
         self.account.settle(
             rid,
             self.actor,

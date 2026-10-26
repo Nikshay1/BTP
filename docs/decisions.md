@@ -65,21 +65,32 @@ named milestone).
 
 ## D5. Validity rules built into the code from the start
 
-- **Date:** 2026-10-26 · **Status:** active
-- **Decision:** the following are enforced by code and tests, not by convention.
-  1. Executors never see the provider client directly. Every call goes through a metered client
-     that reserves budget before the call and settles it from the provider's reported usage after.
-     A call that could exceed the remaining budget is not sent.
+- **Date:** 2026-10-26 · **Status:** active (wording corrected after the M1 review, see R1)
+- **Decision:** the following are enforced by code and tests, not by convention. Where a rule is
+  only partly implemented so far, the entry says so.
+  1. Executors never see the provider transport. Every call goes through a metered client that
+     reserves budget before the call and settles it from the provider's reported usage after. A
+     call whose reservation does not fit is not sent. The reservation is a conservative estimate,
+     not a guarantee: if the provider reports more than estimated and a limit is crossed, the
+     overrun is recorded in the cost, no further calls are admitted, and the run is reported as
+     over budget (`within_budget = false`).
   2. Tokens are recorded by actor (coordinator or worker) and by purpose (local or inter-agent
-     communication), as Section 4.4 of the plan requires.
-  3. Reference answers live only in the evaluation package. Subtasks and execution contexts have no
-     field that could carry them.
-  4. The response cache is for debugging and replay only. A run in measurement mode refuses to use
-     it, and every run manifest records the mode.
+     communication), as Section 4.4 of the plan requires (D6).
+  3. Reference answers live only in the evaluation package; `Subtask` has no field meant for them
+     and unknown fields are rejected. A test forbids system modules from importing the evaluation
+     package. This is a guard against mistakes, not a proof: a generator could still put reference
+     information into `Subtask.inputs`, so every task generator is reviewed for this.
+  4. Measured runs never use cached replies. The metered client of a run in `measurement` mode
+     refuses any reply marked as cached, whatever transport produced it, and the cache itself
+     refuses to be built in that mode. Every run manifest records the mode.
   5. Every run writes an append-only JSON Lines trace and a manifest with the code revision,
-     lockfile hash, configuration, prompt hashes, model identifier and seeds.
-  6. One decomposition per task and repetition is generated once, stored, and replayed to every
-     system, so that all systems solve identical subtask graphs (Section 4.1, shared decomposer).
+     lockfile hash, configuration, the hash of the task graph, prompt hashes, model identifier and
+     seeds. Each run gets its own directory and a trace file is never appended to by another run.
+  6. All systems solve identical subtask graphs: each system receives a fresh copy parsed from the
+     stored graph, and the graph's hash goes into the manifest. *Partly implemented:* for the toy
+     family the graph comes from a deterministic generator. The protocol for LLM-generated
+     decompositions (generate once per task and repetition, store, replay, and charge its cost
+     equally to every system) is built in M2.
 - **Second opinion:** points 1, 3, 4 and 6 were raised independently by both plans; Sol added the
   reservation-then-settle accounting and the separate purpose view of tokens.
 
@@ -100,6 +111,71 @@ named milestone).
   and RQ5 depends on those numbers being well defined.
 - **Second opinion:** Sol recommended an actor view and a disjoint purpose view, with generation and
   each reading billed as separate occurrences; this entry follows that.
+
+## D7. Concurrent subtasks share one budget pool, first come first served
+
+- **Date:** 2026-10-26 · **Status:** active
+- **Decision:** a dispatch is not given a fixed share of the task budget. All dispatches of a task
+  draw from the task's pool. A call that does not fit only because other calls are in flight (their
+  reservations are worst cases) waits for them to settle; it is refused only when the budget
+  itself is spent. A subtask refused for lack of budget is not retried. Ready subtasks are
+  dispatched as soon as their dependencies are accepted, not in waves.
+- **Why:** the M1 review (R1, findings 1 and 7) showed that the first version could abandon a
+  subtask with 98% of the budget unspent, because sibling reservations were mistaken for spent
+  budget, and could delay a ready subtask behind an unrelated slow one. The rule is the same for
+  every system compared, so it does not favour any of them. A fixed per-subtask split is possible
+  (`CoordinatorConfig.dispatch_budget`) if an experiment needs it.
+
+## D8. Retries are told why the previous answer was rejected
+
+- **Date:** 2026-10-26 · **Status:** active
+- **Decision:** when a result is rejected, the next attempt at that subtask receives the rejected
+  output and the public reasons the runtime checks gave. Reading the rejected output counts as
+  communication; the check reasons do not (no agent wrote them). Every system, baselines included,
+  gets the same attempt allowance and the same feedback (`CoordinatorConfig.retry_feedback`).
+- **Why:** blind resampling would make "recovery" depend only on sampling luck, and a deployed
+  system would pass the error back. The review (R1, finding 10) pointed out that the first version
+  retried blindly while the demo appeared to recover.
+
+## D9. Policies receive structured feedback and define their own reward
+
+- **Date:** 2026-10-26 · **Status:** active
+- **Decision:** after each attempt the policy receives a record with the executor, status, every
+  check result, the overall verdict, whether the result was accepted, the executor's confidence and
+  the tokens spent. The coordinator does not collapse these into one number. The reward used by the
+  LinUCB selector (M3) will be defined from these fields, keeping three things apart: acceptance by
+  a strong check (constraint checker, tests), acceptance by a weak check (schema only, or
+  `unknown`), and the training-only graded outcome of the parent task.
+- **Why:** the review (R1, finding 9) showed that the first version gave the same reward of 1.0 to
+  an unverified answer with confidence 0.01 as to a verified one; a learned selector would then
+  optimise for passing weak checks rather than for being right. Acceptance is never reported as
+  correctness.
+
+## R1. Review of the M1 implementation (2026-10-26)
+
+GPT-6.1 Sol (high effort) reviewed the eight M1 commits and reported 15 findings, verified with
+probes. All were checked against the code and accepted. Fixed before calling M1 done, each with a
+regression test in `tests/test_review_regressions.py` that fails when the fix is reverted:
+
+| # | Finding | Fix |
+|---|---|---|
+| 1 | Sibling reservations treated as spent budget | Admission waits for in-flight calls (D7) |
+| 2 | Wall-time limit not enforced while waiting | Waits bounded by the tightest deadline |
+| 3 | Cancellation leaked reservations | Sent-but-unanswered calls always settle as unknown usage |
+| 4 | Empty route crashed the run | Checks made total over any output |
+| 5 | Overrun reported as a normal success | `Cost.overrun`, `RunResult.within_budget` |
+| 6 | Reused run directory mixed two runs' traces | Unique run ids; traces opened exclusively |
+| 7 | Subtasks dispatched in waves | Event-driven dispatch (D7) |
+| 8 | Measurement mode did not stop cached replies | Enforced in the metered client (D5.4) |
+| 9 | Reward collapsed weak acceptance into success | Structured feedback (D9) |
+| 10 | Retries were blind | Feedback-assisted retries (D8) |
+| 11 | Model seeds unset; random policy order-dependent | Seeds derived from task, subtask and attempt |
+| 12 | Unknown usage priced at the input rate | Charged as prompt estimate plus maximum completion |
+| 13 | Raw inputs counted as communication | One message per source |
+
+Deferred to M2, before any comparative result is collected: the stored-decomposition protocol
+(14), tool and check services in the execution context, typed tool-call records and tool events,
+finish reasons on replies, and Groq usage normalisation (15).
 
 ## Open questions found while planning (to settle before M2)
 

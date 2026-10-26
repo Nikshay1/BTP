@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import asyncio
 import json
+import uuid
 from dataclasses import dataclass
+from datetime import UTC, datetime
 from pathlib import Path
 
 from pydantic import JsonValue
@@ -14,12 +16,13 @@ from bioalloc.budget import Account, MeteredClient, Pricing
 from bioalloc.coordinator import Coordinator, CoordinatorConfig, RunResult
 from bioalloc.evaluation.toy_data import Grade, ToyInstance, grade, make_instance, optimal_legs
 from bioalloc.executors.direct import Direct
+from bioalloc.graph import TaskGraph
 from bioalloc.llm.base import RunMode, Transport
 from bioalloc.llm.fake import FakeTransport
 from bioalloc.policies import Constant
 from bioalloc.schemas import Budget
 from bioalloc.tasks.toy import ToyRoutes
-from bioalloc.trace import Tracer, finish_manifest, start_manifest
+from bioalloc.trace import Tracer, finish_manifest, sha256_text, start_manifest
 
 SCENARIOS = ("good", "recover", "budget")
 
@@ -71,16 +74,22 @@ def run_toy(
         budget = Budget(max_tokens=50_000, max_model_calls=calls)
     transport = transport or scripted_toy_transport(instance, scenario)
     config = CoordinatorConfig(max_attempts=2)
-    run_id = f"{instance.graph.id}-{scenario}"
+    # Every system gets a fresh copy of the stored graph, so no run can alter another's inputs.
+    stored = instance.graph.model_dump_json()
+    graph = TaskGraph.model_validate_json(stored)
+    stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ")
+    run_id = f"{graph.id}-{scenario}-{stamp}-{uuid.uuid4().hex[:6]}"
     run_dir = out_dir / run_id
     run_config: dict[str, JsonValue] = {
-        "task": instance.graph.id,
+        "task": graph.id,
+        "graph_sha256": sha256_text(stored),
         "family": "toy_routes",
         "scenario": scenario,
         "system": "constant:direct",
         "budget": budget.model_dump(mode="json"),
         "max_attempts": config.max_attempts,
         "accept_unknown": config.accept_unknown,
+        "retry_feedback": config.retry_feedback,
     }
     manifest = start_manifest(
         run_dir,
@@ -98,10 +107,11 @@ def run_toy(
         actor="coordinator",
         agent="coordinator",
         pricing=pricing or Pricing(),
+        mode=mode,
     )
     coordinator = Coordinator({"direct": Direct(model=model)}, Constant("direct"), config)
     try:
-        result = asyncio.run(coordinator.run(instance.graph, ToyRoutes(), llm, tracer))
+        result = asyncio.run(coordinator.run(graph, ToyRoutes(), llm, tracer))
     except BaseException:
         tracer.close()
         finish_manifest(run_dir, manifest, "crashed", {})
@@ -116,6 +126,7 @@ def run_toy(
             "correct": g.correct,
             "grade_detail": g.detail,
             "answer": result.answer,
+            "within_budget": result.within_budget,
             "cost": result.cost.model_dump(mode="json"),
             "attempts": len(result.attempts),
         },

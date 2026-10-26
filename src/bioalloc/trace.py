@@ -78,7 +78,8 @@ class Tracer:
         self.run_dir = run_dir
         self.run_id = run_id
         run_dir.mkdir(parents=True, exist_ok=True)
-        self._file: TextIO = (run_dir / "trace.jsonl").open("a", encoding="utf-8")
+        # Exclusive create: a trace is never appended to by a second run.
+        self._file: TextIO = (run_dir / "trace.jsonl").open("x", encoding="utf-8")
         self._seq = count()
         self._span_ids = count(1)
         self._parents: dict[str, str | None] = {}
@@ -142,7 +143,8 @@ def tokens_from_trace(events: list[TraceEvent]) -> dict[str, int]:
             totals["communication"] += int(data["communication_tokens"])
         elif e.kind == "llm_error" and data.get("usage") == "unknown":
             totals["model_calls"] += 1
-            totals["tokens"] += int(data["charged_tokens"])
+            totals["tokens"] += int(data["charged_prompt_tokens"])
+            totals["tokens"] += int(data["charged_completion_tokens"])
     return totals
 
 

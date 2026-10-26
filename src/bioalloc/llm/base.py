@@ -11,7 +11,7 @@ import hashlib
 import json
 from typing import Literal, Protocol
 
-from pydantic import Field, JsonValue, NonNegativeFloat, NonNegativeInt
+from pydantic import Field, JsonValue, NonNegativeFloat, NonNegativeInt, model_validator
 
 from bioalloc.schemas import Wire
 
@@ -51,6 +51,14 @@ class Usage(Wire):
     reasoning_tokens: NonNegativeInt | None = None  # subset of completion_tokens
     cached_prompt_tokens: NonNegativeInt | None = None  # subset of prompt_tokens
 
+    @model_validator(mode="after")
+    def _subsets(self) -> Usage:
+        if self.reasoning_tokens is not None and self.reasoning_tokens > self.completion_tokens:
+            raise ValueError("reasoning_tokens must be included in completion_tokens")
+        if self.cached_prompt_tokens is not None and self.cached_prompt_tokens > self.prompt_tokens:
+            raise ValueError("cached_prompt_tokens must be included in prompt_tokens")
+        return self
+
 
 class LLMReply(Wire):
     content: str
@@ -63,14 +71,20 @@ class LLMReply(Wire):
 
 
 class LLMError(Exception):
-    """A request that produced no usable reply."""
+    """A request that produced no usable reply. Unless it is a ``RequestRejected``, the provider
+    may have consumed tokens, so the metered client charges the full reservation."""
 
 
 class TransportTimeout(LLMError):
     """The request timed out; the provider may still have consumed tokens."""
 
 
-class RateLimited(LLMError):
+class RequestRejected(LLMError):
+    """The provider refused the request before processing it (e.g. invalid request, rate limit).
+    Nothing was consumed, so the reservation is released."""
+
+
+class RateLimited(RequestRejected):
     pass
 
 

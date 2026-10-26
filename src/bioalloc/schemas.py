@@ -76,6 +76,8 @@ class Cost(Wire):
     usd: NonNegativeFloat = 0.0
     # False if any call's usage was unknown (e.g. a timeout) and a reservation was charged instead.
     usage_complete: bool = True
+    # True if reported usage pushed spending past the token limit (reservations are estimates).
+    overrun: bool = False
 
     @property
     def tokens(self) -> Tokens:

@@ -31,7 +31,7 @@ def edge_costs(edges: Any) -> dict[tuple[str, str], float]:
 
 def route_of(output: JsonValue) -> list[str] | None:
     route = output.get("route") if isinstance(output, dict) else None
-    if isinstance(route, list) and all(isinstance(n, str) for n in route):
+    if isinstance(route, list) and route and all(isinstance(n, str) for n in route):
         return [str(n) for n in route]
     return None
 

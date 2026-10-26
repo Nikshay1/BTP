@@ -50,12 +50,15 @@ TaskGraph ──> Coordinator ──select──> Policy
 ```python
 class Executor(Protocol):
     name: str
+
     async def execute(self, subtask: Subtask, ctx: ExecutionContext) -> ExecutorOutcome: ...
 ```
 
 `ExecutionContext` holds the accepted outputs of the subtask's dependencies (with the agent that
-produced each), a `MeteredClient` whose account is the budget of this dispatch, a random generator
-seeded by run seed, subtask and attempt, and an event hook into the trace. The coordinator turns
+produced each), any rejected earlier attempts with the reasons for rejection (D8), a
+`MeteredClient` whose account is the budget of this dispatch, a seed derived from the run seed,
+task, subtask and attempt (used for the random generator and for model sampling), and an event
+hook into the trace. The coordinator turns
 the outcome into an `ExecutorResult` by adding the dispatch's cost and its trace span.
 
 Executors differ only in control flow, communication rules, memory and stopping conditions. The
@@ -64,14 +67,23 @@ shared by every system, including the baselines (research plan, Section 4.1).
 
 ## Budget accounting
 
-- Every model call reserves `ceil(chars/3) + 4` tokens per prompt message plus its maximum
-  completion tokens before it is sent. If the reservation does not fit in the remaining budget of
-  the dispatch or any ancestor, the call is not sent (`BudgetExceeded`).
+- Every model call reserves an estimate of its prompt (three characters per token over all
+  messages, tool definitions and response format) plus its maximum completion tokens before it is
+  sent. If the reservation does not fit in what the dispatch and all its ancestors have left, the
+  call is not sent.
+- If it would fit once calls already in flight have settled, it waits for them; concurrent
+  subtasks share one pool, first come first served (D7). It is refused (`BudgetExceeded`) only when
+  the budget itself is spent.
 - After the reply the reservation is released and the provider's reported usage is charged to the
-  dispatch and all its ancestors.
-- A timed-out call is charged its full reservation and the cost is marked `usage_complete=False`.
-  A call that failed with no reply is released without charge.
-- Limits: total tokens (prompt plus completion), number of model calls, and optionally wall time.
+  dispatch and all its ancestors. Reasoning tokens are recorded as a subset of completion tokens.
+- A call that was sent but got no reply (timeout, deadline, cancellation, transport error) is
+  charged its full reservation, split into prompt and completion, and the cost is marked
+  `usage_complete=False`. Only a `RequestRejected` error is released without charge.
+- With a wall-time limit, waiting for admission, for a reply and for a whole executor are all
+  bounded by the time left.
+- Reservations are estimates. If reported usage still crosses a limit, `Cost.overrun` is set, no
+  further calls are admitted and the run is reported with `within_budget = false`.
+- In `measurement` mode a cached reply is refused (D5.4).
 - Failed attempts, retries and (from M2) decomposition all count against the same task budget.
 
 ## Token attribution (D6)
@@ -81,11 +93,21 @@ prompt spent reading content written by another agent is counted as communicatio
 estimated by characters, using the `source` field that every message carries. Communication is a
 subset of the total, so `coordinator + worker = local + communication = total`.
 
+## Scheduling and reallocation
+
+A subtask is dispatched as soon as all its dependencies are accepted, independently of other
+branches. A rejected result is reallocated: the policy chooses again, with the record of every
+earlier attempt, and the executor receives the rejected output and the public reasons for
+rejection (D8). The attempt allowance is the same for every system. A subtask refused for lack of
+budget is not retried. After each attempt the policy receives a structured record (D9) and defines
+its own reward from it.
+
 ## Runtime checks and acceptance
 
 A runtime check may use only what a deployed system would have: the output schema, tool status,
 constraint checkers that are part of the task's public statement, tests supplied with the task and
-agreement between samples. Verdicts combine as: any `fail` fails; otherwise any `pass` passes;
+agreement between samples. Checks are total: any output, however malformed, gets a verdict.
+Verdicts combine as: any `fail` fails; otherwise any `pass` passes;
 otherwise `unknown`. `unknown` results are accepted by default (Section 4.4), but the verdict is
 recorded separately so that acceptance is never reported as correctness.
 
@@ -93,9 +115,10 @@ recorded separately so that acceptance is never reported as correctness.
 
 Each run directory holds `trace.jsonl` (append-only, flushed per event) and `manifest.json`.
 Event kinds so far: `run_start`, `dispatch`, `llm_request`, `llm_reply`, `llm_error`,
-`attempt_end`, `subtask_failed`, `run_end`. The manifest records the git commit and whether the
-tree was dirty, the `uv.lock` hash, the resolved configuration and its hash, the hash of every
-prompt template, the model identifier, seeds, the run mode (`debug` or `measurement`) and the final
+`attempt_end`, `subtask_failed`, `run_end`. Every run gets its own directory (task, scenario, time and a random
+suffix) and the trace file is created exclusively. The manifest records the git commit and whether
+the tree was dirty, the `uv.lock` hash, the resolved configuration and its hash, the hash of the
+task graph, the hash of every prompt template, the model identifier, seeds, the run mode (`debug` or `measurement`) and the final
 status with a summary. A run that crashed or was interrupted is identifiable by its status.
 Token totals rebuilt from the trace alone are tested to equal the ledger.
 

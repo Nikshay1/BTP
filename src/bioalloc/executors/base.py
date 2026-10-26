@@ -30,11 +30,23 @@ class Upstream(Wire):
     output: JsonValue
 
 
+class Feedback(Wire):
+    """A rejected earlier attempt at the same subtask and the public reasons it was rejected."""
+
+    agent: str
+    output: JsonValue
+    reasons: tuple[str, ...]
+
+
 @dataclass
 class ExecutionContext:
     llm: MeteredClient
     span_id: str
     upstream: dict[str, Upstream] = field(default_factory=dict)
+    # Earlier rejected attempts at this subtask, oldest first (decision D8).
+    feedback: tuple[Feedback, ...] = ()
+    # Derived from the run seed, task, subtask and attempt; seeds the RNG and model sampling.
+    seed: int = 0
     rng: random.Random = field(default_factory=lambda: random.Random(0))
     emit: Callable[[str, dict[str, Any]], None] = lambda kind, data: None
 
@@ -59,16 +71,20 @@ class ExecutorOutcome:
 
 
 def subtask_messages(system: str, subtask: Subtask, ctx: ExecutionContext) -> list[Message]:
-    """Standard messages for a subtask: template, task text, then each upstream result."""
-    body = [f"Subtask: {subtask.instruction}"]
-    if subtask.inputs:
-        body.append("Inputs:\n" + json.dumps(subtask.inputs, indent=1))
-    if subtask.output_schema is not None:
-        body.append("Output schema:\n" + json.dumps(subtask.output_schema))
+    """Standard messages for a subtask, one per source so that communication is counted only for
+    content another agent wrote (D6): template, instruction, task inputs, upstream results, and
+    the rejected earlier attempts with the public reasons for rejection."""
     messages = [
         Message(role="system", content=system),
-        Message(role="user", content="\n\n".join(body), source=subtask.written_by),
+        Message(role="user", content=f"Subtask: {subtask.instruction}", source=subtask.written_by),
     ]
+    data = []
+    if subtask.inputs:
+        data.append("Inputs:\n" + json.dumps(subtask.inputs, indent=1))
+    if subtask.output_schema is not None:
+        data.append("Output schema:\n" + json.dumps(subtask.output_schema))
+    if data:
+        messages.append(Message(role="user", content="\n\n".join(data)))
     for dep in subtask.depends_on:
         up = ctx.upstream.get(dep)
         if up is not None:
@@ -79,6 +95,18 @@ def subtask_messages(system: str, subtask: Subtask, ctx: ExecutionContext) -> li
                     source=up.agent,
                 )
             )
+    for fb in ctx.feedback:
+        messages.append(
+            Message(
+                role="user",
+                content=f"An earlier attempt answered:\n{json.dumps(fb.output)}",
+                source=fb.agent,
+            )
+        )
+        reasons = "; ".join(fb.reasons) or "no reason given"
+        messages.append(
+            Message(role="user", content=f"That answer was rejected by the checks: {reasons}")
+        )
     return messages
 
 

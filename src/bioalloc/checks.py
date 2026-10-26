@@ -3,7 +3,8 @@
 Only checks that would exist in deployment belong here: output schema and type, tool status,
 constraint checkers that are a public part of the task, tests supplied with the task, agreement
 between samples. Reference answers never reach a runtime check (research plan, Section 4.4).
-A check that cannot decide returns ``unknown``, which is kept distinct from ``pass``.
+A check that cannot decide returns ``unknown``, which is kept distinct from ``pass``. Checks must
+be total: any model output, however malformed, gets a verdict and never raises.
 """
 
 from __future__ import annotations

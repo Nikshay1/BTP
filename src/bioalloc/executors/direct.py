@@ -25,6 +25,7 @@ class Direct:
             max_completion_tokens=self.max_completion_tokens,
             temperature=self.temperature,
             reasoning_effort=self.reasoning_effort,  # type: ignore[arg-type]
+            seed=ctx.seed,
             sample_id=ctx.agent,
         )
         reply = await ctx.llm.complete(request)
