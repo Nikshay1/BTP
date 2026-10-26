@@ -100,6 +100,7 @@ def test_sigma_zero_with_all_committed_is_absorbing(tmp_path: Path) -> None:
         "reason": "absorbing",
         "support": {'{"x":1}': 3, '{"x":2}': 2},
         "quorum_reached": False,
+        "from_released": False,
     }
 
 
@@ -155,3 +156,59 @@ def test_scout_answers_count_as_communication_only_when_shown_to_another_scout()
     asyncio.run(Bee(model="m", sigma=0.0).execute(GRAPH.nodes[0], ctx))
     cost = account.snapshot()
     assert 0 < cost.communication < cost.tokens.total
+
+
+def test_released_answers_survive_a_budget_cut_after_inhibition(tmp_path: Path) -> None:
+    table = {(0, 0): 1, (1, 0): 1, (2, 0): 1, (3, 0): 2, (4, 0): 2}
+    fake = FakeTransport().respond(SOLVE, answers(table))
+    # 5 calls for the scouts, then nothing left: sigma = 1 releases everyone and rediscovery is refused.
+    result, events = run(fake, tmp_path, Bee(model="m", sigma=1.0), calls=5)
+    assert result.answer == {"x": 1} and result.status == "completed"
+    stop = stop_of(events)
+    assert stop["reason"] == "budget" and stop["from_released"] is True
+
+
+def test_yoked_majority_never_overshoots_with_multi_call_episodes(tmp_path: Path) -> None:
+    from bioalloc.llm.base import LLMReply, ToolCall, Usage
+
+    tool_turn = LLMReply(
+        content="",
+        model="m",
+        finish_reason="tool_calls",
+        tool_calls=(ToolCall(id="t", name="calculate", arguments='{"expression": "1+1"}'),),
+        usage=Usage(prompt_tokens=5, completion_tokens=5),
+    )
+    calls = iter(range(10_000))
+
+    def respond(req: LLMRequest):  # type: ignore[no-untyped-def]
+        # Every voter first calls the tool once, then answers: two calls per vote.
+        return tool_turn if next(calls) % 2 == 0 else json.dumps({"x": 1})
+
+    graph = TaskGraph(
+        id="q",
+        nodes=(Subtask(id="a", instruction="pick", allowed_tools=("calculate",)),),
+        final_nodes=("a",),
+    )
+    from bioalloc.tasks.common import CALCULATOR
+
+    fake = FakeTransport().respond(SOLVE, respond)
+    llm = MeteredClient(
+        fake, Account(Budget(max_tokens=10**7, max_model_calls=100)), "coordinator", "coordinator"
+    )
+    voter = MajorityVote(model="m", max_calls=5, name="majority_yoked")
+    coord = Coordinator(
+        {voter.name: voter},
+        Constant(voter.name),
+        CoordinatorConfig(max_attempts=1),
+        tools={"calculate": CALCULATOR},
+    )
+    asyncio.run(coord.run(graph, Family(), llm, Tracer(tmp_path, "r")))
+    assert len(fake.requests) == 5  # 2 + 2 + 1 (the last episode is cut at the allowance)
+
+
+def test_yoked_majority_stops_when_every_request_is_rejected(tmp_path: Path) -> None:
+    from bioalloc.llm.base import RequestRejected
+
+    fake = FakeTransport().respond(SOLVE, lambda r: RequestRejected("bad request"))
+    result, _ = run(fake, tmp_path, MajorityVote(model="m", max_calls=4, name="majority_yoked"))
+    assert len(fake.requests) == 4 and result.status == "failed"

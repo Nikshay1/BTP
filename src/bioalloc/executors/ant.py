@@ -32,7 +32,7 @@ from bioalloc import prompts
 from bioalloc.actions import FINISH, Action, ActionSpace
 from bioalloc.budget import BudgetExceeded
 from bioalloc.checks import goal_verified
-from bioalloc.executors.base import ExecutionContext, ExecutorOutcome, parse_json
+from bioalloc.executors.base import ExecutionContext, ExecutorOutcome, parse_json, subtask_messages
 from bioalloc.llm.base import LLMRequest, Message
 from bioalloc.schemas import Subtask
 
@@ -171,18 +171,20 @@ class Ant:
         path: int,
         step: int,
     ) -> list[Action]:
-        body = [
-            f"Subtask: {subtask.instruction}",
-            f"Allowed action kinds: {list(space.kinds)}",
-            f"State: {space.describe(state)}",
-            "Steps so far:\n" + ("\n".join(history) if history else "(none)"),
-        ]
+        # The shared subtask messages (instruction, inputs, upstream results, retry feedback, each
+        # with its provenance), then the action-specific state.
+        messages = subtask_messages(prompts.load("propose_actions"), subtask, ctx)
+        steps = "\n".join(history) if history else "(none)"
+        messages.append(
+            Message(
+                role="user",
+                content=f"Allowed action kinds: {list(space.kinds)}\n\n"
+                f"State: {space.describe(state)}\n\nSteps so far on this attempt:\n{steps}",
+            )
+        )
         request = LLMRequest(
             model=self.model,
-            messages=(
-                Message(role="system", content=prompts.load("propose_actions")),
-                Message(role="user", content="\n\n".join(body)),
-            ),
+            messages=tuple(messages),
             max_completion_tokens=self.max_completion_tokens,
             temperature=self.temperature,
             reasoning_effort=self.reasoning_effort,  # type: ignore[arg-type]

@@ -55,7 +55,7 @@ def route_proposer(best: dict[str, list[str]]):  # type: ignore[no-untyped-def]
     """Fake proposer for the toy: ranks the next node on the cheapest route first."""
 
     def respond(req: LLMRequest) -> str:
-        text = req.messages[1].content
+        text = req.messages[-1].content
         route = json.loads(re.search(r"Route so far: (\[.*?\])", text).group(1))  # type: ignore[union-attr]
         goal = re.search(r"Goal: (\w)", text).group(1)  # type: ignore[union-attr]
         edges = json.loads(re.search(r"Edges from \w: (\[.*\])\.", text).group(1))  # type: ignore[union-attr]
@@ -161,7 +161,7 @@ class Counter:
 
 
 def counter_proposer(req: LLMRequest) -> str:
-    value = int(re.search(r"value=(-?\d+)", req.messages[1].content).group(1))  # type: ignore[union-attr]
+    value = int(re.search(r"value=(-?\d+)", req.messages[-1].content).group(1))  # type: ignore[union-attr]
     first = "FINISH" if value == 3 else "INC"
     rest = [k for k in ("INC", "DEC", "FINISH") if k != first]
     return json.dumps({"candidates": [{"kind": k, "args": {}} for k in [first, *rest]]})
@@ -204,3 +204,38 @@ def test_budget_before_any_finished_path_is_budget_exhaustion(tmp_path: Path) ->
     fake = FakeTransport().respond(PROPOSE, route_proposer({leg1[-1]: leg1, leg2[-1]: leg2}))
     _, result = run_toy(fake, tmp_path, Ant(model="m"), Budget(max_tokens=10**7, max_model_calls=1))
     assert result.status == "budget_exhausted"
+
+
+def test_ant_sees_inputs_upstream_and_retry_feedback_with_provenance() -> None:
+    from bioalloc.executors.base import ExecutionContext, Feedback, Upstream
+
+    seen: list[LLMRequest] = []
+
+    def respond(req: LLMRequest) -> str:
+        seen.append(req)
+        return json.dumps({"candidates": [{"kind": "FINISH", "args": {}}]})
+
+    fake = FakeTransport().respond(PROPOSE, respond)
+    sub = Subtask(
+        id="c",
+        instruction="reach 3",
+        inputs={"question": "What is 1+2?"},
+        depends_on=("u",),
+        written_by="decomposer",
+    )
+    ctx = ExecutionContext(
+        llm=MeteredClient(
+            fake, Account(Budget(max_tokens=10**6, max_model_calls=50)), "worker", "ant:c:1"
+        ),
+        span_id="s",
+        actions=Counter.Space(),
+        checks=(Counter.Goal(),),
+        upstream={"u": Upstream(subtask_id="u", agent="direct:u:0", output={"n": 1})},
+        feedback=(Feedback(agent="ant:c:0", output={"value": 0}, reasons=("goal: wrong",)),),
+    )
+    asyncio.run(Ant(model="m", params=AntParams(max_paths=1)).execute(sub, ctx))
+    msgs = seen[0].messages
+    text = "\n".join(m.content for m in msgs)
+    assert "What is 1+2?" in text and "goal: wrong" in text and "value=0" in text
+    sources = {m.source for m in msgs}
+    assert {"decomposer", "direct:u:0", "ant:c:0"} <= sources

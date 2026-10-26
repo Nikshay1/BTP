@@ -37,7 +37,7 @@ from dataclasses import dataclass, field
 from pydantic import JsonValue
 
 from bioalloc import prompts
-from bioalloc.budget import BudgetExceeded
+from bioalloc.budget import BudgetExceeded, MeteredClient
 from bioalloc.executors.base import (
     ExecutionContext,
     ExecutorOutcome,
@@ -47,7 +47,7 @@ from bioalloc.executors.base import (
     tool_episode,
 )
 from bioalloc.llm.base import LLMError, LLMRequest, Message
-from bioalloc.schemas import Subtask
+from bioalloc.schemas import Budget, Subtask
 
 
 @dataclass
@@ -57,6 +57,10 @@ class Scout:
     option: str | None = None
     output: JsonValue = None
     confidence: float = 0.0
+    # The last option this scout committed to, kept when it is released, so that a run cut short
+    # right after inhibition still returns an answer it had.
+    last_option: str | None = None
+    last_output: JsonValue = None
 
 
 @dataclass
@@ -67,10 +71,16 @@ class _Answerer:
     reasoning_effort: str | None
 
     async def answer(
-        self, subtask: Subtask, ctx: ExecutionContext, agent: str, seed: int, tag: str
+        self,
+        subtask: Subtask,
+        ctx: ExecutionContext,
+        agent: str,
+        seed: int,
+        tag: str,
+        client: MeteredClient | None = None,
     ) -> tuple[str | None, JsonValue]:
         """One independent answer through Direct's bounded episode; (option, output)."""
-        client = dataclasses.replace(ctx.llm, agent=agent)
+        client = dataclasses.replace(client or ctx.llm, agent=agent)
         sub_ctx = dataclasses.replace(ctx, llm=client)
         request = LLMRequest(
             model=self.model,
@@ -188,6 +198,7 @@ class Bee:
             and ctx.rng.random() < self.sigma
         ]
         for s in released:
+            s.last_option, s.last_output = s.option, s.output
             s.option = None
         ctx.emit("bee_inhibition", {"released": [s.index for s in released]})
 
@@ -252,9 +263,23 @@ class Bee:
 
     def _finish(self, scouts: list[Scout], ctx: ExecutionContext, reason: str) -> ExecutorOutcome:
         support = self._support(scouts)
+        from_released = False
+        if not support:
+            # Everyone was released and the run ended before anyone recommitted: fall back to the
+            # options scouts held before release.
+            for s in scouts:
+                if s.last_option is not None:
+                    s.option, s.output = s.last_option, s.last_output
+            support = self._support(scouts)
+            from_released = bool(support)
         ctx.emit(
             "executor_stop",
-            {"reason": reason, "support": dict(support), "quorum_reached": reason == "quorum"},
+            {
+                "reason": reason,
+                "support": dict(support),
+                "quorum_reached": reason == "quorum",
+                "from_released": from_released,
+            },
         )
         if not support:
             if reason == "budget":
@@ -292,21 +317,35 @@ class MajorityVote:
             results, budget_hit = await _gather_budgeted(coros)
             votes = [r for r in results if r is not None and r[0] is not None]
         else:
-            i = 0
-            start = ctx.llm.account.snapshot().model_calls
-            while ctx.llm.account.snapshot().model_calls - start < self.max_calls:
-                results, budget_hit = await _gather_budgeted(
+            # Call-yoked: each voter runs under a sub-account capped by the calls still allowed, so
+            # a multi-call tool episode cannot overshoot; attempts are bounded too, so rejected
+            # requests (which spend nothing) cannot loop forever.
+            allowance = self.max_calls
+            spent_at_start = ctx.llm.account.snapshot().model_calls
+            for i in range(self.max_calls):
+                left = allowance - (ctx.llm.account.snapshot().model_calls - spent_at_start)
+                if left <= 0:
+                    break
+                capped = ctx.llm.child(
+                    Budget(max_tokens=ctx.llm.account.limits.max_tokens, max_model_calls=left)
+                )
+                results, refused = await _gather_budgeted(
                     [
                         answerer.answer(
-                            subtask, ctx, f"{ctx.agent}/voter{i}", ctx.seed + 100 * i, "vote"
+                            subtask,
+                            ctx,
+                            f"{ctx.agent}/voter{i}",
+                            ctx.seed + 100 * i,
+                            "vote",
+                            client=capped,
                         )
                     ]
                 )
-                if budget_hit:
-                    break
                 if results[0] is not None and results[0][0] is not None:
                     votes.append(results[0])
-                i += 1
+                if refused and ctx.llm.account.exhausted():
+                    budget_hit = True
+                    break
         tally = Counter(o for o, _ in votes)
         ctx.emit(
             "executor_stop", {"reason": "budget" if budget_hit else "votes", "tally": dict(tally)}
