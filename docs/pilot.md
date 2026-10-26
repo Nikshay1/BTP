@@ -27,7 +27,7 @@ specialist), cap of 120,000 tokens, 60 model calls, 40 tool calls and 10 minutes
 | Full offline rehearsal of the pilot config (720 runs) | done |
 | Cross-check of the plan simulator against the pinned VAL binary | **open**: VAL build needs Nikshay (see below) |
 | Hand-labelled sample of checker and grader verdicts | **open**: after the first live runs |
-| Independent code review of the M2 batch | **in progress** |
+| Independent code review of the M2 batch (R2: 19 findings, 18 fixed, 1 gated) | done; re-review of the fixes in progress |
 | Groq key with a spend cap | **open**: Nikshay |
 
 ## How to run it

@@ -413,6 +413,34 @@ and settled; where they differed, the entry says which was taken and why.
   appears in two splits. No model run ever used v1.
 - **Consequence:** the tool family's development tasks now come in pairs on 25 + 15 databases.
 
+## R2. Review of the M2 implementation (2026-10-26/27)
+
+GPT-6.1 Sol (high effort) reviewed the M2 commits up to the offline rehearsal (a first attempt was
+cut off by model capacity after four findings, fixed in `114538f`). The full review reported 19
+findings, each with a probe. All were checked against the code and accepted.
+
+| # | Finding | Fix | Commit |
+|---|---|---|---|
+| 1 | Decomposer saw input names, not values; a plan could drop the question | Decomposer sees the public task; final node keeps all inputs and the original instruction | `fc7f7cc` |
+| 2 | Bee/majority found no usable answer on intermediate nodes | Intermediate nodes compared by canonical JSON | `fc7f7cc` |
+| 3 | Ant's 12-choice paths too short for a 12-action plan in the pool | Up to 30 choices; the task budget binds | `26ac1f1` |
+| 4 | Ant's prompt said FINISH takes no arguments | Every action space describes its kinds and arguments | `26ac1f1` |
+| 5 | Ant ran tools directly, outside the tool service | Tool-backed actions go through the metered ToolService; legality is structural | `26ac1f1` |
+| 6 | Calculator errors and complex results crashed runs | All become CalcError or failed tool observations | `1f1b809` |
+| 7 | Tool templates shared databases across splits | Split v2 (D22) | `aff17c5` |
+| 8 | Interrupted runs could not be resumed | Interrupted runs set aside with their spending, then rerun | `4afbd1a` |
+| 9 | Resume could mix configurations | Provenance check; dirty trees refused in measurement | `4afbd1a` |
+| 10 | Reporting control skipped successful tool episodes | Octopus step = one completion; report after every non-final step | `62ddd0f` |
+| 11 | `--max-usd` counted attributed, not actual, spending | Persistent spending ledger, decomposition paid once | `4afbd1a` |
+| 12 | CLI analysis ignored groups and family weights | Family-stratified group bootstrap from the split file | `4afbd1a` |
+| 13 | Imported costs ignored call, tool and time limits | All limits and deadline checked | `a0bcabb` |
+| 14 | Runs did not verify data snapshots | Loader verifies manifests and split provenance | `4afbd1a` |
+| 15 | Ant ignored the configured completion limit | Passed through | `26ac1f1` |
+| 16 | Specialist lost its answer if the critic could not run | Finished answer kept | `a0bcabb` |
+| 17 | Learned systems ran untrained | Refused in measurement mode until M3 artifacts exist | `4afbd1a` |
+| 18 | `majority` control not call-yoked to bee | **Gated**: to wire before the Table 3 control experiments | open |
+| 19 | Typed PDDL accepted without type checks | Typed lists refused | `62ddd0f` |
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
