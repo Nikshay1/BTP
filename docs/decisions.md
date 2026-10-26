@@ -381,6 +381,22 @@ and settled; where they differed, the entry says which was taken and why.
 - **Statistics:** planning has more tasks than groups (isomorphic duplicates stay together), so the
   bootstrap resamples groups, as Section E of Sol's plan requires.
 
+## D21. Pilot design
+
+- **Date:** 2026-10-26 · **Status:** active
+- **Graphs per family:** tools use their natural workflow graphs; reasoning (GSM8K) uses the model
+  decomposer from the question alone; planning (PlanBench) is a single node, because a split of a
+  planning problem into goals cannot be validated and an invalid split would hurt every system
+  equally but uninformatively (Sol's advice in the M2 plan).
+- **Budget cap:** the plan's primary cap is twice the single agent's mean cost, which is unknown
+  until the pilot. The pilot uses a generous provisional cap (120,000 tokens, 60 model calls, 40
+  tool calls, 10 minutes per task), records actual use, and the main study's cap is fixed from the
+  pilot's single-agent runs before any test task is touched.
+- **Systems:** single agent, the four core executors alone, fixed, random and specialist; the
+  learned selectors and the Table 3 controls are left out of the pilot to keep its cost to a few
+  dollars, and are rehearsed offline.
+- **Spending stop:** live runs take `--max-usd`; the pilot is run with `--max-usd 5`.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
