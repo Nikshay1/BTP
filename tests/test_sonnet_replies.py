@@ -116,3 +116,41 @@ def test_a_trailing_example_object_is_still_ambiguous() -> None:
     # Known limit: no parser can tell a trailing example from a correction. The prompts now ask
     # for the corrected object last and no example objects; this pins the documented behaviour.
     assert parse_json('{"answer":25}\nExample only: {"answer":0}') == {"answer": 0}
+
+
+# Second round of adversarial cases (Sol, R7).
+
+
+def test_a_mismatched_bracket_never_exposes_a_nested_fragment() -> None:
+    text = '{"answer":25} Correction: {"x": ], "nested":{"answer":0}}'
+    assert parse_json(text) == text
+
+
+def test_an_unclosed_final_array_gives_no_answer() -> None:
+    text = '{"answer": 25}\nRevised: [{"answer": 30}'
+    assert parse_json(text) == text
+
+
+def test_a_broken_correction_blocks_an_earlier_envelope() -> None:
+    good = '{"candidates":[{"kind":"FINISH","args":{"answer":25}}]}'
+    for tail in ('\nCorrection: {"candidates":[broken]}', '\nCorrection: {"candidates":['):
+        assert parse_json(good + tail, envelope="candidates") == good + tail
+
+
+def test_prose_braces_and_brackets_do_not_cancel_an_answer() -> None:
+    assert parse_json('{"answer":0.5} because \\frac{1}{2}') == {"answer": 0.5}
+    assert parse_json('{"answer":5} (where {n} denotes the count)') == {"answer": 5}
+    assert parse_json('{"answer":5} (see [1])') == {"answer": 5}
+
+
+def test_a_huge_integer_is_unreadable_not_a_crash() -> None:
+    text = '{"answer": ' + "9" * 5000 + "}"
+    assert parse_json(text) == text
+    later = '{"answer": 3}\n{"answer": ' + "9" * 5000 + "}"
+    assert parse_json(later) == later  # the broken last object blocks the earlier answer
+
+
+def test_protocol_replies_keep_their_envelope_over_a_quoted_answer() -> None:
+    # Bee's assessment would have read {"answer": 25} and counted a rejection (Sol, R7).
+    text = '{"accept": true, "confidence": 0.9} Accepted: {"answer": 25}'
+    assert parse_json(text, envelope="accept") == {"accept": True, "confidence": 0.9}

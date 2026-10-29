@@ -167,7 +167,7 @@ class Octopus:
             sample_id=f"supervisor:{ctx.agent}/step{step}",
         )
         reply = await supervisor.complete(request)
-        parsed = parse_json(reply.content)
+        parsed = parse_json(reply.content, envelope="decision")
         if isinstance(parsed, dict):
             decision = "stop" if parsed.get("decision") == "stop" else "continue"
             instruction = str(parsed.get("instruction") or "")[:500]

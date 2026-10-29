@@ -212,7 +212,7 @@ async def model_decomposition(
         )
         reply = await llm.complete(request)
         try:
-            graph = graph_from_proposal(task, parse_json(reply.content))
+            graph = graph_from_proposal(task, parse_json(reply.content, envelope="nodes"))
         except ValueError as exc:
             errors.append(str(exc))
             messages += [

@@ -64,7 +64,7 @@ class Specialist:
                 Message(role="user", content=json.dumps(graph, indent=1)),
             ]
             reply = await planner.complete(self._request(messages, ctx, "planner", 1024))
-            parsed = parse_json(reply.content)
+            parsed = parse_json(reply.content, envelope="advice")
             raw = parsed.get("advice") if isinstance(parsed, dict) else None
             advice = {str(k): str(v)[:500] for k, v in raw.items()} if isinstance(raw, dict) else {}
             ctx.task_state[ADVICE_KEY] = advice
@@ -100,7 +100,7 @@ class Specialist:
         except BudgetExceeded:
             ctx.emit("specialist_review", {"skipped": "budget"})
             return outcome  # keep the finished answer (D15)
-        verdict = parse_json(reply.content)
+        verdict = parse_json(reply.content, envelope="accept")
         accept = isinstance(verdict, dict) and verdict.get("accept") is True
         critique = str(verdict.get("critique", ""))[:800] if isinstance(verdict, dict) else ""
         ctx.emit("specialist_review", {"accept": accept, "critique": critique})

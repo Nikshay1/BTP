@@ -595,6 +595,29 @@ deposit and evaporation controls cannot differ there.
   each of 4 pilot tasks at each temperature (32 runs); `scripts/diversity_report.py` compares
   distinct answers and accuracy. If 1.0 lowers accuracy, the choice is revisited before the pilot.
 
+## R7. Second review of the parser and the diversity check (2026-10-29)
+
+GPT-6.1 Sol (high) reviewed commit 25ce3d4: "fix first". All seven findings fixed:
+
+1. A mismatched bracket let recovery resume inside the broken object and expose a nested
+   fragment. Recovery now skips to where the outer bracket's own kind balances, and a container
+   that never closes ends the scan.
+2. The diversity check mixed sampling with per-repetition model decompositions and check-driven
+   retries. Both configs now use single-node tasks and one attempt; the report verifies that every
+   repetition sent the same request body.
+3. A valid envelope followed by a broken correction returned the earlier envelope. A malformed
+   container after the last envelope now means no answer.
+4. Prose braces (`\frac{1}{2}`, `{n}`) were treated as malformed answers. Only containers that
+   look like JSON count: an object opening with a key or `}`, an array opening with `{`, `[` or a
+   string. `[1]` or `[note]` in prose are ignored.
+5. The report counted raw answer objects; it now counts the family's normalized options (what
+   bee counts), unreadable answers separately, and reply texts per run.
+6. Other protocol replies had the trailing-object problem fixed for ant: advice, decomposition,
+   reviews and assessments, and supervision now read their envelope (`advice`, `nodes`,
+   `accept`, `decision`). Solver answers keep the general rule.
+7. A huge integer literal raised an uncaught error that could stop an experiment; it is now an
+   unreadable answer.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

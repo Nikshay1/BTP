@@ -254,7 +254,7 @@ class Bee:
             sample_id=f"{scout.agent}/assess{rnd}",
         )
         reply = await client.complete(request)
-        parsed = parse_json(reply.content)
+        parsed = parse_json(reply.content, envelope="accept")
         if not isinstance(parsed, dict):
             return False, 0.0
         confidence = parsed.get("confidence")

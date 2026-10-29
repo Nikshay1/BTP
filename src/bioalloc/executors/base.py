@@ -191,52 +191,79 @@ def canonical_option(output: JsonValue) -> str | None:
 
 
 _OPEN = {"{": "}", "[": "]"}
+_LOOKS_LIKE = {"{": '"}', "[": '{["'}  # what may follow the opener (after spaces) in JSON
 
 
-def _scan_top_level(text: str) -> list[tuple[str, JsonValue | None]]:
-    """Every container that starts outside any other one, in order: ("{" or "[", its value, or
-    None if it is not valid JSON). A container that fails to parse is skipped whole; nothing
-    inside it is ever taken. Quotes are tracked only inside containers, so prose apostrophes and
-    quotes around them do not matter."""
-    found: list[tuple[str, JsonValue | None]] = []
-    i, n = 0, len(text)
-    while i < n:
-        if text[i] not in _OPEN:
+def _looks_like_json(text: str, i: int) -> bool:
+    """Whether the bracket at ``i`` opens something that looks like JSON: an object starting
+    with a key (or empty), or an array of objects, arrays or strings. Prose such as
+    "\frac{1}{2}", "{n}", "[1]" or "[note]" does not."""
+    j = i + 1
+    while j < len(text) and text[j] in " \t\r\n":
+        j += 1
+    return j < len(text) and text[j] in _LOOKS_LIKE[text[i]]
+
+
+def _end_of(text: str, i: int) -> tuple[int, bool]:
+    """(index after the container opened at ``i``, whether its brackets nest correctly). If they
+    do not, the end is where the outer bracket's own kind balances again, ignoring the other kind,
+    so recovery never resumes inside it; -1 if it never closes."""
+    opener = text[i]
+    stack, depth, nested_ok = [_OPEN[opener]], 1, True
+    in_string = escaped = False
+    for j in range(i + 1, len(text)):
+        c = text[j]
+        if in_string:
+            if escaped:
+                escaped = False
+            elif c == "\\":
+                escaped = True
+            elif c == '"':
+                in_string = False
+            continue
+        if c == '"':
+            in_string = True
+        elif c in _OPEN:
+            depth += c == opener
+            if nested_ok:
+                stack.append(_OPEN[c])
+        elif c in "}]":
+            depth -= c == _OPEN[opener]
+            if nested_ok:
+                if c == stack[-1]:
+                    stack.pop()
+                else:
+                    nested_ok = False
+            if nested_ok and not stack:
+                return j + 1, True
+            if not nested_ok and depth == 0:
+                return j + 1, False
+    return -1, False
+
+
+def _scan_top_level(text: str) -> list[JsonValue | None]:
+    """The JSON-looking containers that start outside any other one, in order: each its value,
+    or None if it is malformed (bad nesting, never closed, or not valid JSON). A malformed
+    container is skipped whole, nothing inside it is ever taken, and one that never closes ends
+    the scan."""
+    found: list[JsonValue | None] = []
+    i = 0
+    while i < len(text):
+        if text[i] not in _OPEN or not _looks_like_json(text, i):
             i += 1
             continue
-        stack = [_OPEN[text[i]]]
-        j, in_string, escaped = i + 1, False, False
-        while j < n and stack:
-            c = text[j]
-            if in_string:
-                if escaped:
-                    escaped = False
-                elif c == "\\":
-                    escaped = True
-                elif c == '"':
-                    in_string = False
-            elif c == '"':
-                in_string = True
-            elif c in _OPEN:
-                stack.append(_OPEN[c])
-            elif c in "}]":
-                if c != stack[-1]:
-                    break  # mismatched closer: the container is malformed
-                stack.pop()
-            j += 1
-        if stack:  # never closed, or closed by the wrong bracket
-            if text[i] == "{":
-                found.append(("{", None))
-            if j >= n:
-                break
-            i = j + 1
-            continue
-        span = text[i:j]
-        try:
-            found.append((text[i], json.loads(span)))
-        except json.JSONDecodeError:
-            found.append((text[i], None))
-        i = j
+        end, ok = _end_of(text, i)
+        if end == -1:
+            found.append(None)
+            break
+        value: JsonValue | None = None
+        if ok:
+            try:
+                value = json.loads(text[i:end])
+            except ValueError:  # invalid JSON, or a number beyond Python's conversion limit
+                value = None
+        found.append(value)
+        i = end
     return found
 
 
@@ -246,27 +273,24 @@ def parse_json(text: str, envelope: str | None = None) -> JsonValue:
 
     The answer is the last top-level JSON value in the reply: a model that answers, notices a
     mistake and answers again means its last object (the prompts ask it to write the corrected
-    object last and no example objects). If the last top-level object is malformed, there is no
-    answer: an earlier object or a fragment of the broken one is never taken instead. Square
-    brackets in prose that are not valid JSON are ignored. With ``envelope``, the answer is the
-    last top-level object holding that key (a protocol field such as "candidates"), so that a
-    trailing object quoting one item does not replace it. The rule is the same for every system
-    and never looks at whether a value would pass a check."""
+    object last and no example objects). If the last JSON-looking container is malformed, there is
+    no answer: an earlier value or a fragment of the broken one is never taken instead. Brackets
+    in prose that do not look like JSON are ignored. With ``envelope``, the answer is the last
+    top-level object holding that protocol key; well-formed objects without it after it (a quoted
+    item, say) are passed over, but a malformed container after it means no answer. The rule is
+    the same for every system and never looks at whether a value would pass a check."""
     try:
         whole: JsonValue = json.loads(text.strip())
-    except json.JSONDecodeError:
+    except ValueError:
         pass
     else:
         if envelope is None or (isinstance(whole, dict) and envelope in whole):
             return whole
         return text
     found = _scan_top_level(text)
-    if envelope is not None:
-        for _, value in reversed(found):
-            if isinstance(value, dict) and envelope in value:
-                return value
-        return text
-    readable = [(k, v) for k, v in found if v is not None or k == "{"]
-    if readable and readable[-1][1] is not None:
-        return readable[-1][1]
+    for value in reversed(found):
+        if value is None:
+            return text
+        if envelope is None or (isinstance(value, dict) and envelope in value):
+            return value
     return text

@@ -29,6 +29,11 @@
   "max_elapsed_s": 600,
   "max_tool_calls": 40
  },
- "max_attempts": 2,
- "concurrency": 4
+ "max_attempts": 1,
+ "concurrency": 4,
+ "decompose": {
+  "planning": "single",
+  "tools": "natural",
+  "reasoning": "single"
+ }
 }
