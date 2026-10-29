@@ -710,6 +710,10 @@ the second failed with 800 left, while the same call arriving later would have b
 the call keeps its place in line, and the admitted limit is used for the reservation, the request
 and the trace alike. A concurrent test reproduces the case and fails on the old code.
 
+Re-review of commit c73f66e: no new findings (FIFO fairness, sibling and ancestor budgets,
+wakeups, retries, deadlines, call limits, small completion limits, ledger consistency, and the
+D26 config, tasks and snapshot hashes). Cleared for the calibration run.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
