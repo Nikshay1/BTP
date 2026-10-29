@@ -963,6 +963,9 @@ Macro check (Sol's sizing): `configs/macro-check.json`, the six tuning instances
 repair run's settings and one outer attempt: 60 runs, at most 300 calls, about US$3.60-5.94
 (centrally US$4.32), stop at US$8. A mechanism check, not an efficacy comparison.
 
+Re-review of commit bcaa71f: no new findings (all five fixes, several completing candidates,
+initially true goals, evaporation on failed calls, the config). Cleared for the macro check.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
