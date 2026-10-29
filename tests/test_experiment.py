@@ -310,3 +310,18 @@ def test_pilot_configs_hold_exactly_the_d24_selection() -> None:
         cfg = json.loads((ROOT / "configs" / name).read_text())
         assert cfg["tasks"]["task_ids"] == ids, name
         assert len({groups[t] for t in ids}) == len(ids), name  # no shared groups
+    # Independent of the selector's own code (Sol, R6): every pilot task is a training task, the
+    # smoke tasks are a subset of the pilot's, and every reasoning question is at least as long as
+    # the median training question, counted on the problem text.
+    from bioalloc.evaluation import gsm8k_data
+
+    assignments = {a.task_id: a for a in splits.load(ROOT / "data/splits/v2.json")}
+    pilot = json.loads((ROOT / "configs" / "pilot.json").read_text())["tasks"]["task_ids"]
+    smoke = json.loads((ROOT / "configs" / "pilot-smoke.json").read_text())["tasks"]["task_ids"]
+    assert set(smoke) <= set(pilot)
+    assert all(assignments[t].split == "train" for t in pilot)
+    words = {i.task.id: len(str(i.task.inputs["question"]).split()) for i in gsm8k_data.load()}
+    train_q = sorted(words[t] for t, a in assignments.items() if a.split == "train" and t in words)
+    median = (train_q[len(train_q) // 2 - 1] + train_q[len(train_q) // 2]) / 2
+    chosen_q = [t for t in pilot if t.startswith("gsm8k-")]
+    assert len(chosen_q) == 6 and all(words[t] >= median for t in chosen_q)

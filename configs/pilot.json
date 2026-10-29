@@ -2,7 +2,7 @@
  "name": "pilot-v2",
  "mode": "measurement",
  "model": "global.anthropic.claude-sonnet-4-6",
- "temperature": 0.6,
+ "temperature": 1.0,
  "reasoning_effort": "low",
  "max_completion_tokens": 2048,
  "pricing": {
@@ -35,11 +35,11 @@
    "tools-v1-top_product-s51",
    "tools-v1-top_product-s283",
    "gsm8k-test-00273",
-   "gsm8k-test-00105",
-   "gsm8k-test-01151",
    "gsm8k-test-00831",
-   "gsm8k-test-00030",
-   "gsm8k-test-00705"
+   "gsm8k-test-01044",
+   "gsm8k-test-00512",
+   "gsm8k-test-00986",
+   "gsm8k-test-01093"
   ]
  },
  "repetitions": 2,

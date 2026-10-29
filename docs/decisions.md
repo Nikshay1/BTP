@@ -551,6 +551,50 @@ than planned; measured in the second smoke test.
   test (6 tasks, a subset of the pilot's). Only public text is used; split v2 is unchanged.
   A test checks that both configs hold exactly this selection.
 
+## R6. Review of the R5 fixes and a research plan (2026-10-29)
+
+GPT-6.1 Sol (high) reviewed commit 613c386 and proposed a plan towards the project goal (bio
+systems that answer better than a single agent, preferably with fewer tokens).
+
+1. D24's "longer GSM8K" rule counted the instruction, which is the same 18 words for every task,
+   so every question passed. Fixed: words of the problem text. The pilot's reasoning tasks changed
+   (four of six had been below the median). The test now checks the rule independently.
+2. The first "last object" parser could take a fragment from inside a malformed correction, or
+   split a fenced array into its last element. Replaced by a scanner that tracks brackets and
+   strings, takes only top-level values, never looks inside one that fails to parse, and gives no
+   answer when the last top-level object is malformed.
+3. "Last object" cannot tell a correction from a trailing example. Every JSON prompt now asks for
+   the corrected object last and no example objects; ant reads the last object holding its
+   `candidates` envelope, so a quoted action after it no longer replaces it. The remaining case
+   is pinned by a test as a known limit.
+4. Ant now traces cut-off replies and empty candidate lists.
+
+Plan adopted (in order): a small diversity check (D25); the repaired smoke test at temperature 1.0;
+then a difficulty check before the 288-run pilot, because GSM8K and Blocksworld may be at ceiling
+for Sonnet. Later, as separately versioned changes: bee with three scouts, ant loop detection and
+path limits, stopping on a public goal certificate, split v3 with harder tasks (MATH, longer
+Logistics, branching tool workflows) if the difficulty check confirms the ceiling, and evidence of
+complementarity (oracle versus best fixed executor) before more work on the selector. Noted
+structural limit: ant receives no reward where no goal check exists (tools, GSM8K), so its
+deposit and evaporation controls cannot differ there.
+
+## D25. Sampling: temperature 1.0 for every system; thinking stays off, effort low
+
+- **Date:** 2026-10-29 · **Status:** active from the second smoke test; checked by the diversity
+  check
+- **Amends:** D23 (temperature 0.6)
+- **Decision:** temperature 1.0 (Claude's default) for every system. Thinking stays off and
+  effort low.
+- **Why:** in the first smoke test, identical requests returned near-identical replies at 0.6,
+  and all 60 bee planning scouts reached the same plan. Bee's scouts and repeated runs are only
+  useful if their errors differ. Claude has no seed, so temperature is the only sampling control.
+  Thinking stays off: the model already corrects itself in visible text (which the parser now
+  reads), thinking would require temperature 1 anyway and adds hidden output cost and adapter
+  work; it can be compared later on harder tasks if failures turn out to be reasoning failures.
+- **Check:** `configs/diversity-t06.json` and `configs/diversity-t10.json` run Direct 4 times on
+  each of 4 pilot tasks at each temperature (32 runs); `scripts/diversity_report.py` compares
+  distinct answers and accuracy. If 1.0 lowers accuracy, the choice is revisited before the pilot.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

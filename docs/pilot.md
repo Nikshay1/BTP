@@ -64,13 +64,20 @@ decides the main-study backbone and size (D23).
    ```sh
    uv run python scripts/capability_check.py
    ```
-4. Smoke test, then look at the results before going on:
+4. Diversity check (D25; 32 short Direct runs, about US$1):
+
+   ```sh
+   uv run bioalloc experiment run configs/diversity-t06.json --max-usd 2
+   uv run bioalloc experiment run configs/diversity-t10.json --max-usd 2
+   uv run python scripts/diversity_report.py runs/diversity-t06 runs/diversity-t10
+   ```
+5. Smoke test, then look at the results before going on:
 
    ```sh
    uv run bioalloc experiment run configs/pilot-smoke.json --max-usd 8
    uv run bioalloc experiment analyze runs/pilot-smoke-2
    ```
-5. The pilot:
+6. The pilot (after a difficulty check, R6):
 
    ```sh
    uv run bioalloc experiment run configs/pilot.json --max-usd 40

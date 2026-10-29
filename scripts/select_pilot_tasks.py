@@ -6,7 +6,8 @@ Per family, the training tasks are split into two subtypes and N tasks are taken
 
 * planning: Blocksworld and Logistics;
 * tools: the ``revenue`` and ``top_product`` templates;
-* reasoning: GSM8K questions with at least the median training word count ("longer"), taking
+* reasoning: GSM8K questions whose problem text has at least the median training word count
+  ("longer"; counted on the question, not the shared instruction), taking
   2N of them, because GSM8K has one subtype and the short half is likely at ceiling.
 
 Within a subtype, tasks are taken in SHA-256 order of (seed, task id), skipping any whose group
@@ -32,6 +33,11 @@ def order(task_id: str) -> str:
     return hashlib.sha256(f"{SEED}:{task_id}".encode()).hexdigest()
 
 
+def question_words(item: gsm8k_data.GSM8KItem) -> int:
+    """Words in the problem itself (the instruction is the same for every GSM8K task)."""
+    return len(str(item.task.inputs["question"]).split())
+
+
 def pick(pool: list[splits.Assignment], n: int, taken: set[str]) -> list[str]:
     out: list[str] = []
     for a in sorted(pool, key=lambda a: order(a.task_id)):
@@ -52,7 +58,7 @@ def select(n: int) -> dict[str, list[str]]:
     def of(prefix: str) -> list[splits.Assignment]:
         return [a for a in train if a.task_id.startswith(prefix)]
 
-    words = {i.task.id: len(i.task.instruction.split()) for i in gsm8k_data.load()}
+    words = {i.task.id: question_words(i) for i in gsm8k_data.load()}
     reasoning = of("gsm8k-")
     median = statistics.median(words[a.task_id] for a in reasoning)
     longer = [a for a in reasoning if words[a.task_id] >= median]

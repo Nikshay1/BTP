@@ -2,7 +2,7 @@
  "name": "pilot-smoke-2",
  "mode": "measurement",
  "model": "global.anthropic.claude-sonnet-4-6",
- "temperature": 0.6,
+ "temperature": 1.0,
  "reasoning_effort": "low",
  "max_completion_tokens": 2048,
  "pricing": {
@@ -27,7 +27,7 @@
    "tools-v1-revenue-s67",
    "tools-v1-top_product-s111",
    "gsm8k-test-00273",
-   "gsm8k-test-00105"
+   "gsm8k-test-00831"
   ]
  },
  "repetitions": 1,

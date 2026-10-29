@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import json
 import random
-import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Protocol
@@ -191,44 +190,83 @@ def canonical_option(output: JsonValue) -> str | None:
     return json.dumps(output, sort_keys=True, separators=(",", ":"))
 
 
-_FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
+_OPEN = {"{": "}", "[": "]"}
 
 
-def top_level_objects(text: str) -> list[JsonValue]:
-    """Every JSON object in ``text`` that is not nested inside another one, in order."""
-    decoder = json.JSONDecoder()
-    found: list[JsonValue] = []
-    i = text.find("{")
-    while i != -1:
-        try:
-            value, end = decoder.raw_decode(text, i)
-        except json.JSONDecodeError:
-            i = text.find("{", i + 1)
+def _scan_top_level(text: str) -> list[tuple[str, JsonValue | None]]:
+    """Every container that starts outside any other one, in order: ("{" or "[", its value, or
+    None if it is not valid JSON). A container that fails to parse is skipped whole; nothing
+    inside it is ever taken. Quotes are tracked only inside containers, so prose apostrophes and
+    quotes around them do not matter."""
+    found: list[tuple[str, JsonValue | None]] = []
+    i, n = 0, len(text)
+    while i < n:
+        if text[i] not in _OPEN:
+            i += 1
             continue
-        found.append(value)
-        i = text.find("{", end)
+        stack = [_OPEN[text[i]]]
+        j, in_string, escaped = i + 1, False, False
+        while j < n and stack:
+            c = text[j]
+            if in_string:
+                if escaped:
+                    escaped = False
+                elif c == "\\":
+                    escaped = True
+                elif c == '"':
+                    in_string = False
+            elif c == '"':
+                in_string = True
+            elif c in _OPEN:
+                stack.append(_OPEN[c])
+            elif c in "}]":
+                if c != stack[-1]:
+                    break  # mismatched closer: the container is malformed
+                stack.pop()
+            j += 1
+        if stack:  # never closed, or closed by the wrong bracket
+            if text[i] == "{":
+                found.append(("{", None))
+            if j >= n:
+                break
+            i = j + 1
+            continue
+        span = text[i:j]
+        try:
+            found.append((text[i], json.loads(span)))
+        except json.JSONDecodeError:
+            found.append((text[i], None))
+        i = j
     return found
 
 
-def parse_json(text: str) -> JsonValue:
+def parse_json(text: str, envelope: str | None = None) -> JsonValue:
     """Parse a JSON reply, tolerating code fences and surrounding prose. Returns the raw text if
-    no JSON can be found, so that the runtime checks (not the parser) decide what fails.
+    no answer can be read, so that the runtime checks (not the parser) decide what fails.
 
-    When a reply holds several top-level objects (a model that answers, notices a mistake and
-    answers again), the last one is its final answer. The rule is fixed and the same for every
-    system; it never looks at whether an object would pass a check."""
+    The answer is the last top-level JSON value in the reply: a model that answers, notices a
+    mistake and answers again means its last object (the prompts ask it to write the corrected
+    object last and no example objects). If the last top-level object is malformed, there is no
+    answer: an earlier object or a fragment of the broken one is never taken instead. Square
+    brackets in prose that are not valid JSON are ignored. With ``envelope``, the answer is the
+    last top-level object holding that key (a protocol field such as "candidates"), so that a
+    trailing object quoting one item does not replace it. The rule is the same for every system
+    and never looks at whether a value would pass a check."""
     try:
         whole: JsonValue = json.loads(text.strip())
-        return whole
     except json.JSONDecodeError:
         pass
-    objects = top_level_objects(text)
-    if objects:
-        return objects[-1]
-    for fenced in reversed(_FENCE.findall(text)):
-        try:
-            value: JsonValue = json.loads(fenced.strip())
-            return value
-        except json.JSONDecodeError:
-            continue
+    else:
+        if envelope is None or (isinstance(whole, dict) and envelope in whole):
+            return whole
+        return text
+    found = _scan_top_level(text)
+    if envelope is not None:
+        for _, value in reversed(found):
+            if isinstance(value, dict) and envelope in value:
+                return value
+        return text
+    readable = [(k, v) for k, v in found if v is not None or k == "{"]
+    if readable and readable[-1][1] is not None:
+        return readable[-1][1]
     return text

@@ -11,3 +11,5 @@ Rules:
 - The final subtask produces the answer to the whole task, in the task's required output format; it
   is always given the whole task and all its inputs as well.
 - If the task is small enough for one worker, return a single subtask.
+If you revise your reply, write the whole corrected JSON object last; never write example or
+partial JSON objects.

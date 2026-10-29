@@ -220,14 +220,18 @@ class Ant:
             sample_id=f"{ctx.agent}/path{path}/step{step}",
         )
         reply = await ctx.llm.complete(request)
-        if incompleteness_of(reply.finish_reason) is not None:
+        incomplete = incompleteness_of(reply.finish_reason)
+        if incomplete is not None:
+            ctx.emit("ant_rejected", {"path": path, "step": step, "reasons": [incomplete]})
             return []
-        parsed = parse_json(reply.content)
+        parsed = parse_json(reply.content, envelope="candidates")
         raw = parsed.get("candidates") if isinstance(parsed, dict) else None
         valid: list[Action] = []
         rejected: list[str] = []
         if not isinstance(raw, list):
             rejected.append("no candidates list")
+        elif not raw:
+            rejected.append("empty candidates list")
         for item in raw if isinstance(raw, list) else []:
             try:
                 action = Action.model_validate(normalize_candidate(item))

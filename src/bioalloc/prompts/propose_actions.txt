@@ -9,3 +9,5 @@ Each candidate must be written exactly as the allowed actions are listed: a "kin
 object holding that action's arguments. Use FINISH, with the arguments listed for it, only when the
 current state answers the subtask. The reply is always this candidates object, even when the only
 candidate is FINISH.
+If you revise your reply, write the whole corrected JSON object last; never write example or
+partial JSON objects.
