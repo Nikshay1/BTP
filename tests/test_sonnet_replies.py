@@ -164,3 +164,51 @@ def test_a_stray_closer_inside_a_broken_correction_ends_the_scan() -> None:
     for key in ("candidates", "advice", "nodes", "accept", "decision"):
         broken = '{"' + key + '": 1}\nFix: {"x":[},"y":{"' + key + '": 2}}'
         assert parse_json(broken, envelope=key) == broken, key
+
+
+def test_octopus_logistics_replay_succeeds_at_a_tight_cap(tmp_path: Path) -> None:
+    # R10 (Sol): at twice the smoke single-agent mean (10,570 tokens), the wider prompt margin
+    # refused octopus's third call on Logistics-095, turning a success (9,173 real tokens) into a
+    # failure. Replaying its recorded replies, the call is now fitted to the remaining budget.
+    import asyncio
+
+    from bioalloc.budget import Account, MeteredClient
+    from bioalloc.coordinator import Coordinator, CoordinatorConfig
+    from bioalloc.executors.octopus import Octopus
+    from bioalloc.llm.base import LLMReply, Usage
+    from bioalloc.llm.fake import FakeTransport
+    from bioalloc.policies import Constant
+    from bioalloc.schemas import Budget
+    from bioalloc.trace import Tracer
+
+    recorded = json.loads((FIXTURES / "octopus_logistics095_replies.json").read_text())
+    replies = [
+        LLMReply(
+            content=r["content"],
+            finish_reason=r["finish_reason"],
+            usage=Usage(
+                prompt_tokens=r["usage"]["prompt_tokens"],
+                completion_tokens=r["usage"]["completion_tokens"],
+            ),
+            model="claude-sonnet-4-6",
+        )
+        for r in recorded
+    ]
+    task = TaskLoader().load("planbench-logistics-095")
+    assert task.public is not None
+    llm = MeteredClient(
+        FakeTransport().always(*replies),
+        Account(Budget(max_tokens=10_570, max_model_calls=60)),
+        "coordinator",
+        "coordinator",
+    )
+    octopus = Octopus(model="m", temperature=1.0, reasoning_effort="low")
+    coord = Coordinator(
+        {"octopus": octopus}, Constant("octopus"), CoordinatorConfig(max_attempts=2)
+    )
+    tracer = Tracer(tmp_path, "r")
+    result = asyncio.run(coord.run(task.public.as_single_node(), task.task_family, llm, tracer))
+    tracer.close()
+    assert result.status == "completed"
+    assert task.grade(result.answer).correct
+    assert result.cost.tokens.total == 9_173

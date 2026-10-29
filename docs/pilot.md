@@ -82,6 +82,7 @@ decides the main-study backbone and size (D23).
    ```sh
    uv run bioalloc experiment run configs/calibration.json --max-usd 6
    uv run bioalloc experiment analyze runs/calibration-v1
+   uv run python scripts/calibration_report.py runs/calibration-v1
    ```
 7. The pilot (not run as configured, R9; replaced by targeted comparisons after D26):
 

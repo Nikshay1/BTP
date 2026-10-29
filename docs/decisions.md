@@ -677,10 +677,28 @@ Decision: pilot-v2 (288 runs) is not run as configured. Next is a baseline-only 
   `scripts/select_calibration_tasks.py`; a test checks the rule independently. 60 runs, about
   US$2-3, stop at US$6.
 - **Why:** the comparison only means something where the single agent itself sometimes fails.
-  The target development region is a single-agent success rate of roughly 60-85%. If the
+  The target development region is a single-agent success rate of roughly 60-85%, judged per
+  named subset with `scripts/calibration_report.py` (each core family, the 12 extra Logistics,
+  all 15 Logistics), never on the pooled panel. One repetition only screens; a promising subset
+  is confirmed with more samples before any comparison is run on it. If the
   calibration finds it (likely in Logistics), the next step compares single agent, octopus and a
   bee with certificate stopping there; if not, harder task families (branching tool workflows,
   MATH) go into a split v3 before more paid runs.
+
+## R10. Review of the R9 changes (2026-10-29)
+
+GPT-6.1 Sol (high) cleared the calibration run and raised two points, both handled:
+
+1. The wider prompt margin (1.75 characters per token) can refuse a call the budget could pay
+   for: replaying octopus on Logistics-095 at twice the smoke single-agent mean (10,570 tokens),
+   its third, successful call no longer fit (5,658 spent + 5,718 reserved). New rule for every
+   system: when a call's full reservation does not fit but its prompt estimate plus 256 tokens
+   does, it is sent with its completion limit cut to what is left (`completion_fitted` in the
+   trace). An outcome-level test replays octopus's recorded replies at that cap and requires the
+   same correct answer at 9,173 tokens.
+2. A pooled success rate can hide a hard subset (15 Logistics against 15 others). The calibration
+   is reported per named subset (`scripts/calibration_report.py`) and D26 judges its target that
+   way.
 
 ## Open questions found while planning (settled by D10-D14)
 

@@ -75,6 +75,8 @@ def _chars_to_tokens(n: int) -> int:
 # Providers add a hidden system prompt when tools are offered and bill it as input (Anthropic
 # documents about 350 tokens for Claude with tool_choice auto); reserved with a margin.
 TOOL_OVERHEAD_TOKENS = 600
+# Smallest completion limit a call is sent with when it is fitted to the remaining budget.
+MIN_COMPLETION = 256
 
 
 def reserve_prompt_tokens(request: LLMRequest) -> int:
@@ -428,6 +430,21 @@ class MeteredClient:
             root._queue.remove(ticket)
             self.account._notify()
 
+    def _fit_completion(self, request: LLMRequest, prompt_est: int) -> LLMRequest:
+        """Near the end of the token budget, a call whose full reservation no longer fits is sent
+        with its completion limit cut to what is left, if that still allows MIN_COMPLETION tokens
+        (R10). The same rule holds for every system, so the conservative prompt estimate does not
+        refuse a call the budget could pay for. Calls in flight are not counted here: admission
+        still waits for them to settle."""
+        left = self.account.remaining(include_reservations=False).max_tokens - prompt_est
+        if left >= request.max_completion_tokens or left < MIN_COMPLETION:
+            return request
+        self._emit(
+            "completion_fitted",
+            {"agent": self.agent, "from": request.max_completion_tokens, "to": left},
+        )
+        return request.model_copy(update={"max_completion_tokens": left})
+
     async def complete(self, request: LLMRequest) -> LLMReply:
         """One model call. A rate-limited attempt releases its reservation, waits, and goes through
         admission again; it is an HTTP retry, not a model call, and is traced as such."""
@@ -449,6 +466,7 @@ class MeteredClient:
 
     async def _complete_once(self, request: LLMRequest) -> LLMReply:
         prompt_est = reserve_prompt_tokens(request)
+        request = self._fit_completion(request, prompt_est)
         rid = await self._admit(prompt_est, request.max_completion_tokens)
         reserved = prompt_est + request.max_completion_tokens
         self._emit(

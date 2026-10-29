@@ -137,3 +137,28 @@ def test_events_are_emitted() -> None:
     c = client(FakeTransport().always("ok"), on_event=lambda k, d: events.append(k))
     asyncio.run(c.complete(req(source="coordinator")))
     assert events == ["llm_request", "llm_reply"]
+
+
+def test_a_call_near_the_budget_end_is_fitted_not_refused() -> None:
+    # R10 (Sol): with the wider prompt margin, a call whose full reservation does not fit was
+    # refused although the budget could pay for it; it is now sent with a smaller completion limit.
+    from bioalloc.budget import MIN_COMPLETION, reserve_prompt_tokens
+
+    events: list[tuple[str, dict]] = []  # type: ignore[type-arg]
+    seen: list[LLMRequest] = []
+    fake = FakeTransport().respond(lambda r: seen.append(r) or True, lambda r: "{}")
+    request = LLMRequest(
+        model="m", messages=(Message(role="user", content="x" * 700),), max_completion_tokens=2048
+    )
+    prompt = reserve_prompt_tokens(request)
+    account = Account(Budget(max_tokens=prompt + 1000, max_model_calls=5))
+    client = MeteredClient(
+        fake, account, "worker", "w", on_event=lambda k, d: events.append((k, d))
+    )
+    asyncio.run(client.complete(request))
+    assert seen[0].max_completion_tokens == 1000
+    assert ("completion_fitted", {"agent": "w", "from": 2048, "to": 1000}) in events
+    # Below the minimum, the call is still refused.
+    tight = Account(Budget(max_tokens=prompt + MIN_COMPLETION - 1, max_model_calls=5))
+    with pytest.raises(BudgetExceeded):
+        asyncio.run(MeteredClient(fake, tight, "worker", "w").complete(request))
