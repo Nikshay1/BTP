@@ -630,8 +630,9 @@ rejected no real answer) and found two remaining problems, both fixed:
    provider-generated ids, and counted intermediate replies as answer texts. It now compares each
    run's first request and its final reply.
 
-Stopped the review loop here: both fixes are small and pinned by tests, and the next step is the
-diversity check and the second smoke test.
+Final re-review of commit 5043a9f: no new findings (213 adversarial assertions, all 354 smoke
+replies parsed exactly as before, diversity report verified on repetitions with tool
+continuations). Cleared for the diversity check and the second smoke test.
 
 ## Open questions found while planning (settled by D10-D14)
 
