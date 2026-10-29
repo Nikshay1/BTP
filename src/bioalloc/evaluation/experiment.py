@@ -42,6 +42,7 @@ from bioalloc.llm.base import ProviderThrottled, RunMode, Transport
 from bioalloc.schemas import Budget, Wire
 from bioalloc.trace import (
     Tracer,
+    _git,
     code_revision,
     finish_manifest,
     fsync_dir,
@@ -129,6 +130,32 @@ class ExperimentMismatch(RuntimeError):
     """An experiment directory holds runs made under a different configuration or code."""
 
 
+# Files that decide how a task is solved: a resume never accepts a change to any of them (R18).
+SOLVING_CODE = (
+    "src/bioalloc/prompts/",
+    "src/bioalloc/executors/",
+    "src/bioalloc/tasks/",
+    "src/bioalloc/coordinator.py",
+    "src/bioalloc/decomposition.py",
+    "src/bioalloc/checks.py",
+    "src/bioalloc/actions.py",
+    "src/bioalloc/tools.py",
+    "src/bioalloc/graph.py",
+    "src/bioalloc/schemas.py",
+    "src/bioalloc/features.py",
+    "src/bioalloc/policies.py",
+    "src/bioalloc/evaluation/registry.py",
+    "src/bioalloc/evaluation/logistics_gen.py",
+    "src/bioalloc/evaluation/planbench_data.py",
+    "src/bioalloc/evaluation/gsm8k_data.py",
+    "src/bioalloc/evaluation/toolsuite_data.py",
+    "src/bioalloc/llm/bedrock.py",
+    "src/bioalloc/llm/groq.py",
+    "data/",
+    "configs/",
+)
+
+
 class ProviderUnavailable(RuntimeError):
     """The provider throttled or a quota ran out (R18). Runs it interrupted were not recorded;
     running the experiment again later resumes them, and finished runs are kept."""
@@ -159,9 +186,11 @@ class Experiment:
         out: Path,
         root: Path | None = None,
         max_usd: float | None = None,
+        accept_code_change: str | None = None,
     ) -> None:
         from bioalloc.evaluation.data import REPO_ROOT
 
+        self.accept_code_change = accept_code_change
         self.config = config
         self.transport = transport
         self.root = root or REPO_ROOT
@@ -203,6 +232,35 @@ class Experiment:
             "split_sha256": self.split_sha256,
         }
 
+    def _accept_code_change(
+        self, path: Path, before: dict[str, JsonValue], now: dict[str, JsonValue]
+    ) -> None:
+        """Resume under newer code when only the code changed and none of the files that decide
+        how a task is solved did (R18). The change, its files and the reason are kept in the
+        provenance record, which then names the new code."""
+        old, new = before["code"], now["code"]
+        assert isinstance(old, dict) and isinstance(new, dict)
+        files = _git("diff", "--name-only", str(old.get("git_commit")), str(new.get("git_commit")))
+        if files is None:
+            raise ExperimentMismatch("cannot list the code changes; refusing to resume")
+        changed = [f for f in files.splitlines() if f]
+        solving = [f for f in changed if f.startswith(SOLVING_CODE)]
+        if solving or old.get("uv_lock_sha256") != new.get("uv_lock_sha256"):
+            raise ExperimentMismatch(
+                f"{self.out}: the code change touches how tasks are solved "
+                f"({', '.join(solving) or 'uv.lock'}); use a new experiment name"
+            )
+        history = before.get("code_changes") or []
+        assert isinstance(history, list)
+        record = {
+            **now,
+            "code_changes": [
+                *history,
+                {"from": old, "to": new, "files": changed, "reason": self.accept_code_change},
+            ],
+        }
+        path.write_text(json.dumps(record, indent=1) + "\n")
+
     def check_provenance(self) -> None:
         now = self.provenance()
         code = now["code"]
@@ -213,6 +271,9 @@ class Experiment:
         if path.exists():
             before = json.loads(path.read_text())
             diff = sorted(k for k in now if before.get(k) != now[k])
+            if diff == ["code"] and self.accept_code_change:
+                self._accept_code_change(path, before, now)
+                diff = []
             if diff:
                 raise ExperimentMismatch(
                     f"{self.out} was run with a different {', '.join(diff)}; use a new experiment "

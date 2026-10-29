@@ -42,6 +42,13 @@ def build_parser() -> argparse.ArgumentParser:
         default=None,
         help="stop starting new runs once this much has been spent (live runs)",
     )
+    run.add_argument(
+        "--accept-code-change",
+        metavar="REASON",
+        default=None,
+        help="resume an experiment under newer code when only the code changed and nothing that "
+        "decides how tasks are solved did; the reason is recorded in its provenance",
+    )
     an = exp_sub.add_parser("analyze", help="summarize results.jsonl of an experiment")
     an.add_argument("run_dir", type=Path)
     an.add_argument("--compare", nargs=2, action="append", default=[], metavar=("A", "B"))
@@ -118,7 +125,13 @@ def bedrock_transport() -> Transport:
     return BedrockTransport(region=os.environ.get("AWS_REGION", "us-east-1"))
 
 
-def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float | None) -> int:
+def experiment_run(
+    config_path: Path,
+    out: Path,
+    rehearsal: bool,
+    max_usd: float | None,
+    accept_code_change: str | None = None,
+) -> int:
     import asyncio
     import json
 
@@ -148,7 +161,9 @@ def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float
             print("GROQ_API_KEY is not set (environment or .env); nothing was run.")
             return 2
         transport = GroqTransport(key)
-    experiment = Experiment(config, transport, out, max_usd=max_usd)
+    experiment = Experiment(
+        config, transport, out, max_usd=max_usd, accept_code_change=accept_code_change
+    )
 
     def progress(rec: RunRecord) -> None:
         mark = "ok " if rec.correct else "-- "
@@ -220,7 +235,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if args.command == "demo":
         return demo(args.scenario, args.seed, args.out)
     if args.command == "experiment" and args.action == "run":
-        return experiment_run(args.config, args.out, args.rehearsal, args.max_usd)
+        return experiment_run(
+            args.config, args.out, args.rehearsal, args.max_usd, args.accept_code_change
+        )
     if args.command == "experiment" and args.action == "analyze":
         return experiment_analyze(args.run_dir, args.compare)
     parser.print_help()

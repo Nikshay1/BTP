@@ -398,3 +398,38 @@ def test_a_quota_stop_leaves_runs_unrecorded_and_a_rerun_resumes(tmp_path: Path)
     assert {(r["task_id"], r["system"], r["repetition"]) for r in after} >= {
         (r["task_id"], r["system"], r["repetition"]) for r in first
     }
+
+
+def test_resume_accepts_only_code_changes_that_do_not_touch_solving(
+    tmp_path: Path, monkeypatch
+) -> None:  # type: ignore[no-untyped-def]
+    # R18: finishing the throttled runs under the throttling fix, without mixing solving code.
+    from bioalloc.evaluation import experiment as ex
+    from bioalloc.evaluation.experiment import ExperimentMismatch
+
+    cfg = config(["direct"])
+    asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+    prov = tmp_path / "t" / "provenance.json"
+    recorded = json.loads(prov.read_text())
+    recorded["code"]["git_commit"] = "0" * 40  # as if run under an older commit
+    prov.write_text(json.dumps(recorded))
+
+    def resume(reason: str | None) -> None:
+        exp = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT, accept_code_change=reason)
+        asyncio.run(exp.run())
+
+    with pytest.raises(ExperimentMismatch, match="different code"):
+        resume(None)
+    monkeypatch.setattr(ex, "_git", lambda *a: "src/bioalloc/executors/bee.py\nsrc/bioalloc/cli.py")
+    with pytest.raises(ExperimentMismatch, match="how tasks are solved"):
+        resume("throttling fix")
+    monkeypatch.setattr(ex, "_git", lambda *a: "src/bioalloc/cli.py\ndocs/decisions.md")
+    resume("throttling fix")
+    after = json.loads(prov.read_text())
+    assert after["code"] != recorded["code"]
+    change = after["code_changes"][-1]
+    assert change["reason"] == "throttling fix" and change["files"] == [
+        "src/bioalloc/cli.py",
+        "docs/decisions.md",
+    ]
+    assert change["from"]["git_commit"] == "0" * 40

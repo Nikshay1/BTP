@@ -984,6 +984,16 @@ partway and is resumed. `scripts/drop_throttled_runs.py` unrecorded the 74 throt
 (166 kept) and the 8 macro runs, moving their directories aside so their spending stays counted.
 Nikshay needs a higher daily quota for the remaining runs (Service Quotas, Amazon Bedrock).
 
+Resuming (Nikshay chose to finish the 74 runs, about US$6-8, rather than rerun all 240 for about
+US$25): the runs were made with commit bcaa71f and the fix changed the code, which an experiment
+refuses. `bioalloc experiment run --accept-code-change REASON` resumes only when the config,
+prompts and split are unchanged, `uv.lock` is unchanged, and no changed file is one that decides
+how a task is solved (`SOLVING_CODE` in `experiment.py`: prompts, executors, task families,
+coordinator, decomposition, checks, registry, data loaders, the model adapters, data and
+configs). The provenance record keeps every accepted change with both commits, the files and the
+reason. `budget.py` is not on that list because it also holds bookkeeping, so a change to it must
+be argued in the reason and reviewed; here it only changes what happens after a refusal.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
