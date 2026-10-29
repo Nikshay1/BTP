@@ -50,3 +50,30 @@ Carried over from M1 (all now addressed above):
 - Executors: octopus, ant, bee, each with its plain counterparts (Table 3 of the plan).
 - Task suites with fixed, hashed splits; baselines; a pilot on training tasks to measure the real
   cost of a task run. The pilot needs a Groq API key.
+
+
+## Session of 29 October 2026 (summary; details in docs/decisions.md D23-D30, R5-R19)
+
+- Backbone: Claude Sonnet 4.6 on Amazon Bedrock, low effort, thinking off, temperature 1.0
+  (D23, D25). Live spending so far about US$38 of the US$200-250 AWS credit.
+- Smoke tests, diversity check and calibration found and fixed every parsing problem (R5-R10);
+  the single agent is at ceiling on the old task panel and wins on PlanBench Logistics at the
+  21,000-token cap (R12, R13).
+- Built: certificate stopping (D27); repair scouts, the bee v2 candidates (D28); a generated,
+  frozen Logistics suite of 180 harder problems (D29); the macro ant with milestone rewards
+  (D30); quota handling and a guarded resume (R18).
+- Repair tuning run (D29) was cut by the Bedrock daily token quota (about 6.2M tokens/day):
+  166 valid runs kept, 74 to finish. Valid runs so far: single agent 19/41, short-memory scout
+  18/42, staged bee 15/42, three-scout bee 12/41 (a biased subset: not a result).
+
+**Next session, in order:**
+
+1. Fix the three open R19 findings (bee gather, backoff deadline, allow-list resume guard); Sol
+   re-review until a round has no findings.
+2. Nikshay raises the Bedrock daily token quota for Sonnet 4.6 (Service Quotas) or waits for it
+   to reset.
+3. Finish the runs (about US$8 and US$4-6):
+   `uv run bioalloc experiment run configs/repair-tune.json --max-usd 35 --accept-code-change "R18 quota handling"`
+   `uv run bioalloc experiment run configs/macro-check.json --max-usd 8 --accept-code-change "R18 quota handling"`
+4. Analyse both with Sol: D29's pre-registered advancement rule per stratum; whether macro-ant
+   deposits change later choices.

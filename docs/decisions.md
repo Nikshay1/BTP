@@ -994,6 +994,30 @@ configs). The provenance record keeps every accepted change with both commits, t
 reason. `budget.py` is not on that list because it also holds bookkeeping, so a change to it must
 be argued in the reason and reviewed; here it only changes what happens after a refusal.
 
+## R19. Review of the R18 fix and resume guard (2026-10-29) — OPEN, fix before any resume
+
+GPT-6.1 Sol (high): "fix first". Verified meanwhile: all 166 kept tuning runs are byte-for-byte
+unchanged, reconcile with their traces and contain no rate-limit event of any kind; the
+bcaa71f..HEAD diff keeps non-throttled solving behaviour; config, prompts, split, lock file and
+stored graphs match; seeds and per-task system order are preserved; spending scans include
+set-aside traces. Estimated cost to finish: repair-tune-v1 74 runs about US$8.1 (US$26.1 in all,
+inside the US$35 stop); macro-check-v1 60 runs about US$3.6-6.0 (inside US$8).
+
+Open findings, to fix next session:
+
+1. **P1:** bee's `_gather_budgeted` waits for every scout before looking at exceptions, so when
+   one scout gets a daily-quota refusal and another hangs, the coordinator's deadline cancels
+   the gather and the run is recorded as `budget_exhausted`. Throttling must propagate at once,
+   then siblings are cancelled and settled.
+2. **P2:** `MeteredClient.complete` checks the deadline before the backoff sleep; if scheduling
+   delay carries the sleep past the deadline, the next admission raises `BudgetExceeded`, which
+   executors swallow. The throttle condition must survive backoff and deadline cancellation.
+3. **P2:** the resume guard is a deny list and misses files that affect solving
+   (`evaluation/experiment.py`, `evaluation/splits.py`, `evaluation/data.py`, `llm/base.py`,
+   `pyproject.toml`), and excluding all of `budget.py` would let admission or fitting changes
+   through. Replace it by an allow list (unclassified changes are refused), with narrow,
+   reviewed exceptions for the R18 changes.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
