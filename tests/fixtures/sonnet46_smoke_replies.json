@@ -1,0 +1,7 @@
+{
+ "bee_planning_self_correction": "{\"plan\": [\"(unstack a d)\", \"(stack a c)\"]}\n\nWait, c is not clear. b is on c, d is on b, a is on d. So c has b on it.\n\nNeed to clear c first.\n\n{\"plan\": [\"(unstack a d)\", \"(put-down a)\", \"(unstack d b)\", \"(put-down d)\", \"(unstack b c)\", \"(put-down b)\", \"(pick-up a)\", \"(stack a c)\"]}",
+ "direct_planning_self_correction": "{\"plan\": [\"(unstack a d)\", \"(stack a c)\"]}\n\nWait, c is not clear. b is on c, d is on b, a is on d. So c has b on it.\n\nNeed to clear c first.\n\n{\"plan\": [\"(unstack a d)\", \"(put-down a)\", \"(unstack d b)\", \"(put-down d)\", \"(unstack b c)\", \"(put-down b)\", \"(pick-up a)\", \"(stack a c)\"]}",
+ "ant_tools_flat_candidates": "{\"candidates\": [{\"kind\": \"QUERY\", \"name\": \"r\", \"table\": \"customers\", \"where\": {\"city\": \"Cochin\"}, \"columns\": [\"id\"]}]}",
+ "ant_reasoning_bare_action": "FINISH {\"answer\": 25}",
+ "ant_planning_prose_then_candidates": "Stack is a\u2192d\u2192b\u2192c. Need a on c.\n\nUnstack a d, put down a, unstack d b, put down d, unstack b c, put down b, pick up a, stack a c.\n\n{\"candidates\": [{\"kind\": \"UNSTACK\", \"args\": {\"objects\": [\"a\", \"d\"]}}, {\"kind\": \"PUT-DOWN\", \"args\": {\"objects\": [\"a\"]}}]}"
+}

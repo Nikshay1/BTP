@@ -509,6 +509,48 @@ executors, but five issues, handled as follows:
 5. Money tests did not check the ledger. Added: exact dollar charge after throttling, full
    reservation charged and never resent for 424, 408, 500 and read timeouts.
 
+## R5. First live smoke test and its review (2026-10-29)
+
+`configs/pilot-smoke.json` (24 runs, US$1.26) on Sonnet 4.6. Reviewed independently by Claude
+(Opus 5.5) and GPT-6.1 Sol (high); both found that every failure came from how replies were read,
+not from the mechanisms. Ledger, traces and results agreed on every run (Sol reconstructed all
+totals and regraded every output).
+
+1. Ant (0/3, and every failed fixed/random run, which had picked ant): the model wrote candidates
+   flat (`{"kind": "QUERY", "name": ...}`) or as a bare line (`FINISH {"answer": 25}`, the right
+   answer), copying how the allowed actions were listed; the parser dropped them silently. Fix:
+   the actions are now listed in the exact `{"kind": ..., "args": {...}}` form, the prompt says so,
+   the unambiguous flat form is read as kind plus args, and every rejected candidate is traced
+   (`ant_rejected`) with its reason.
+2. Bee on planning (60 calls, budget exhausted) and Direct inside random: with thinking off the
+   model often answers, writes "Wait, c is not clear...", and answers again. Reading from the
+   first "{" to the last "}" gave invalid JSON. All 60 bee replies ended with a plan that passes
+   the simulator. Fix: `parse_json` takes the last top-level JSON object, a fixed rule for every
+   system that never looks at whether an object passes a check.
+3. Prompt reservations fell below real prompt tokens on 117 of 354 calls (worst 7.4%, planning).
+   Fix: 2.5 characters per token instead of 3; a test replays all 183 distinct smoke prompts and
+   requires a 10% margin.
+4. Task selection took the first ids in order: only Blocksworld, only `revenue`, short GSM8K
+   questions, and two planning tasks from one group. Fixed by D24.
+5. Ant could not call `list_tables`, which every other executor may call. Added as LIST_TABLES.
+
+Regression tests use the real replies and prompts from the traces (`tests/fixtures/`), and each
+fails when its fix is reverted. Observed but not yet acted on: replies to identical requests are
+nearly identical at temperature 0.6, so bee's scouts and repeated runs may be less independent
+than planned; measured in the second smoke test.
+
+## D24. Pilot task selection by fixed rules
+
+- **Date:** 2026-10-29 · **Status:** active
+- **Decision:** the pilot's tasks are listed explicitly in the configs, chosen from training by
+  `scripts/select_pilot_tasks.py`: per family two subtypes with N tasks each (planning:
+  Blocksworld and Logistics; tools: `revenue` and `top_product`), and for reasoning 2N GSM8K
+  questions at or above the training median word count, since short questions are likely at
+  ceiling for Sonnet. Within a subtype, tasks are taken in SHA-256 order of a fixed seed and the
+  task id, never two from one group. N = 3 for the pilot (18 tasks), N = 1 for the second smoke
+  test (6 tasks, a subset of the pilot's). Only public text is used; split v2 is unchanged.
+  A test checks that both configs hold exactly this selection.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

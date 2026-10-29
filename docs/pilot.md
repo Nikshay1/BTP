@@ -8,12 +8,14 @@ of the main study (D13). It uses training tasks only.
 
 ## What it runs
 
-1. `configs/pilot-smoke.json`: one training task per family, one repetition, 8 systems: 24 runs,
-   stop at US$5. It catches broken prompts and adapter problems before the real pilot.
-2. `configs/pilot.json` (pilot-v2): 18 training tasks from split v2 (6 planning, 6 tools, 6
-   reasoning), 2 repetitions, 8 systems (single agent, Direct, ant, bee and octopus alone, fixed,
-   random, specialist): 288 runs, stop at US$40. Cap of 120,000 tokens, 60 model calls, 40 tool
-   calls and 10 minutes per task.
+1. `configs/pilot-smoke.json` (pilot-smoke-2): 6 training tasks (one Blocksworld, one Logistics,
+   one `revenue`, one `top_product`, two longer GSM8K questions; D24), one repetition, 8 systems:
+   48 runs, about US$4, stop at US$8. The first smoke test (24 runs, US$1.26, `runs/pilot-smoke`)
+   found the parsing bugs in R5.
+2. `configs/pilot.json` (pilot-v2): 18 training tasks chosen by D24 (6 per family), 2
+   repetitions, 8 systems (single agent, Direct, ant, bee and octopus alone, fixed, random,
+   specialist): 288 runs, about US$25, stop at US$40. Cap of 120,000 tokens, 60 model calls, 40
+   tool calls and 10 minutes per task.
 
 The learned selectors are not in it; they are trained in M3. After the pilot, its cost per run
 decides the main-study backbone and size (D23).
@@ -65,8 +67,8 @@ decides the main-study backbone and size (D23).
 4. Smoke test, then look at the results before going on:
 
    ```sh
-   uv run bioalloc experiment run configs/pilot-smoke.json --max-usd 5
-   uv run bioalloc experiment analyze runs/pilot-smoke
+   uv run bioalloc experiment run configs/pilot-smoke.json --max-usd 8
+   uv run bioalloc experiment analyze runs/pilot-smoke-2
    ```
 5. The pilot:
 

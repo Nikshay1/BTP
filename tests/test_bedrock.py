@@ -7,7 +7,6 @@ of the live API.
 import asyncio
 import io
 import json
-import math
 from typing import Any
 
 import pytest
@@ -18,6 +17,7 @@ from bioalloc.budget import (
     Account,
     MeteredClient,
     Pricing,
+    _chars_to_tokens,
     reserve_prompt_tokens,
 )
 from bioalloc.cli import is_bedrock_model
@@ -345,7 +345,7 @@ def test_possibly_billed_failures_charge_the_full_reservation(exc: Exception) ->
 def test_reservation_covers_the_hidden_tool_prompt() -> None:
     with_tools = req(tools=(CALCULATOR.spec.wire(),))
     assert TOOL_OVERHEAD_TOKENS >= 350  # Anthropic's documented hidden tool prompt
-    spec_tokens = math.ceil(len(json.dumps(CALCULATOR.spec.wire())) / 3)
+    spec_tokens = _chars_to_tokens(len(json.dumps(CALCULATOR.spec.wire())))
     assert reserve_prompt_tokens(with_tools) == (
         reserve_prompt_tokens(req()) + spec_tokens + TOOL_OVERHEAD_TOKENS
     )

@@ -1,5 +1,5 @@
 {
- "name": "pilot-smoke",
+ "name": "pilot-smoke-2",
  "mode": "measurement",
  "model": "global.anthropic.claude-sonnet-4-6",
  "temperature": 0.6,
@@ -21,11 +21,14 @@
  ],
  "tasks": {
   "split": "train",
-  "per_family": {
-   "planning": 1,
-   "tools": 1,
-   "reasoning": 1
-  }
+  "task_ids": [
+   "planbench-blocksworld-324",
+   "planbench-logistics-095",
+   "tools-v1-revenue-s67",
+   "tools-v1-top_product-s111",
+   "gsm8k-test-00273",
+   "gsm8k-test-00105"
+  ]
  },
  "repetitions": 1,
  "seed": 1,

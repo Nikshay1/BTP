@@ -144,8 +144,11 @@ class OperatorActions:
         for name in sorted(self.domain.operators):
             op = self.domain.operators[name]
             params = ", ".join(p.lstrip("?") for p in op.params)
-            lines.append(f'{name.upper()} {{"objects": [{params}]}} (objects in this order)')
-        lines.append("FINISH {} (when the goal holds)")
+            lines.append(
+                f'{{"kind": "{name.upper()}", "args": {{"objects": [{params}]}}}} '
+                "(objects in this order)"
+            )
+        lines.append('{"kind": "FINISH", "args": {}} (when the goal holds)')
         return "\n".join(lines)
 
     def describe(self, state: _PlanState) -> str:

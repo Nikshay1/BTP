@@ -73,10 +73,11 @@ class ArithmeticActions:
 
     def describe_actions(self) -> str:
         return (
-            'NOTE {"name": "<new quantity name>", "value": <number from the problem>}\n'
-            'CALCULATE {"name": "<new quantity name>", "expression": "<arithmetic over numbers '
-            'and known quantity names>"} (runs the calculator)\n'
-            'FINISH {"answer": <number, or the name of a known quantity>}'
+            '{"kind": "NOTE", "args": {"name": "<new quantity name>", "value": <number from the '
+            "problem>}}\n"
+            '{"kind": "CALCULATE", "args": {"name": "<new quantity name>", "expression": '
+            '"<arithmetic over numbers and known quantity names>"}} (runs the calculator)\n'
+            '{"kind": "FINISH", "args": {"answer": <number, or the name of a known quantity>}}'
         )
 
     def legal(self, state: _State, action: Action) -> str | None:

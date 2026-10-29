@@ -5,4 +5,7 @@ Propose up to five different next actions, best first. Reply with a single JSON 
 else:
 {"candidates": [{"kind": "ACTION_KIND", "args": {...}}, ...]}
 
-Use FINISH, with the arguments listed for it, only when the current state answers the subtask.
+Each candidate must be written exactly as the allowed actions are listed: a "kind" and an "args"
+object holding that action's arguments. Use FINISH, with the arguments listed for it, only when the
+current state answers the subtask. The reply is always this candidates object, even when the only
+candidate is FINISH.

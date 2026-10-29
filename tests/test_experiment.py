@@ -292,3 +292,21 @@ def test_decomposer_uses_the_configured_effort_and_limit(tmp_path: Path) -> None
     assert decomposer, "the reasoning task was not decomposed by the model"
     assert all(r.reasoning_effort == "low" for r in transport.requests)
     assert all(r.max_completion_tokens == 1500 for r in decomposer)
+
+
+def test_pilot_configs_hold_exactly_the_d24_selection() -> None:
+    import importlib.util
+
+    from bioalloc.evaluation import splits
+
+    spec = importlib.util.spec_from_file_location("sel", ROOT / "scripts" / "select_pilot_tasks.py")
+    assert spec and spec.loader
+    sel = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(sel)
+    groups = {a.task_id: a.group for a in splits.load(ROOT / "data/splits/v2.json")}
+    for name, n in (("pilot.json", 3), ("pilot-smoke.json", 1)):
+        chosen = sel.select(n)
+        ids = chosen["planning"] + chosen["tools"] + chosen["reasoning"]
+        cfg = json.loads((ROOT / "configs" / name).read_text())
+        assert cfg["tasks"]["task_ids"] == ids, name
+        assert len({groups[t] for t in ids}) == len(ids), name  # no shared groups

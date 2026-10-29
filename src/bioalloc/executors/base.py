@@ -194,17 +194,40 @@ def canonical_option(output: JsonValue) -> str | None:
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
 
 
+def top_level_objects(text: str) -> list[JsonValue]:
+    """Every JSON object in ``text`` that is not nested inside another one, in order."""
+    decoder = json.JSONDecoder()
+    found: list[JsonValue] = []
+    i = text.find("{")
+    while i != -1:
+        try:
+            value, end = decoder.raw_decode(text, i)
+        except json.JSONDecodeError:
+            i = text.find("{", i + 1)
+            continue
+        found.append(value)
+        i = text.find("{", end)
+    return found
+
+
 def parse_json(text: str) -> JsonValue:
     """Parse a JSON reply, tolerating code fences and surrounding prose. Returns the raw text if
-    no JSON can be found, so that the runtime checks (not the parser) decide what fails."""
-    candidates = [text.strip()]
-    candidates += [m.strip() for m in _FENCE.findall(text)]
-    start, end = text.find("{"), text.rfind("}")
-    if 0 <= start < end:
-        candidates.append(text[start : end + 1])
-    for c in candidates:
+    no JSON can be found, so that the runtime checks (not the parser) decide what fails.
+
+    When a reply holds several top-level objects (a model that answers, notices a mistake and
+    answers again), the last one is its final answer. The rule is fixed and the same for every
+    system; it never looks at whether an object would pass a check."""
+    try:
+        whole: JsonValue = json.loads(text.strip())
+        return whole
+    except json.JSONDecodeError:
+        pass
+    objects = top_level_objects(text)
+    if objects:
+        return objects[-1]
+    for fenced in reversed(_FENCE.findall(text)):
         try:
-            value: JsonValue = json.loads(c)
+            value: JsonValue = json.loads(fenced.strip())
             return value
         except json.JSONDecodeError:
             continue

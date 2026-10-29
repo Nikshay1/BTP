@@ -118,6 +118,25 @@ def test_illegal_and_unknown_proposals_are_dropped(tmp_path: Path) -> None:
     assert result.attempts[0].checks[-1].reason == "no path reached FINISH"
 
 
+def flatten(reply: str) -> str:
+    """The same candidates written flat, as Sonnet 4.6 wrote them in the first smoke test."""
+    cands = json.loads(reply)["candidates"]
+    return json.dumps({"candidates": [{"kind": c["kind"], **c["args"]} for c in cands]})
+
+
+def test_flat_candidates_are_used_and_rejections_traced(tmp_path: Path) -> None:
+    inst = make_instance(0)
+    leg1, leg2 = optimal_legs(inst)
+    proposer = route_proposer({leg1[-1]: leg1, leg2[-1]: leg2})
+    fake = FakeTransport().respond(PROPOSE, lambda r: flatten(proposer(r)))
+    _, result = run_toy(fake, tmp_path, Ant(model="m"))
+    assert result.status == "completed"
+    junk = FakeTransport().respond(PROPOSE, lambda r: 'MOVE {"to": "B"}')
+    run_toy(junk, tmp_path / "junk", Ant(model="m", params=AntParams(max_paths=1)))
+    rejected = [e.data for e in read_trace(tmp_path / "junk") if e.kind == "ant_rejected"]
+    assert rejected and rejected[0]["reasons"] == ["no candidates list"]
+
+
 class Counter:
     """Test family with a real goal check: reach exactly 3 from 0 with INC/DEC, then FINISH."""
 

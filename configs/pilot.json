@@ -21,11 +21,26 @@
  ],
  "tasks": {
   "split": "train",
-  "per_family": {
-   "planning": 6,
-   "tools": 6,
-   "reasoning": 6
-  }
+  "task_ids": [
+   "planbench-blocksworld-324",
+   "planbench-blocksworld-292",
+   "planbench-blocksworld-398",
+   "planbench-logistics-095",
+   "planbench-logistics-172",
+   "planbench-logistics-263",
+   "tools-v1-revenue-s67",
+   "tools-v1-revenue-s63",
+   "tools-v1-revenue-s0",
+   "tools-v1-top_product-s111",
+   "tools-v1-top_product-s51",
+   "tools-v1-top_product-s283",
+   "gsm8k-test-00273",
+   "gsm8k-test-00105",
+   "gsm8k-test-01151",
+   "gsm8k-test-00831",
+   "gsm8k-test-00030",
+   "gsm8k-test-00705"
+  ]
  },
  "repetitions": 2,
  "seed": 1,

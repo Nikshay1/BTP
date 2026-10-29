@@ -37,6 +37,14 @@ from bioalloc.llm.base import LLMRequest, Message
 from bioalloc.schemas import Subtask
 
 
+def normalize_candidate(item: Any) -> Any:
+    """A candidate written flat ({"kind": K, <args>...}) means {"kind": K, "args": {<args>}}.
+    Only that unambiguous form is rewritten; anything else is left for validation to reject."""
+    if isinstance(item, dict) and "kind" in item and "args" not in item:
+        return {"kind": item["kind"], "args": {k: v for k, v in item.items() if k != "kind"}}
+    return item
+
+
 @dataclass(frozen=True)
 class AntParams:
     alpha: float = 1.0
@@ -217,15 +225,27 @@ class Ant:
         parsed = parse_json(reply.content)
         raw = parsed.get("candidates") if isinstance(parsed, dict) else None
         valid: list[Action] = []
+        rejected: list[str] = []
+        if not isinstance(raw, list):
+            rejected.append("no candidates list")
         for item in raw if isinstance(raw, list) else []:
             try:
-                action = Action.model_validate(item)
+                action = Action.model_validate(normalize_candidate(item))
             except ValidationError:
+                rejected.append(f"malformed: {json.dumps(item)[:120]}")
                 continue
-            if action.kind not in space.kinds or action in valid:
+            if action.kind not in space.kinds:
+                rejected.append(f"unknown kind {action.kind}")
                 continue
-            if space.legal(state, action) is None:
+            if action in valid:
+                continue
+            why = space.legal(state, action)
+            if why is None:
                 valid.append(action)
+            else:
+                rejected.append(f"illegal {action.kind}: {why}")
+        if rejected:
+            ctx.emit("ant_rejected", {"path": path, "step": step, "reasons": rejected})
         return valid
 
     def choice_weights(self, proposals: list[Action], tau: dict[str, float]) -> list[float]:

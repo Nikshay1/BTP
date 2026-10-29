@@ -176,10 +176,10 @@ class _State:
 
 
 class ToolActions:
-    """QUERY and CALCULATE are tool-backed (the query and calculator tools); FINISH gives the
-    subtask's JSON answer."""
+    """LIST_TABLES, QUERY and CALCULATE are tool-backed (the same three tools every other executor
+    may call); FINISH gives the subtask's JSON answer."""
 
-    kinds: tuple[str, ...] = ("QUERY", "CALCULATE", FINISH)
+    kinds: tuple[str, ...] = ("LIST_TABLES", "QUERY", "CALCULATE", FINISH)
 
     def __init__(self, subtask: Subtask) -> None:
         self.dataset = str(subtask.inputs.get("dataset", ""))
@@ -189,12 +189,15 @@ class ToolActions:
 
     def describe_actions(self) -> str:
         return (
-            'QUERY {"name": "<result name>", "table": "<table>", "where": {"<column>": <value or '
-            'list of values>}, "columns": ["<column>", ...]} (runs the query tool on this '
-            "subtask's dataset)\n"
-            'CALCULATE {"name": "<result name>", "expression": "<arithmetic>"} (runs the '
-            "calculator)\n"
-            'FINISH {"output": <the subtask\'s JSON answer, in its output schema>}'
+            '{"kind": "LIST_TABLES", "args": {"name": "<result name>"}} (runs the list_tables '
+            "tool: the dataset's table names and their columns)\n"
+            '{"kind": "QUERY", "args": {"name": "<result name>", "table": "<table>", "where": '
+            '{"<column>": <value or list of values>}, "columns": ["<column>", ...]}} (runs the '
+            "query tool on this subtask's dataset)\n"
+            '{"kind": "CALCULATE", "args": {"name": "<result name>", "expression": '
+            '"<arithmetic>"}} (runs the calculator)\n'
+            '{"kind": "FINISH", "args": {"output": <the subtask\'s JSON answer, in its output '
+            "schema>}}"
         )
 
     def legal(self, state: _State, action: Action) -> str | None:
@@ -213,6 +216,8 @@ class ToolActions:
             return None
         if action.kind == "CALCULATE":
             return None if isinstance(a.get("expression"), str) else "needs an 'expression'"
+        if action.kind == "LIST_TABLES":
+            return None
         return f"unknown action {action.kind}"
 
     def apply(self, state: _State, action: Action) -> tuple[_State, str]:
@@ -232,6 +237,10 @@ class ToolActions:
         if action.kind == "CALCULATE":
             return ToolCall(
                 id=call_id, name="calculate", arguments=json.dumps({"expression": a["expression"]})
+            )
+        if action.kind == "LIST_TABLES":
+            return ToolCall(
+                id=call_id, name="list_tables", arguments=json.dumps({"dataset": self.dataset})
             )
         return None
 

@@ -12,8 +12,8 @@ from bioalloc.executors.direct import Direct
 from bioalloc.llm.base import LLMReply, LLMRequest, ToolCall, Usage
 from bioalloc.llm.fake import FakeTransport
 from bioalloc.policies import Constant
-from bioalloc.schemas import Budget
-from bioalloc.tasks.toolsuite import ToolSuite, database, run_query
+from bioalloc.schemas import Budget, Subtask
+from bioalloc.tasks.toolsuite import ToolActions, ToolSuite, database, run_query
 from bioalloc.trace import Tracer
 
 
@@ -164,3 +164,14 @@ def test_ant_tool_actions_are_metered_and_limited(tmp_path: Path) -> None:
         assert result.cost.tool_calls == expect_calls
         if limit == 0:
             assert result.status == "budget_exhausted"
+
+
+def test_ant_can_list_tables_like_every_other_executor() -> None:
+    # Parity (Sol, R5): other executors may call list_tables; ant's action space now can too.
+    space = ToolActions(Subtask(id="s", instruction="x", inputs={"dataset": "shop-v1-0"}))
+    state = space.start(Subtask(id="s", instruction="x"), {})
+    action = Action(kind="LIST_TABLES", args={"name": "tables"})
+    assert "LIST_TABLES" in space.kinds and space.legal(state, action) is None
+    call = space.tool_call(state, action, "c1")
+    assert call is not None and call.name == "list_tables"
+    assert json.loads(call.arguments) == {"dataset": "shop-v1-0"}

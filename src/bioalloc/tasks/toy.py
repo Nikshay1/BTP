@@ -135,7 +135,10 @@ class RouteActions:
         raise ValueError("route actions are local")
 
     def describe_actions(self) -> str:
-        return 'MOVE {"to": "<next node along an existing edge>"}\nFINISH {} (only at the goal)'
+        return (
+            '{"kind": "MOVE", "args": {"to": "<next node along an existing edge>"}}\n'
+            '{"kind": "FINISH", "args": {}} (only at the goal)'
+        )
 
     def describe(self, state: list[str]) -> str:
         here = state[-1] if state else "?"
