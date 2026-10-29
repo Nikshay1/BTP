@@ -300,3 +300,10 @@ def test_a_certificate_found_in_the_last_round_is_returned(tmp_path: Path) -> No
     fake = FakeTransport().respond(SOLVE, answers(table))
     result, events = run_goal(fake, tmp_path, Bee(model="m", max_rounds=1))
     assert result.answer == {"x": 42} and stop_of(events)["reason"] == "certificate"
+
+
+def test_a_unanimous_certificate_reports_the_quorum(tmp_path: Path) -> None:
+    # Sol, R14: the certificate stop always reported quorum_reached=False.
+    fake = FakeTransport().respond(SOLVE, answers({(i, 0): 42 for i in range(5)}))
+    _, events = run_goal(fake, tmp_path, Bee(model="m"))
+    assert stop_of(events)["reason"] == "certificate" and stop_of(events)["quorum_reached"]

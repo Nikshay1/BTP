@@ -740,7 +740,8 @@ where the single agent sits at 67% on Logistics: inside the D26 target region. D
 - **Date:** 2026-10-29 · **Status:** active (implemented; Sol review owed)
 - **Amends:** D10 (ant stopping), D14 (bee stopping), D18 (majority vote)
 - **Decision 1:** bee, its no-stop control and majority vote return a goal-verified answer
-  (D15: a goal-level check passed, none failed) as soon as one exists, and ant stops at its first
+  (D15: a goal-level check passed, none failed) at the next round boundary (when the scouts
+  launched together have returned; R14), and ant stops at its first
   goal-verified path (its weights are still updated). Octopus and the single agent already stop
   this way. Each has `stop_on_certificate` (default on) to restore the earlier rule. Why: in the
   second smoke test, fixed's ant spent 36% of its run searching after a verified plan, and bee
@@ -760,8 +761,9 @@ where the single agent sits at 67% on Logistics: inside the D26 target region. D
 
 ## R13. Logistics comparison at the primary cap (2026-10-29)
 
-`runs/logistics-compare-v1`: 150 runs, US$12.37, 15 Logistics training problems, 2 repetitions,
-21,000 tokens per task (D27). Reviewed by Claude only; a Sol review is owed.
+`runs/logistics-compare-v1`: 150 runs, US$12.37 recorded (including one ant call that timed out
+and was charged at its reservation, 5,529 tokens, US$0.04), 15 Logistics training problems, 2
+repetitions, 21,000 tokens per task (D27). Corrected after GPT-6.1 Sol's review (R14).
 
 | System | Valid plans | Mean tokens | US$/run | US$ per success |
 |---|---|---|---|---|
@@ -771,18 +773,52 @@ where the single agent sits at 67% on Logistics: inside the D26 target region. D
 | Direct | 17/30 (57%) | 5,703 | 0.040 | 0.071 |
 | ant | 0/30 | 19,053 | 0.096 | - |
 
-- **No mechanism beats the single agent at equal tokens.** Paired differences: bee -0.13
-  (95% CI -0.30 to 0.07), octopus -0.07 (-0.20 to 0.07). With 15 tasks the detectable effect is
+- **No mechanism beats the single agent at equal tokens.** Paired differences (group bootstrap,
+  `bioalloc experiment analyze`): bee -0.13 (95% CI -0.30 to 0.07; a plain percentile bootstrap
+  over the 15 task differences gives an upper bound of 0.03), octopus -0.07 (-0.20 to 0.07).
+  Single agent and octopus run the same solving loop on a single-node graph, so their difference
+  here is sampling noise, not a memory effect. With 15 tasks the detectable effect is
   about 0.25, so small differences cannot be resolved.
-- **Some complementarity:** choosing the best system per task would solve 25/30 against the
-  single agent's 22/30 (bee alone solves 095 and 250 more often, octopus 235). Too few tasks and
+- **Some complementarity:** choosing the best system per task (on its two repetitions together)
+  would solve 25/30 against the single agent's 22/30 (bee solves 095 and 250 more often, octopus
+  235); choosing per task and repetition gives 27/30. Too few tasks and
   repetitions to rely on.
-- **Bee** stopped on a certificate in 18 runs and ran out of budget in 12: five scouts cost about
-  17,000 tokens per round, and scouts get no feedback on a rejected plan, while the single agent's
-  strength is revision against the simulator's message.
-- **Ant is infeasible here:** it finished no path. Each step is one call carrying the whole
-  problem (about 3,500 tokens), a Logistics plan needs 20 or more actions, and the cap buys about
-  six calls. A step-per-call ant cannot do long-horizon planning at a realistic budget.
+- **Bee** stopped on a certificate in 18 runs and ran out of budget in 12: its first five answers
+  cost 15,632 tokens on average, and scouts get no feedback on a rejected plan, while the single
+  agent's strength is revision against the simulator's message. 17 of the 18 successes came from
+  the first five answers. Bee's own mechanism never ran: every rejected plan left its scout
+  uncommitted and every accepted plan was a certificate, so there were no recruitment calls and
+  inhibition released nobody. Here bee was independent sampling with certificate selection.
+- **Ant is infeasible here:** in 30 runs it finished one path (an immediate, rejected FINISH).
+  Each step is one call carrying the whole problem (about 3,500 tokens), the valid plans found by
+  the other systems have 14 to 45 actions (median 27), and the cap buys 5 to 7 calls. A
+  step-per-call ant cannot do long-horizon planning at a realistic budget.
+
+## R14. Review of D27 and R13, and the next design (2026-10-29)
+
+GPT-6.1 Sol (high) reviewed commits 3c303e7 and 569620b against all 150 records and traces (final
+plans revalidated, costs reconciled) and proposed the next design.
+
+1. With D10's whole-task reward and uniform initial weights, ant's first positive deposit comes
+   with the first certificate, so stopping there (D27) leaves reinforcement no later choice to
+   affect: full ant, no-deposit and no-evaporation behave identically. Recorded, not changed:
+   ant's learning can only matter with rewards before task success (milestones) or a learned
+   prior, which is the macro-and-milestone ant planned below.
+2. Bee checks for a certificate when a batch of scouts has returned, not as soon as one exists:
+   seven requests were admitted after a certificate (US$0.18). D27 now says "at the round
+   boundary"; the new staged executors launch one episode at a time and check after each.
+3. Logistics does not exercise recruitment, inhibition or quorum (R13). Bee there is independent
+   sampling with certificate selection, and bee with feedback would be a portfolio of repair
+   trajectories. A real Table 3 bee experiment needs tasks where several accepted but unverified
+   answers can coexist.
+4. R13 corrected (interval method, ant's one finished path, plan lengths 14-45, bee's first
+   cohort, the imputed timeout).
+5. A certificate stop reported `quorum_reached` false even when support reached the quorum. Fixed,
+   with a test.
+
+Completion fitting reconciled: bee 8 fitted calls (6 ended at the length limit), ant 19 (8),
+single agent 2 (0), octopus 3 (1). Fitting stays, and fitted and truncated replies are reported
+separately.
 
 ## Open questions found while planning (settled by D10-D14)
 

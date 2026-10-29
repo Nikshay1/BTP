@@ -193,12 +193,13 @@ class Bee:
     def _finish_certified(
         self, scout: Scout, scouts: list[Scout], ctx: ExecutionContext
     ) -> ExecutorOutcome:
+        support = self._support(scouts)
         ctx.emit(
             "executor_stop",
             {
                 "reason": "certificate",
-                "support": dict(self._support(scouts)),
-                "quorum_reached": False,
+                "support": dict(support),
+                "quorum_reached": bool(support) and max(support.values()) >= self.quorum,
                 "from_released": False,
                 "scout": scout.index,
             },
