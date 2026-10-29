@@ -52,3 +52,18 @@ def test_experiments_select_from_the_suite() -> None:
         TaskSelection(split_file=str(gen.SUITE), split="tune", per_family={"planning": 30}), ROOT
     )
     assert len(chosen) == 30 and all(s == "tune" for _, s in chosen)
+
+
+def test_generated_tasks_verify_the_planbench_snapshot() -> None:
+    # R16 (Sol): without provenance the loader never verified the domain snapshot.
+    import pytest
+
+    from bioalloc.evaluation.registry import TaskLoader
+
+    payload = json.loads((ROOT / gen.SUITE).read_text())
+    assert "planbench" in payload["provenance"]
+    tid = splits.load(ROOT / gen.SUITE)[0].task_id
+    TaskLoader(expected=payload["provenance"]).load(tid)  # the true snapshot passes
+    wrong = {"planbench": {k: "0" * 64 for k in payload["provenance"]["planbench"]}}
+    with pytest.raises(ValueError, match="snapshot differs"):
+        TaskLoader(expected=wrong).load(tid)

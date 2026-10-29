@@ -90,7 +90,13 @@ decides the main-study backbone and size (D23).
    uv run bioalloc experiment run configs/logistics-compare.json --max-usd 15
    uv run bioalloc experiment analyze runs/logistics-compare-v1 --compare bee single_agent --compare octopus single_agent
    ```
-8. The pilot (not run as configured, R9; replaced by targeted comparisons after D26):
+8. Repair tuning run (D29; 240 runs on the generated tuning instances, about US$25):
+
+   ```sh
+   uv run bioalloc experiment run configs/repair-tune.json --max-usd 35
+   uv run bioalloc experiment analyze runs/repair-tune-v1
+   ```
+9. The pilot (not run as configured, R9; replaced by targeted comparisons after D26):
 
    ```sh
    uv run bioalloc experiment run configs/pilot.json --max-usd 40

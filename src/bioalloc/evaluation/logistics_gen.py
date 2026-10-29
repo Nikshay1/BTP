@@ -215,11 +215,16 @@ def build() -> list[splits.Assignment]:
 
 def save_suite(root: Path) -> str:
     """Write the suite file (same layout and hash as the split files)."""
+    from bioalloc.evaluation.data import verify_prepared
+
     assignments = build()
     text = splits.canonical(assignments)
     digest = hashlib.sha256(text.encode()).hexdigest()
     payload = {
         "suite": PREFIX,
+        # The domain text comes from the PlanBench snapshot; experiments verify it against this
+        # hash before loading any generated task (R16).
+        "provenance": {"planbench": verify_prepared("planbench")["prepared"]},
         "generator_version": GENERATOR_VERSION,
         "strata": [list(s) for s in STRATA],
         "per_stratum": PER_STRATUM,

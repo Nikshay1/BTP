@@ -1,5 +1,10 @@
 {
  "suite": "logisticsgen-v1",
+ "provenance": {
+  "planbench": {
+   "planbench/public.jsonl": "28e8ccffe6db5993b5435bbba47bc83c4bd771cb508bdeacecd521fe53f6f7fd"
+  }
+ },
  "generator_version": 1,
  "strata": [
   [

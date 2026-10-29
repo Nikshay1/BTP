@@ -867,9 +867,18 @@ separately.
   stop. Octopus is left out: on one-node graphs it is the single agent's own loop.
 - **Pre-registered rule for what follows:** the candidate with the highest tuning success
   advances (fewer mean tokens break ties), if it either beats the single agent's observed success
-  or saves at least 20% tokens with no observed loss in success (a screening rule, not a
-  significance test). It is then compared with the single agent on the 120 test instances, two
-  repetitions (480 runs, about US$45-57), with power re-estimated from the tuning data first.
+  or, with the single agent above 0 successes, matches or exceeds it while saving at least 20% of
+  its mean tokens (a screening rule, not a significance test; a cheaper failure never advances,
+  R16). It is then compared with the single agent on the 120 test instances, two repetitions (480
+  runs, about US$45-57), with power re-estimated from the tuning data first.
+- **Pre-registered response to floor effects:** results are reported per stratum. If the single
+  agent solves fewer than 15% of its 60 tuning runs, or no candidate solves any, there is no test
+  run; the cap and strata are reconsidered from the tuning data first. A stratum where every
+  system solves nothing is reported as a floor and kept in the test set unchanged (test instances
+  are never dropped by results). Sol's rough expectation for the single agent at 21,000 tokens:
+  60-80% with 5 packages, 35-60% with 7, 15-40% with 9 (R16).
+- **Snapshot:** the suite file records the PlanBench snapshot hash its domain text comes from, and
+  experiments verify it before loading a generated task (R16).
 
 ## R15. Review of the D28 implementation (2026-10-29)
 
@@ -913,6 +922,17 @@ equivalence on Logistics holds under coupled replies.
   problems (3,300-3,900 reserved), segments a few hundred tokens, so five decisions fit 21,000
   tokens and can place up to 60 actions (witness plans 25-93; good plans are shorter). Not yet
   in a paid run: first a Sol review, then a small run with the controls on tuning instances.
+
+## R16. Review of the R15 fixes and the generated suite (2026-10-29)
+
+GPT-6.1 Sol (high): no new findings on R15. Two on D29, both fixed: the suite file had no
+provenance, so experiments never verified the PlanBench snapshot that supplies the domain text
+(now recorded and checked, with a test that a wrong hash is refused); and the advancement rule
+let a candidate advance on fewer tokens when everything solved nothing (now excluded, with the
+response to floor effects fixed in advance). Sol's difficulty check: tuning witness plans average
+36, 52 and 64 actions for 5, 7 and 9 packages; from R13, roughly 60-80%, 35-60% and 15-40%
+single-agent success at 21,000 tokens, with four cities at the lower end (uncertain: no comparable
+four-city problems were run before). The US$35 stop is the `--max-usd 35` flag, not the config.
 
 ## Open questions found while planning (settled by D10-D14)
 

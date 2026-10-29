@@ -85,7 +85,9 @@ def test_a_milestone_deposit_changes_a_later_choice() -> None:
 
 def test_controls_change_exactly_one_thing() -> None:
     c = macro_controls("m")
-    assert c["ant_macro_no_deposit"].params.delta == 0 and c["ant_macro_no_deposit"].params.rho == 0.1
+    assert (
+        c["ant_macro_no_deposit"].params.delta == 0 and c["ant_macro_no_deposit"].params.rho == 0.1
+    )
     assert c["ant_macro_no_evaporation"].params.rho == 0
     assert (c["ant_macro_uniform"].params.alpha, c["ant_macro_uniform"].params.beta) == (0, 0)
     assert c["macro_greedy"].params.greedy and not c["ant_macro"].params.greedy
