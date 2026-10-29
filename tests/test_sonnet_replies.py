@@ -154,3 +154,12 @@ def test_protocol_replies_keep_their_envelope_over_a_quoted_answer() -> None:
     # Bee's assessment would have read {"answer": 25} and counted a rejection (Sol, R7).
     text = '{"accept": true, "confidence": 0.9} Accepted: {"answer": 25}'
     assert parse_json(text, envelope="accept") == {"accept": True, "confidence": 0.9}
+
+
+def test_a_stray_closer_inside_a_broken_correction_ends_the_scan() -> None:
+    # Sol, R8: the mismatched "}" once ended recovery early and exposed {"answer":0}.
+    text = '{"answer":25}\nCorrection: {"answer":30,"steps":[},"final":{"answer":0}}'
+    assert parse_json(text) == text
+    for key in ("candidates", "advice", "nodes", "accept", "decision"):
+        broken = '{"' + key + '": 1}\nFix: {"x":[},"y":{"' + key + '": 2}}'
+        assert parse_json(broken, envelope=key) == broken, key

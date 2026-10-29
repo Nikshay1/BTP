@@ -204,12 +204,11 @@ def _looks_like_json(text: str, i: int) -> bool:
     return j < len(text) and text[j] in _LOOKS_LIKE[text[i]]
 
 
-def _end_of(text: str, i: int) -> tuple[int, bool]:
-    """(index after the container opened at ``i``, whether its brackets nest correctly). If they
-    do not, the end is where the outer bracket's own kind balances again, ignoring the other kind,
-    so recovery never resumes inside it; -1 if it never closes."""
-    opener = text[i]
-    stack, depth, nested_ok = [_OPEN[opener]], 1, True
+def _end_of(text: str, i: int) -> int:
+    """Index after the container opened at ``i`` if its brackets nest correctly, else -1 (bad
+    nesting or never closed). After bad nesting the container's true end is unknowable, so the
+    caller treats the rest of the reply as unreadable."""
+    stack = [_OPEN[text[i]]]
     in_string = escaped = False
     for j in range(i + 1, len(text)):
         c = text[j]
@@ -220,48 +219,38 @@ def _end_of(text: str, i: int) -> tuple[int, bool]:
                 escaped = True
             elif c == '"':
                 in_string = False
-            continue
-        if c == '"':
+        elif c == '"':
             in_string = True
         elif c in _OPEN:
-            depth += c == opener
-            if nested_ok:
-                stack.append(_OPEN[c])
+            stack.append(_OPEN[c])
         elif c in "}]":
-            depth -= c == _OPEN[opener]
-            if nested_ok:
-                if c == stack[-1]:
-                    stack.pop()
-                else:
-                    nested_ok = False
-            if nested_ok and not stack:
-                return j + 1, True
-            if not nested_ok and depth == 0:
-                return j + 1, False
-    return -1, False
+            if c != stack.pop():
+                return -1
+            if not stack:
+                return j + 1
+    return -1
 
 
 def _scan_top_level(text: str) -> list[JsonValue | None]:
     """The JSON-looking containers that start outside any other one, in order: each its value,
-    or None if it is malformed (bad nesting, never closed, or not valid JSON). A malformed
-    container is skipped whole, nothing inside it is ever taken, and one that never closes ends
-    the scan."""
+    or None if it is malformed. A container that nests correctly but is not valid JSON is skipped
+    whole; one with bad nesting or that never closes ends the scan, since where it ends cannot be
+    known. Nothing inside a malformed container is ever taken."""
     found: list[JsonValue | None] = []
     i = 0
     while i < len(text):
         if text[i] not in _OPEN or not _looks_like_json(text, i):
             i += 1
             continue
-        end, ok = _end_of(text, i)
+        end = _end_of(text, i)
         if end == -1:
             found.append(None)
             break
-        value: JsonValue | None = None
-        if ok:
-            try:
-                value = json.loads(text[i:end])
-            except ValueError:  # invalid JSON, or a number beyond Python's conversion limit
-                value = None
+        value: JsonValue | None
+        try:
+            value = json.loads(text[i:end])
+        except ValueError:  # invalid JSON, or a number beyond Python's conversion limit
+            value = None
         found.append(value)
         i = end
     return found

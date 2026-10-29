@@ -3,11 +3,11 @@
 Usage: uv run python scripts/diversity_report.py runs/diversity-t06 runs/diversity-t10
 
 Both configs run Direct once per repetition on single-node tasks with one attempt, so every
-repetition of a task sends the same request body and only the provider's sampling differs. Per
-task and temperature the report gives: distinct request bodies (must be 1), distinct final
+repetition of a task sends the same first request and only the provider's sampling differs. Per
+task and temperature the report gives: distinct first request bodies (must be 1), distinct final
 answers after the task family's own normalization (the options bee would count), unreadable or
-invalid answers, distinct reply texts, and correct runs. What matters for bee and for repetition
-statistics is whether errors differ, not wording.
+invalid answers, distinct final reply texts, and correct runs. What matters for bee and for
+repetition statistics is whether errors differ, not wording.
 """
 
 from __future__ import annotations
@@ -48,17 +48,16 @@ def summarize(exp_dir: Path, loader: TaskLoader) -> dict[str, dict[str, int]]:
         row = rows[rec["task_id"]]
         row["runs"] += 1
         row["ok"] += int(rec["correct"])
-        answer = None
-        for e in trace(rec["run_dir"]):
-            if e["kind"] == "llm_request":
-                body = wire_request(LLMRequest.model_validate(e["data"]["request"]))
-                row["bodies"].add(
-                    hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest()
-                )
-            elif e["kind"] == "llm_reply":
-                row["texts"].add(e["data"]["reply"]["content"])
-            elif e["kind"] == "run_end":
-                answer = e["data"].get("answer")
+        events = trace(rec["run_dir"])
+        # Only the first request is identical across repetitions: later ones carry the model's
+        # own tool calls (provider-generated ids). Only the last reply is the final answer text.
+        first = next(e for e in events if e["kind"] == "llm_request")
+        body = wire_request(LLMRequest.model_validate(first["data"]["request"]))
+        row["bodies"].add(hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest())
+        replies = [e for e in events if e["kind"] == "llm_reply"]
+        if replies:
+            row["texts"].add(replies[-1]["data"]["reply"]["content"])
+        answer = next((e["data"].get("answer") for e in events if e["kind"] == "run_end"), None)
         option = task.task_family.normalize(subtask, answer)
         if option is None:
             row["invalid"] += 1

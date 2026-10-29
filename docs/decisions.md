@@ -618,6 +618,21 @@ GPT-6.1 Sol (high) reviewed commit 25ce3d4: "fix first". All seven findings fixe
 7. A huge integer literal raised an uncaught error that could stop an experiment; it is now an
    unreadable answer.
 
+## R8. Third review of the parser (2026-10-29)
+
+GPT-6.1 Sol (high) re-checked the R7 fixes on all 354 smoke replies (the JSON-looking rule
+rejected no real answer) and found two remaining problems, both fixed:
+
+1. A stray closer inside a broken correction (`{"steps":[},"final":{"answer":0}}`) still ended
+   recovery early and exposed a fragment, for answers and all five envelope keys. Bad nesting now
+   ends the scan: where such a container ends cannot be known, so nothing after it is read.
+2. The diversity report compared every request, including tool continuations that carry
+   provider-generated ids, and counted intermediate replies as answer texts. It now compares each
+   run's first request and its final reply.
+
+Stopped the review loop here: both fixes are small and pinned by tests, and the next step is the
+diversity check and the second smoke test.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
