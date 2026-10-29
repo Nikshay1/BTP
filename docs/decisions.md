@@ -700,6 +700,16 @@ GPT-6.1 Sol (high) cleared the calibration run and raised two points, both handl
    is reported per named subset (`scripts/calibration_report.py`) and D26 judges its target that
    way.
 
+## R11. Re-review of the fitting rule (2026-10-29)
+
+GPT-6.1 Sol (high) found one new problem: the completion limit was fitted once, before a call
+queued for admission, so a call waiting behind a sibling kept a limit that no longer fit after
+the sibling settled and spent budget, and was refused (with 1,000 tokens, two calls of 100 + 800:
+the second failed with 800 left, while the same call arriving later would have been fitted to
+700). Fitting now happens inside FIFO admission and is recomputed each time the budget changes;
+the call keeps its place in line, and the admitted limit is used for the reservation, the request
+and the trace alike. A concurrent test reproduces the case and fails on the old code.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

@@ -162,3 +162,37 @@ def test_a_call_near_the_budget_end_is_fitted_not_refused() -> None:
     tight = Account(Budget(max_tokens=prompt + MIN_COMPLETION - 1, max_model_calls=5))
     with pytest.raises(BudgetExceeded):
         asyncio.run(MeteredClient(fake, tight, "worker", "w").complete(request))
+
+
+def test_a_queued_call_is_refitted_after_an_earlier_one_settles() -> None:
+    # R11 (Sol): fitting happened once, before the call queued; when the earlier call settled and
+    # spent budget, the queued call was refused although a fitted limit would have been paid for.
+    from bioalloc.budget import reserve_prompt_tokens
+    from bioalloc.llm.base import LLMReply, Usage
+
+    request = LLMRequest(
+        model="m", messages=(Message(role="user", content="y" * 350),), max_completion_tokens=800
+    )
+    p = reserve_prompt_tokens(request)
+    first = LLMReply(content="{}", usage=Usage(prompt_tokens=p, completion_tokens=600), model="m")
+    second = LLMReply(content="{}", usage=Usage(prompt_tokens=5, completion_tokens=5), model="m")
+    fake = FakeTransport().always(first, second)
+
+    class Slow:
+        async def send(self, r: LLMRequest) -> LLMReply:
+            await asyncio.sleep(0.01)
+            return await fake.send(r)
+
+    account = Account(Budget(max_tokens=2 * p + 1100, max_model_calls=5))
+    events: list[tuple[str, dict]] = []  # type: ignore[type-arg]
+    client = MeteredClient(
+        Slow(), account, "worker", "w", on_event=lambda k, d: events.append((k, d))
+    )
+
+    async def both() -> None:
+        await asyncio.gather(client.complete(request), client.complete(request))
+
+    asyncio.run(both())  # the second waits for the first, then is fitted to the 500 tokens left
+    assert [r.max_completion_tokens for r in fake.requests] == [800, 500]
+    assert ("completion_fitted", {"agent": "w", "from": 800, "to": 500}) in events
+    assert account.snapshot().model_calls == 2 and account.reserved_tokens == 0

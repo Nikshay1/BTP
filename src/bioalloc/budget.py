@@ -409,18 +409,30 @@ class MeteredClient:
         if self.on_event is not None:
             self.on_event(kind, data)
 
-    async def _admit(self, prompt: int, completion: int) -> int:
-        """Reserve a call, waiting in arrival order behind earlier calls of the same task."""
+    def _fitted(self, prompt: int, wanted: int) -> int:
+        """The completion limit a call is admitted with right now. Near the end of the token
+        budget, a call whose full reservation no longer fits is cut to what is left, if that still
+        allows MIN_COMPLETION tokens (R10), so the conservative prompt estimate does not refuse a
+        call the budget could pay for. Calls in flight are not counted: admission still waits for
+        them to settle, and the limit is computed again each time the budget changes (R11)."""
+        left = self.account.remaining(include_reservations=False).max_tokens - prompt
+        return wanted if left >= wanted or left < MIN_COMPLETION else left
+
+    async def _admit(self, prompt: int, wanted: int) -> tuple[int, int]:
+        """Reserve a call, waiting in arrival order behind earlier calls of the same task. Returns
+        the reservation and the completion limit it was admitted with."""
         root = self.account.root
         ticket = object()
         root._queue.append(ticket)
+        smallest = prompt + min(wanted, MIN_COMPLETION)
         try:
             while True:
                 if root._queue[0] is ticket:
+                    completion = self._fitted(prompt, wanted)
                     try:
-                        return self.account.reserve(prompt, completion)
+                        return self.account.reserve(prompt, completion), completion
                     except BudgetExceeded:
-                        if not self.account.would_fit_after_settling(prompt + completion):
+                        if not self.account.would_fit_after_settling(smallest):
                             raise
                 try:
                     await self.account.wait_for_change(self.account.time_left())
@@ -429,21 +441,6 @@ class MeteredClient:
         finally:
             root._queue.remove(ticket)
             self.account._notify()
-
-    def _fit_completion(self, request: LLMRequest, prompt_est: int) -> LLMRequest:
-        """Near the end of the token budget, a call whose full reservation no longer fits is sent
-        with its completion limit cut to what is left, if that still allows MIN_COMPLETION tokens
-        (R10). The same rule holds for every system, so the conservative prompt estimate does not
-        refuse a call the budget could pay for. Calls in flight are not counted here: admission
-        still waits for them to settle."""
-        left = self.account.remaining(include_reservations=False).max_tokens - prompt_est
-        if left >= request.max_completion_tokens or left < MIN_COMPLETION:
-            return request
-        self._emit(
-            "completion_fitted",
-            {"agent": self.agent, "from": request.max_completion_tokens, "to": left},
-        )
-        return request.model_copy(update={"max_completion_tokens": left})
 
     async def complete(self, request: LLMRequest) -> LLMReply:
         """One model call. A rate-limited attempt releases its reservation, waits, and goes through
@@ -466,8 +463,13 @@ class MeteredClient:
 
     async def _complete_once(self, request: LLMRequest) -> LLMReply:
         prompt_est = reserve_prompt_tokens(request)
-        request = self._fit_completion(request, prompt_est)
-        rid = await self._admit(prompt_est, request.max_completion_tokens)
+        rid, completion = await self._admit(prompt_est, request.max_completion_tokens)
+        if completion != request.max_completion_tokens:
+            self._emit(
+                "completion_fitted",
+                {"agent": self.agent, "from": request.max_completion_tokens, "to": completion},
+            )
+            request = request.model_copy(update={"max_completion_tokens": completion})
         reserved = prompt_est + request.max_completion_tokens
         self._emit(
             "llm_request",
