@@ -1,0 +1,1118 @@
+{
+ "suite": "logisticsgen-v1",
+ "generator_version": 1,
+ "strata": [
+  [
+   3,
+   5
+  ],
+  [
+   3,
+   7
+  ],
+  [
+   3,
+   9
+  ],
+  [
+   4,
+   5
+  ],
+  [
+   4,
+   7
+  ],
+  [
+   4,
+   9
+  ]
+ ],
+ "per_stratum": {
+  "train": 5,
+  "tune": 5,
+  "test": 20
+ },
+ "sha256": "eb34314f485a924113a13c85cf896074b7f3b2768d1a8c24d24435a3238c18b2",
+ "assignments": [
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:2a802e4669ce8f92",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p5-00-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:0710482f1f557e4e",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p5-01-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:557c2e9fadb5cd90",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p5-02-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7fdd7dfb635e8a09",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p5-03-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:a28bf536efd6af24",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p5-04-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:eae20a4f937d69bc",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p5-05-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:00f25dd90602b13d",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p5-06-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:f228c1339f1a3d41",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p5-07-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:54497fe7173e5784",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p5-08-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:b83da18215e9834f",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p5-09-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:6a9e95dc39b3a21c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-10-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:bad16832f5bc68b5",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-11-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:00ace0c9e0dd6448",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-12-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:5c01ed24901d0c81",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-13-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:d37bf1bbdc8e5412",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-14-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:52acaa003f3977a0",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-15-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e8d6d343961b3d5b",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-16-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:d9fd8387a0e1a2e9",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-17-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:94338525a0583883",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-18-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7e83ec1a50465212",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-19-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:3e08ae18de153023",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-20-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7a6311b306775659",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-21-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:f4348aa0a555cb58",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-22-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:12106c8d6b41e326",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-23-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ab023aea4ad37fff",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-24-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:821a65d05bb5d2c2",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-25-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ad26cd76deb535c5",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-26-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:b5601fbaf7d8d682",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-27-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8891cd351e55f3ad",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-28-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:a40927511cbad348",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p5-29-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:d72a2c6cd16f69f7",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p7-00-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:de6f4bb83ec20757",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p7-01-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:938d5d4827cd95be",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p7-02-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8f3b1c115507f883",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p7-03-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:744006ead5a8422e",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p7-04-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:d448d8bbd14a5268",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p7-05-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:91afd83084eb43e4",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p7-06-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:410043b7179c79b1",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p7-07-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ca5fbd7c9e79cf6c",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p7-08-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:14803f591532a9a5",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p7-09-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:29e1c861df950af7",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-10-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:20bc4639bdd3dfbf",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-11-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:62bb7be30d2bf465",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-12-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:407e3a79a76e5488",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-13-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:698f75960f6af1ff",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-14-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8f2f37de8019c9a2",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-15-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:40835bfe6a1e4b2a",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-16-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:342a8049ec930013",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-17-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:78e3abc67915b266",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-18-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:88178589d8215907",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-19-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:1a2e5e378416f798",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-20-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:5c4bbb38f6934e48",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-21-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7e942b94438c3a33",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-22-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:57111cdeed1fb52e",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-23-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:934de6912b443e6d",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-24-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:2a367a5e561eaa87",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-25-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:946e3165ff464ba5",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-26-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:1bc6181756f0821f",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-27-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:2264f1fcb9a83172",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-28-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:466c852afcfde89c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p7-29-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:80b43e7b8e7cea3e",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p9-00-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:3fde9ed4309ec987",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p9-01-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e7b2bea15c032413",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p9-02-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e1fba337d50e7b4e",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p9-03-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:281af0a836f148a9",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c3-p9-04-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7e1b1a8e9e590309",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p9-05-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:de7f164a94a212ea",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p9-06-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:d3f3a75fd44dbaa0",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p9-07-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:883a1777c046a830",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p9-08-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ee2feef781003d03",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c3-p9-09-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:827d5b950691ed6c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-10-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7b90cace0a4584e2",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-11-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:63aa4afd433755e0",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-12-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:380d7503db89589c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-13-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:287bebd327cfffc1",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-14-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:99b999bacf81392e",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-15-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:f3eb3109d79ac6bd",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-16-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:02886fd2be6e4154",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-17-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e3005f5e0e80ae76",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-18-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:9aa4d3d46e65735b",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-19-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:73964df2f117185a",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-20-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8fe686b0e5d2ef69",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-21-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:00da3e0e539cd40f",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-22-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:5a73cceb7adf9702",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-23-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:6c462811e52abab5",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-24-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:3c9b68e6d8bdd90d",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-25-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:1ab830e97002becf",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-26-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:30073f47f1f67340",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-27-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:030a1c6ec58e9183",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-28-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:c1b82b5fe5bf87e3",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c3-p9-29-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e79618c7338fd616",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p5-00-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:b6b15844427c6ac4",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p5-01-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:879f9eda683012d2",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p5-02-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:a8460a1f6cdb11b6",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p5-03-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:881e5ea2726e4320",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p5-04-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:9f57b9a02a728ecb",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p5-05-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:56a157f9c91c5515",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p5-06-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:a0ed246538b3b5e7",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p5-07-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:afcdcc13631fa11e",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p5-08-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ae09f689f2f6c8fd",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p5-09-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:2dea2edb91998e2a",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-10-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:bedd8ba63544d235",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-11-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:3b90d64a510424b4",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-12-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8473ed19088edb35",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-13-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:2ef1bd6521858d39",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-14-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8ab44a80d9981632",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-15-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:f6e3557e25d0098c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-16-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:82a91f0016309c77",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-17-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:f6399e8c962e6f8e",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-18-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:06ad2aa270d0a92c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-19-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:5ae5a8037b58ccbe",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-20-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e765adf56917af73",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-21-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:847509e9bb960e1c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-22-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:cd03c1c496fd84eb",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-23-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e4d6e8f41926e0da",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-24-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:92e258a94012a9bb",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-25-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:010fd4d596066090",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-26-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:dd29da787abc7ce5",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-27-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:4fd21b680cb4adb3",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-28-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:9977d742284aefc1",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p5-29-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:413a6872527cdf1e",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p7-00-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:59536bf1e3626b4d",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p7-01-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:3dc3e3498b33db5e",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p7-02-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8e76db69ac89fd00",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p7-03-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e142bedb87a85ccb",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p7-04-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:4635f64a4ae7ad53",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p7-05-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:4821342e2fe9b587",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p7-06-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:2cd217884f702959",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p7-07-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e6031b138bbbb09e",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p7-08-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:66ecf0c3f9e49a35",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p7-09-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e5477b482f0c61b6",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-10-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:9d48b1946f94dc43",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-11-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:da1d5490cddbfb68",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-12-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:8b2b59193edc397d",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-13-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:5a899f26914a4c73",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-14-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:f87e89f24e4d8f8f",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-15-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:2093a7e9e118f9c1",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-16-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:41ccac5c1edf49b0",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-17-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:93bbebaa8e9f1a95",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-18-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:36d775c5c82a609c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-19-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:4be71768a24cf179",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-20-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7fe0399dc90a312d",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-21-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:83220d3530ac25f1",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-22-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:9333105a9b161df1",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-23-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ad2fa30ffc8020cf",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-24-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:cf8cbc813fd21648",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-25-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:bce1edc3cb93b3cb",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-26-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:aafc65deb322fb0a",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-27-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:9bfd24e178e0fd5a",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-28-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:3582d44135ec370c",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p7-29-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:d3e496dd749640ea",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p9-00-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:aec74374884aa8ea",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p9-01-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:873512e64a64bb26",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p9-02-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ace90d1e8f1d6553",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p9-03-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:385fbd18446e6889",
+   "split": "train",
+   "task_id": "logisticsgen-v1-c4-p9-04-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:87648d61acd7ccd3",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p9-05-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:9fdbb80f54bc9498",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p9-06-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e94f4b813157f86f",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p9-07-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:251dbff57a3d97bb",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p9-08-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:c47006d3667c36a1",
+   "split": "tune",
+   "task_id": "logisticsgen-v1-c4-p9-09-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:ff2ec5354e634861",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-10-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:1f1b84eef7a7ded8",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-11-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:7f1567a5540d0c7d",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-12-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:cfe25b8762b17144",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-13-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:81af60791cbce2d7",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-14-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:18c6f63b63c675a1",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-15-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:0cd6340e9d2dbe24",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-16-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:a5fdf5953fd5cfc8",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-17-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:0b3c91b5108e19ee",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-18-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:854764d3a1eeedbb",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-19-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:0904d7bb19ba7c22",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-20-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:b7951e504a2ab57b",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-21-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:b44180d6a6ec2596",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-22-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:052906e8709ba932",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-23-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:a463251f33bc6f77",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-24-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:dde344094c814b12",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-25-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:e4bf6228d3a6f03f",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-26-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:5b5d11ded0cc99b1",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-27-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:dfa3790b90a5c25f",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-28-0"
+  },
+  {
+   "family": "planning",
+   "group": "planbench:logisticsgen:447048d869cfa162",
+   "split": "test",
+   "task_id": "logisticsgen-v1-c4-p9-29-0"
+  }
+ ]
+}

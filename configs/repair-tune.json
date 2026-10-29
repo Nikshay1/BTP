@@ -1,0 +1,40 @@
+{
+ "name": "repair-tune-v1",
+ "mode": "measurement",
+ "model": "global.anthropic.claude-sonnet-4-6",
+ "temperature": 1.0,
+ "reasoning_effort": "low",
+ "max_completion_tokens": 2048,
+ "pricing": {
+  "input_per_m": 3.0,
+  "output_per_m": 15.0
+ },
+ "systems": [
+  "single_agent",
+  "scout_short_memory",
+  "bee_staged",
+  "bee_feedback3"
+ ],
+ "tasks": {
+  "split_file": "data/splits/logistics-gen-v1.json",
+  "split": "tune",
+  "per_family": {
+   "planning": 30
+  }
+ },
+ "repetitions": 2,
+ "seed": 1,
+ "budget": {
+  "max_tokens": 21000,
+  "max_model_calls": 60,
+  "max_elapsed_s": 600,
+  "max_tool_calls": 40
+ },
+ "max_attempts": 1,
+ "concurrency": 4,
+ "decompose": {
+  "planning": "single",
+  "tools": "natural",
+  "reasoning": "model"
+ }
+}

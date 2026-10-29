@@ -846,6 +846,31 @@ separately.
 - **Limit:** only an episode's final reply is remembered, not the tool calls inside it, so tool
   tasks need their own memory rule before these variants are used there.
 
+## D29. Generated Logistics suite and the repair tuning run
+
+- **Date:** 2026-10-29 · **Status:** suite frozen; run configured, not yet run (design by GPT-6.1
+  Sol, R14)
+- **Why:** 15 PlanBench Logistics problems give a detectable effect of about 0.25 and have been
+  looked at repeatedly; PlanBench has no harder Logistics. Split v2 stays as it is.
+- **Suite:** `bioalloc.evaluation.logistics_gen` (generator version 1) builds IPC-format
+  Logistics problems: 3 or 4 cities with 3 locations each, one truck per city, 2 airplanes, 5, 7
+  or 9 packages, every package starting away from its goal. Six strata of 30 instances, each split
+  5 training, 5 tuning, 20 test: 180 instances in `data/splits/logistics-gen-v1.json` (SHA-256
+  `eb34314f485a...`). Every instance has its own structure group, distinct from every other one
+  and from every PlanBench group. A constructive witness plan (25 to 93 actions) passes the
+  simulator for each. Tests rebuild the suite and require the frozen file exactly. Test
+  instances were never selected or filtered by any model result.
+- **Tuning run:** `configs/repair-tune.json` runs single agent, `scout_short_memory`,
+  `bee_staged` and `bee_feedback3` (D28) on the 30 tuning instances, two repetitions, one outer
+  attempt each (the executors' own loops do the repair), 21,000 tokens, 2,048 completion tokens,
+  60 calls, 600 s per task: 240 runs, about US$25 (Sol's estimate from the R13 traces), US$35
+  stop. Octopus is left out: on one-node graphs it is the single agent's own loop.
+- **Pre-registered rule for what follows:** the candidate with the highest tuning success
+  advances (fewer mean tokens break ties), if it either beats the single agent's observed success
+  or saves at least 20% tokens with no observed loss in success (a screening rule, not a
+  significance test). It is then compared with the single agent on the 120 test instances, two
+  repetitions (480 runs, about US$45-57), with power re-estimated from the tuning data first.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

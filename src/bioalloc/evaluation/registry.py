@@ -100,6 +100,18 @@ class TaskLoader:
                 lambda a: planbench_data.grade(plan, a),
                 public=plan.task,
             )
+        if task_id.startswith("logisticsgen-"):
+            from bioalloc.evaluation import logistics_gen
+
+            self._verify("planbench")  # the domain text comes from the PlanBench snapshot
+            gen = logistics_gen.item(task_id)
+            return StudyTask(
+                task_id,
+                "planning",
+                PlanBench(),
+                lambda a: planbench_data.grade(gen, a),
+                public=gen.task,
+            )
         m = _TOOL_ID.match(task_id)
         if m:
             inst = toolsuite_data.make_instance(m["template"], int(m["seed"]))
