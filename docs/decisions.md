@@ -820,6 +820,32 @@ Completion fitting reconciled: bee 8 fitted calls (6 ended at the length limit),
 single agent 2 (0), octopus 3 (1). Fitting stays, and fitted and truncated replies are reported
 separately.
 
+## D28. Scouts that repair their own rejected answers
+
+- **Date:** 2026-10-29 · **Status:** implemented, not yet run (design by GPT-6.1 Sol, R14)
+- **Why:** the single agent's strength on Logistics is revision against the simulator's
+  rejection, inside one growing conversation (about 6,000 tokens per call by its seventh plan);
+  bee's scouts got no feedback. Three questions are kept apart: does short memory help (full
+  memory single agent against one short-memory scout), does spreading repair over scouts help
+  (one scout against several), and does the bee mechanism help (bee against the matched plurality
+  control). The last needs tasks with several accepted but unverified answers; on Logistics the
+  two consensus modes are identical (R14), so a Logistics win would be a staged scout-search
+  result, not evidence for inhibition or recruitment.
+- **Mechanism** (`bioalloc.executors.repair.ScoutRepair`): a fixed schedule gives one solve
+  episode at a time to a named scout. A scout's first episode is independent; later ones see only
+  its own latest answer and the latest feedback (octopus's wording; a cut-off reply gets "Your
+  last step failed: ..."). A goal-verified answer ends the search after any episode; an accepted,
+  unverified answer commits the scout, which takes no more episodes. Bee consensus stops at a
+  quorum of ceil(theta * k) and otherwise runs D14's rounds; plurality consensus runs the full
+  schedule and returns the plurality.
+- **Pre-registered variants (six solve episodes at most, per-task model concurrency 1):**
+  `scout_short_memory` (one scout), `bee_staged` (two scouts, order A0 A1 B0 A2 B1 A3: B starts
+  only after A's first two answers fail), `bee_feedback3` (three scouts, A0 B0 C0 A1 B1 C1),
+  each bee with theta 0.6 (quorum 2), sigma 0.2, five consensus rounds; `majority_staged` and
+  `majority_feedback3` are the matched plurality controls.
+- **Limit:** only an episode's final reply is remembered, not the tool calls inside it, so tool
+  tasks need their own memory rule before these variants are used there.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

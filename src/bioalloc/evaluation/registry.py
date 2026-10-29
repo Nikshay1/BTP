@@ -32,6 +32,7 @@ from bioalloc.executors.bee import Bee, MajorityVote
 from bioalloc.executors.conventional import PlanThenExecute, SingleAgent, act_observe
 from bioalloc.executors.direct import Direct
 from bioalloc.executors.octopus import Octopus
+from bioalloc.executors.repair import repair_executors
 from bioalloc.executors.specialist import Specialist
 from bioalloc.graph import TaskGraph
 from bioalloc.policies import Constant, FixedByContract, LinUCB, Policy, RuleTable, Uniform
@@ -166,6 +167,11 @@ SYSTEMS = (
     "bee_no_stop",
     "majority",
     "octopus_reporting",
+    "scout_short_memory",
+    "bee_staged",
+    "majority_staged",
+    "bee_feedback3",
+    "majority_feedback3",
 )
 
 
@@ -186,6 +192,7 @@ def executor_pool(m: ModelSettings) -> dict[str, Executor]:
         "specialist": Specialist(model=m.model, **kw),
     }
     pool.update(ant_controls(m.model, **kw))
+    pool.update(repair_executors(m.model, **kw))
     return pool
 
 
