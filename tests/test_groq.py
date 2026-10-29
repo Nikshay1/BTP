@@ -17,6 +17,7 @@ from bioalloc.llm.base import (
     LLMError,
     LLMRequest,
     Message,
+    ProviderThrottled,
     RateLimited,
     RequestRejected,
     ToolCall,
@@ -253,7 +254,8 @@ def test_rate_limit_is_retried_without_charge_then_succeeds() -> None:
 
 def test_rate_limit_retries_are_bounded() -> None:
     client, account, seen, sleeps, _ = metered(lambda r: httpx.Response(429))
-    with pytest.raises(RateLimited):
+    # Past every retry the provider is unavailable, not the task failed (R18).
+    with pytest.raises(ProviderThrottled):
         asyncio.run(client.complete(req()))
     assert len(seen) == 4 and sleeps == [1.0, 2.0, 4.0]
     assert account.snapshot().model_calls == 0
@@ -264,7 +266,7 @@ def test_rate_limit_wait_respects_the_deadline() -> None:
         lambda r: httpx.Response(429, headers={"retry-after": "60"}),
         Budget(max_tokens=10_000, max_model_calls=5, max_elapsed_s=10),
     )
-    with pytest.raises(TransportTimeout):
+    with pytest.raises(ProviderThrottled):
         asyncio.run(client.complete(req()))
     assert sleeps == [] and account.snapshot().model_calls == 0
 

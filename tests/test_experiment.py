@@ -365,3 +365,36 @@ def test_calibration_config_holds_exactly_the_d26_selection() -> None:
         and a.group not in used
         and goals(t) > floor
     ]
+
+
+class QuotaAfter(RehearsalTransport):
+    """Answers like the rehearsal model until ``n`` calls, then refuses with a daily quota."""
+
+    def __init__(self, n: int) -> None:
+        super().__init__()
+        self.n = n
+
+    async def send(self, request: LLMRequest) -> LLMReply:
+        from bioalloc.llm.base import RateLimited
+
+        if self.calls >= self.n:
+            raise RateLimited("ThrottlingException (HTTP 429): Too many tokens per day")
+        return await super().send(request)
+
+
+def test_a_quota_stop_leaves_runs_unrecorded_and_a_rerun_resumes(tmp_path: Path) -> None:
+    # R18: throttled runs were recorded as task failures. Now the experiment stops, keeps only
+    # runs that finished, and the same experiment run again completes the rest.
+    from bioalloc.evaluation.experiment import ProviderUnavailable
+
+    cfg = config(["direct", "octopus"], reps=2)
+    with pytest.raises(ProviderUnavailable):
+        asyncio.run(Experiment(cfg, QuotaAfter(12), tmp_path, root=ROOT).run())
+    first = load_results(tmp_path / "t" / "results.jsonl")
+    assert 1 <= len(first) < 8 and all(r["model_calls"] > 0 for r in first)
+    asyncio.run(Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT).run())
+    after = load_results(tmp_path / "t" / "results.jsonl")
+    assert len(after) == 8
+    assert {(r["task_id"], r["system"], r["repetition"]) for r in after} >= {
+        (r["task_id"], r["system"], r["repetition"]) for r in first
+    }

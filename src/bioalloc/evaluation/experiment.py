@@ -38,7 +38,7 @@ from bioalloc.evaluation.registry import (
     TaskLoader,
     build_system,
 )
-from bioalloc.llm.base import RunMode, Transport
+from bioalloc.llm.base import ProviderThrottled, RunMode, Transport
 from bioalloc.schemas import Budget, Wire
 from bioalloc.trace import (
     Tracer,
@@ -129,6 +129,11 @@ class ExperimentMismatch(RuntimeError):
     """An experiment directory holds runs made under a different configuration or code."""
 
 
+class ProviderUnavailable(RuntimeError):
+    """The provider throttled or a quota ran out (R18). Runs it interrupted were not recorded;
+    running the experiment again later resumes them, and finished runs are kept."""
+
+
 class SpendingLimitReached(RuntimeError):
     pass
 
@@ -173,6 +178,7 @@ class Experiment:
         self._lock = asyncio.Lock()
         self._spent: float | None = None
         self._stopped = False
+        self._throttled = False
 
     def _client(
         self, account: Account, agent: str, tracer: Tracer | None, span: str | None
@@ -436,18 +442,28 @@ class Experiment:
 
         async def job(task_id: str, split: str, rep: int) -> None:
             async with sem:
-                if self._over_limit():
+                if self._over_limit() or self._throttled:
                     return
                 task = self.loader.load(task_id)
-                record = await self.decomposition(task, rep)
+                try:
+                    record = await self.decomposition(task, rep)
+                except ProviderThrottled:
+                    self._throttled = True
+                    return
                 order = list(cfg.systems)
                 random.Random(f"{cfg.seed}:{task_id}:{rep}").shuffle(order)
                 for system in order:
                     if (task_id, system, rep) in done:
                         continue
-                    if self._over_limit():
+                    if self._over_limit() or self._throttled:
                         return
-                    rec = await self.run_one(task, split, rep, system, record)
+                    try:
+                        rec = await self.run_one(task, split, rep, system, record)
+                    except ProviderThrottled:
+                        # Not a task outcome: leave the run unrecorded (its directory is set aside
+                        # on resume, its spending stays counted) and start nothing new (R18).
+                        self._throttled = True
+                        return
                     async with self._lock:
                         with results_path.open("a", encoding="utf-8") as f:
                             f.write(rec.model_dump_json() + "\n")
@@ -458,6 +474,11 @@ class Experiment:
                         progress(rec)
 
         await asyncio.gather(*(job(t, s, rep) for rep in range(cfg.repetitions) for t, s in tasks))
+        if self._throttled:
+            raise ProviderUnavailable(
+                "the provider throttled or a quota ran out; finished runs are kept and the rest "
+                "resume when the experiment is run again"
+            )
         if self._stopped:
             raise SpendingLimitReached(
                 f"spending limit ${self.max_usd} reached (spent ${self.spent():.4f})"

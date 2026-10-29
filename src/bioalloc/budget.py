@@ -45,6 +45,7 @@ from typing import Any
 from bioalloc.llm.base import (
     LLMReply,
     LLMRequest,
+    ProviderThrottled,
     RateLimited,
     RequestRejected,
     RunMode,
@@ -449,12 +450,16 @@ class MeteredClient:
             try:
                 return await self._complete_once(request)
             except RateLimited as exc:
-                if retry == self.max_rate_limit_retries:
-                    raise
+                # A daily quota will not clear within a run, and 429s past every retry mean the
+                # provider is unavailable: neither is a property of the task (R18).
+                if "per day" in str(exc).lower() or retry == self.max_rate_limit_retries:
+                    self._emit("provider_throttled", {"agent": self.agent, "error": str(exc)})
+                    raise ProviderThrottled(str(exc)) from exc
                 delay = exc.retry_after if exc.retry_after is not None else min(30.0, 2.0**retry)
                 left = self.account.time_left()
                 if left is not None and delay >= left:
-                    raise TransportTimeout("deadline reached while rate limited") from exc
+                    self._emit("provider_throttled", {"agent": self.agent, "error": str(exc)})
+                    raise ProviderThrottled("deadline reached while rate limited") from exc
                 self._emit(
                     "rate_limited", {"agent": self.agent, "retry": retry + 1, "delay_s": delay}
                 )

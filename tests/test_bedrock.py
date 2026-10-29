@@ -389,3 +389,24 @@ def test_capability_check_fails_without_a_tool_call() -> None:
     t, _ = transport(lambda b: ok_body(content=[{"type": "text", "text": "5781"}]))
     report = asyncio.run(capability_check(t, model=MODEL))
     assert not report["ok"] and "did not call the tool" in report["problems"][0]
+
+
+def test_a_daily_quota_refusal_stops_at_once_without_retries() -> None:
+    # R18: Bedrock's "Too many tokens per day" was retried three times and then counted as no
+    # answer, so 58 runs that never reached the model were recorded as task failures.
+    from bioalloc.llm.base import ProviderThrottled
+
+    quota = ClientError(
+        {
+            "Error": {
+                "Code": "ThrottlingException",
+                "Message": "Too many tokens per day, please wait",
+            },
+            "ResponseMetadata": {"HTTPStatusCode": 429},
+        },
+        "InvokeModel",
+    )
+    client, account, fake, sleeps = metered(sequence(quota))
+    with pytest.raises(ProviderThrottled):
+        asyncio.run(client.complete(req()))
+    assert len(fake.seen) == 1 and sleeps == [] and account.snapshot().model_calls == 0

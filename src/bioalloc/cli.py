@@ -126,6 +126,7 @@ def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float
         Experiment,
         ExperimentConfig,
         ExperimentMismatch,
+        ProviderUnavailable,
         RunRecord,
         SpendingLimitReached,
     )
@@ -161,6 +162,9 @@ def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float
     except SpendingLimitReached as exc:
         print(f"{exc}; stopped. Finished runs are kept; rerun to resume with a higher limit.")
         return 3
+    except ProviderUnavailable as exc:
+        print(f"stopped: {exc}.")
+        return 5
     except ExperimentMismatch as exc:
         print(f"refused: {exc}")
         return 4

@@ -108,6 +108,13 @@ class RateLimited(RequestRejected):
         self.retry_after = retry_after
 
 
+class ProviderThrottled(Exception):  # noqa: N818 (it is a condition of the provider, not a bug)
+    """The provider keeps refusing for rate or quota reasons (a daily token quota, or 429s past
+    every retry). Deliberately not an ``LLMError``: no executor may treat it as "no answer", because
+    then a run that never reached the model would be recorded as a task failure (R18). It ends the
+    whole run, which an experiment leaves unrecorded so that a later resume redoes it."""
+
+
 class ConnectionFailed(RequestRejected):
     """The connection could not be opened, so the request never reached the provider."""
 

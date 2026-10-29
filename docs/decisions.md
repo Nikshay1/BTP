@@ -966,6 +966,24 @@ repair run's settings and one outer attempt: 60 runs, at most 300 calls, about U
 Re-review of commit bcaa71f: no new findings (all five fixes, several completing candidates,
 initially true goals, evaporation on failed calls, the config). Cleared for the macro check.
 
+## R18. A daily quota recorded as task failures (2026-10-29)
+
+The repair tuning run (`runs/repair-tune-v1`, US$17.99 recorded) hit Bedrock's daily token quota
+for Sonnet 4.6 at 10:55 UTC, after about 6.2 million tokens that day ("ThrottlingException: Too
+many tokens per day"). Every later call was refused (nothing charged), but each refusal was
+retried three times and then treated as "no answer", so 74 of 240 runs were recorded as task
+failures, 58 of them without a single model call. The macro check, started next, hit the same
+quota and was stopped by Nikshay after 8 runs. Its results and the tuning results as recorded
+are not valid.
+
+Fix: a refusal for a daily quota, or 429s past every retry, raises `ProviderThrottled`, which is
+deliberately not an `LLMError`, so no executor can take it for "no answer". The experiment then
+starts nothing new, leaves the interrupted run unrecorded and stops with `ProviderUnavailable`;
+running it again resumes. Tests cover the Bedrock refusal and an experiment that hits a quota
+partway and is resumed. `scripts/drop_throttled_runs.py` unrecorded the 74 throttled tuning runs
+(166 kept) and the 8 macro runs, moving their directories aside so their spending stays counted.
+Nikshay needs a higher daily quota for the remaining runs (Service Quotas, Amazon Bedrock).
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
