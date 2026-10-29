@@ -1,12 +1,14 @@
 """Scouts that repair their own rejected answers (decision D28; Sol's design in R14).
 
 A schedule names which scout takes each solve episode, one episode at a time (per-task model
-concurrency 1). A scout's first episode answers independently with the shared solve prompt and
-Direct's bounded episode. Each later episode of the same scout revises with short memory: the base
-subtask messages, its own latest answer and the latest feedback on it, worded as octopus words it
-("The checks rejected that answer: ..." or "Your last step failed: ..."), never older attempts and
-never another scout's. Only the final reply of an episode is remembered; tool calls inside it are
-not (D28 limits this to tasks where that loses nothing, Logistics first).
+concurrency 1, assessments included). The schedule bounds the solve episodes of one dispatch;
+experiments using these executors run one outer attempt per task (``max_attempts`` 1), so it is also
+the bound per task (R15). A scout's first episode answers independently with the shared solve prompt
+and Direct's bounded episode. Each later episode of the same scout revises with short memory: the
+base subtask messages, its own latest answer and the latest feedback on it, worded as octopus words
+it ("The checks rejected that answer: ..." or "Your last step failed: ..."), never older attempts
+and never another scout's. Only the final reply of an episode is remembered; tool calls inside it
+are not (D28 limits this to tasks where that loses nothing, Logistics first).
 
 After every episode a goal-verified answer (D15) ends the search at once (D27). An answer that
 passes the public checks without a certificate commits its scout, which takes no further episodes.
@@ -16,7 +18,9 @@ Consensus decides what happens with committed answers:
 * ``"bee"``: the module answers as soon as one option holds a quorum of ceil(theta * k) committed
   scouts (k is the registered population, launched or not). If the schedule ends without a quorum
   while answers are committed, D14's rounds follow: inhibition with probability ``sigma``, then
-  recruitment of uncommitted scouts by one metered assessment each, then the quorum test; the
+  recruitment of uncommitted scouts by one metered assessment each, then the quorum test. Unlike
+  D14, scouts do not answer afresh when inhibition releases every supporter (the episodes are
+  spent): the run ends with reason ``all_released`` and the answers held before release; the
   answer is the option with most support, then most summed confidence, then canonical order.
 * ``"plurality"``: the matched ordinary control. The same schedule, memory, feedback, limits and
   certificate stop, but no quorum stop, inhibition or recruitment: the full schedule runs and the
@@ -151,6 +155,44 @@ class ScoutRepair(Bee):
         outcome = "certificate" if scout.verified else "committed"
         ctx.emit("repair_episode", {"scout": scout.index, "slot": slot, "outcome": outcome})
 
+    async def _recruit(
+        self,
+        subtask: Subtask,
+        ctx: ExecutionContext,
+        scouts: list[Scout],
+        uncommitted: list[Scout],
+        support: Counter[str],
+        rnd: int,
+    ) -> bool:
+        """D14's recruitment, with the assessments made one at a time (per-task concurrency 1,
+        R15). Draws come from the support before the round and decisions are applied together
+        afterwards, as in D14, so the order of assessment does not change the outcome."""
+        options = sorted(support)
+        draws = [
+            ctx.rng.choices(options, weights=[support[o] for o in options])[0] for _ in uncommitted
+        ]
+        reps = {o: self._representative(scouts, o) for o in set(draws)}
+        results: list[tuple[bool, float] | None] = []
+        budget_hit = False
+        for s, o in zip(uncommitted, draws, strict=True):
+            try:
+                results.append(await self._assess(subtask, ctx, s, reps[o], rnd))
+            except BudgetExceeded:
+                budget_hit = True
+                results.append(None)
+                break
+            except LLMError:
+                results.append(None)
+        decisions = []
+        for s, o, r in zip(uncommitted, draws, results, strict=False):
+            accepted, confidence = r if r is not None else (False, 0.0)
+            decisions.append({"scout": s.index, "accept": accepted})
+            if accepted:
+                s.option, s.output, s.confidence = o, reps[o].output, confidence
+                s.verified = reps[o].verified
+        ctx.emit("bee_recruitment", {"round": rnd, "decisions": decisions})
+        return budget_hit
+
     def _plurality(
         self, scouts: list[Scout], ctx: ExecutionContext, budget_hit: bool
     ) -> ExecutorOutcome:
@@ -175,6 +217,9 @@ class ScoutRepair(Bee):
                 self._inhibit(scouts, ctx)
                 support = self._support(scouts)
                 if not support:
+                    # D14 would let every scout answer afresh; here the solve episodes are spent,
+                    # so D28 ends and returns the answers held before release (R15).
+                    reason = "all_released"
                     break
                 uncommitted = [s for s in scouts if s.option is None]
                 if uncommitted and await self._recruit(

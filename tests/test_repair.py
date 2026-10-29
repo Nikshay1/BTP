@@ -98,3 +98,66 @@ def test_every_registered_candidate_has_a_matched_control() -> None:
     assert pool["bee_feedback3"].schedule == pool["majority_feedback3"].schedule
     assert {e.consensus for n, e in pool.items() if n.startswith("majority")} == {"plurality"}
     assert pool["bee_staged"].quorum == 2 and pool["bee_feedback3"].quorum == 2
+
+
+class Tracking:
+    """Wraps a fake transport and records the most calls in flight at once."""
+
+    def __init__(self, fake: FakeTransport) -> None:
+        self.fake, self.inflight, self.peak = fake, 0, 0
+
+    async def send(self, req: LLMRequest) -> LLMReply:
+        import asyncio
+
+        self.inflight += 1
+        self.peak = max(self.peak, self.inflight)
+        await asyncio.sleep(0.005)
+        try:
+            return await self.fake.send(req)
+        finally:
+            self.inflight -= 1
+
+
+ASSESS = lambda r: "has proposed an answer" in r.messages[0].content  # noqa: E731
+
+
+def test_recruitment_assessments_run_one_at_a_time(tmp_path: Path) -> None:
+    # R15 (Sol): inherited recruitment gathered assessments concurrently.
+    rejected = {(i, e): -1 for i in (1, 2) for e in (0, 1)}
+    fake = (
+        FakeTransport()
+        .respond(SOLVE, answers({(0, 0): 5, **rejected}))
+        .respond(ASSESS, lambda r: json.dumps({"accept": True, "confidence": 0.9}))
+    )
+    tracking = Tracking(fake)
+    result, events = run_goal(
+        tracking,  # type: ignore[arg-type]
+        tmp_path,
+        ScoutRepair(model="m", schedule=ALL_START_THREE, sigma=0.0),
+    )
+    assessments = [r for r in fake.requests if ASSESS(r)]
+    assert len(assessments) == 2 and tracking.peak == 1
+    assert result.answer == {"x": 5} and stop_of(events)["reason"] == "quorum"
+
+
+def test_releasing_every_supporter_ends_the_run(tmp_path: Path) -> None:
+    # R15: D14 would restart all scouts; D28 has no episodes left, so it stops explicitly.
+    table = {(0, 0): 5, (1, 0): 7, (2, 0): -1, (2, 1): -1}
+    fake = FakeTransport().respond(SOLVE, answers(table))
+    result, events = run_goal(
+        fake, tmp_path, ScoutRepair(model="m", schedule=ALL_START_THREE, sigma=1.0)
+    )
+    stop = stop_of(events)
+    assert stop["reason"] == "all_released" and stop["from_released"]
+    assert result.answer in ({"x": 5}, {"x": 7})
+
+
+def test_configs_using_repair_scouts_run_one_attempt_per_task() -> None:
+    # R15: the six-episode ceiling is per dispatch; one outer attempt makes it per task.
+    from bioalloc.executors.repair import repair_executors
+
+    names = set(repair_executors("m"))
+    for path in (Path(__file__).resolve().parents[1] / "configs").glob("*.json"):
+        cfg = json.loads(path.read_text())
+        if names & set(cfg.get("systems", [])):
+            assert cfg.get("max_attempts") == 1, path.name

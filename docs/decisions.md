@@ -871,6 +871,24 @@ separately.
   significance test). It is then compared with the single agent on the 120 test instances, two
   repetitions (480 runs, about US$45-57), with power re-estimated from the tuning data first.
 
+## R15. Review of the D28 implementation (2026-10-29)
+
+GPT-6.1 Sol (high) found three problems, all fixed with tests that fail on the old code:
+
+1. The six-episode ceiling is per dispatch, and the coordinator's default two attempts could give
+   twelve solve episodes. D28 now states the ceiling per dispatch, experiments using these
+   executors run one outer attempt, and a test checks every config that lists them.
+2. Recruitment inherited bee's concurrent assessments, breaking per-task concurrency 1. It now
+   assesses one scout at a time, with draws and representatives fixed before the round and
+   decisions applied together, as in D14.
+3. When inhibition released every supporter, D28 stopped silently with "round_limit", while D14
+   lets every scout answer afresh. With the episodes spent, D28 now ends explicitly with
+   `all_released` and the answers held before release (a stated difference from D14).
+
+Sol also replayed the recorded Logistics-095 replies offline: the staged bee and its plurality
+control sent identical requests and returned the same verified plan after three calls, so their
+equivalence on Logistics holds under coupled replies.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
