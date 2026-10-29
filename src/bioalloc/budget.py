@@ -69,9 +69,16 @@ def _chars_to_tokens(n: int) -> int:
     return math.ceil(n / 3)
 
 
+# Providers add a hidden system prompt when tools are offered and bill it as input (Anthropic
+# documents about 350 tokens for Claude with tool_choice auto); reserved with a margin.
+TOOL_OVERHEAD_TOKENS = 600
+
+
 def reserve_prompt_tokens(request: LLMRequest) -> int:
-    """Conservative estimate of a request's prompt tokens, covering every part that is sent."""
-    tokens = sum(_chars_to_tokens(len(m.content)) + 4 for m in request.messages)
+    """Conservative estimate of a request's prompt tokens, covering every part that is sent,
+    including the provider's hidden tool-use prompt."""
+    tokens = TOOL_OVERHEAD_TOKENS if request.tools else 0
+    tokens += sum(_chars_to_tokens(len(m.content)) + 4 for m in request.messages)
     extras: list[object] = [*request.tools]
     extras += [tc.model_dump() for m in request.messages for tc in m.tool_calls]
     if request.response_format is not None:

@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 from typing import Any, Literal
 
+from bioalloc.budget import reserve_prompt_tokens
 from bioalloc.llm.base import LLMRequest, Message, Transport
 from bioalloc.tasks.common import CALCULATOR
 
@@ -50,27 +51,52 @@ async def capability_check(
     )
     tool_reply = await transport.send(tool_ask)
     readback = None
+    readback_ask = tool_ask
     if tool_reply.tool_calls:
-        tc = tool_reply.tool_calls[0]
-        value = CALCULATOR.run(json.loads(tc.arguments or "{}"))
-        readback = await transport.send(
-            tool_ask.model_copy(
-                update={
-                    "messages": (
-                        *tool_ask.messages,
-                        Message(
-                            role="assistant",
-                            content=tool_reply.content,
-                            tool_calls=tool_reply.tool_calls,
-                        ),
-                        Message(role="tool", content=json.dumps(value), tool_call_id=tc.id),
-                    ),
-                    "sample_id": "readback",
-                }
+        # Every call gets its result, or the provider rejects the unanswered ones.
+        results = tuple(
+            Message(
+                role="tool",
+                content=json.dumps(CALCULATOR.run(json.loads(tc.arguments or "{}"))),
+                tool_call_id=tc.id,
             )
+            for tc in tool_reply.tool_calls
         )
-    replies = [r for r in (first, second, tool_reply, readback) if r is not None]
+        readback_ask = tool_ask.model_copy(
+            update={
+                "messages": (
+                    *tool_ask.messages,
+                    Message(
+                        role="assistant",
+                        content=tool_reply.content,
+                        tool_calls=tool_reply.tool_calls,
+                    ),
+                    *results,
+                ),
+                "sample_id": "readback",
+            }
+        )
+        readback = await transport.send(readback_ask)
+    sent = [first, second, tool_reply, readback]
+    replies = [r for r in sent if r is not None]
+    requests = [ask, ask, tool_ask, readback_ask]
+    problems = []
+    if not tool_reply.tool_calls:
+        problems.append("the model did not call the tool")
+    if readback is not None and "5781" not in readback.content.replace(",", ""):
+        problems.append("the read-back reply does not contain 123 * 47 = 5781")
+    if any(r.finish_reason == "length" for r in replies):
+        problems.append("a reply was cut off at the completion limit")
     return {
+        "ok": not problems,
+        "problems": problems,
+        # The ledger's reservation must not fall below real prompt usage (it is charged in full
+        # when usage is unknown).
+        "prompt_estimate_vs_actual": [
+            [reserve_prompt_tokens(q), r.usage.prompt_tokens]
+            for q, r in zip(requests, sent, strict=True)
+            if r is not None
+        ],
         "model_returned": first.model,
         "json_answer": first.content,
         "finish_reasons": [r.finish_reason for r in replies],

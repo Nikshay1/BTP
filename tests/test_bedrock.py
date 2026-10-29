@@ -7,12 +7,19 @@ of the live API.
 import asyncio
 import io
 import json
+import math
 from typing import Any
 
 import pytest
 from botocore.exceptions import ClientError, EndpointConnectionError, ReadTimeoutError
 
-from bioalloc.budget import Account, MeteredClient
+from bioalloc.budget import (
+    TOOL_OVERHEAD_TOKENS,
+    Account,
+    MeteredClient,
+    Pricing,
+    reserve_prompt_tokens,
+)
 from bioalloc.cli import is_bedrock_model
 from bioalloc.evaluation.capability import capability_check
 from bioalloc.llm.base import (
@@ -270,3 +277,115 @@ def test_capability_check_against_a_stand_in_bedrock() -> None:
 def test_bedrock_models_are_recognised() -> None:
     assert is_bedrock_model(MODEL)
     assert not is_bedrock_model("openai/gpt-oss-120b")
+
+
+SONNET = Pricing(input_per_m=3.0, output_per_m=15.0)
+
+
+def metered(handler: Any) -> tuple[MeteredClient, Account, FakeBedrock, list[float]]:
+    t, fake = transport(handler)
+    sleeps: list[float] = []
+
+    async def fake_sleep(s: float) -> None:
+        sleeps.append(s)
+
+    account = Account(Budget(max_tokens=10_000, max_model_calls=5))
+    client = MeteredClient(t, account, "worker", "w", pricing=SONNET, sleep=fake_sleep)
+    return client, account, fake, sleeps
+
+
+def sequence(*steps: Any) -> Any:
+    it = iter(steps)
+
+    def handler(body: dict[str, Any]) -> Any:
+        step = next(it)
+        if isinstance(step, Exception):
+            raise step
+        return step
+
+    return handler
+
+
+def test_success_after_throttling_charges_exactly_the_reported_usage() -> None:
+    client, account, fake, sleeps = metered(
+        sequence(
+            client_error("ThrottlingException", 429),
+            client_error("ModelNotReadyException", 429),
+            ok_body(),
+        )
+    )
+    asyncio.run(client.complete(req()))
+    cost = account.snapshot()
+    assert len(fake.seen) == 3 and sleeps == [1.0, 2.0]
+    assert cost.model_calls == 1 and cost.usage_complete and account.reserved_tokens == 0
+    assert cost.usd == pytest.approx((120 * 3.0 + 40 * 15.0) / 1e6)
+
+
+@pytest.mark.parametrize(
+    "exc",
+    [
+        client_error("ModelErrorException", 424),
+        client_error("ModelTimeoutException", 408),
+        client_error("InternalServerException", 500),
+        ReadTimeoutError(endpoint_url="https://x"),
+    ],
+)
+def test_possibly_billed_failures_charge_the_full_reservation(exc: Exception) -> None:
+    client, account, fake, sleeps = metered(sequence(exc))
+    request = req(tools=(CALCULATOR.spec.wire(),))
+    with pytest.raises(LLMError):
+        asyncio.run(client.complete(request))
+    cost = account.snapshot()
+    assert len(fake.seen) == 1 and sleeps == []  # never resent
+    assert not cost.usage_complete and account.reserved_tokens == 0
+    reserved = reserve_prompt_tokens(request)
+    assert cost.usd == pytest.approx((reserved * 3.0 + 256 * 15.0) / 1e6)
+
+
+def test_reservation_covers_the_hidden_tool_prompt() -> None:
+    with_tools = req(tools=(CALCULATOR.spec.wire(),))
+    assert TOOL_OVERHEAD_TOKENS >= 350  # Anthropic's documented hidden tool prompt
+    spec_tokens = math.ceil(len(json.dumps(CALCULATOR.spec.wire())) / 3)
+    assert reserve_prompt_tokens(with_tools) == (
+        reserve_prompt_tokens(req()) + spec_tokens + TOOL_OVERHEAD_TOKENS
+    )
+
+
+def test_capability_check_answers_every_parallel_tool_call() -> None:
+    def handler(body: dict[str, Any]) -> Any:
+        last = body["messages"][-1]["content"]
+        if body.get("tools") and last[-1]["type"] != "tool_result":
+            return ok_body(
+                content=[
+                    {
+                        "type": "tool_use",
+                        "id": "a",
+                        "name": "calculate",
+                        "input": {"expression": "123*47"},
+                    },
+                    {
+                        "type": "tool_use",
+                        "id": "b",
+                        "name": "calculate",
+                        "input": {"expression": "47*123"},
+                    },
+                ],
+                stop_reason="tool_use",
+            )
+        if body.get("tools"):
+            return ok_body(content=[{"type": "text", "text": "5,781"}])
+        return ok_body(content=[{"type": "text", "text": '{"answer": 42}'}])
+
+    t, fake = transport(handler)
+    report = asyncio.run(capability_check(t, model=MODEL))
+    results = fake.seen[3]["messages"][-1]
+    assert results["role"] == "user"
+    assert [b["tool_use_id"] for b in results["content"]] == ["a", "b"]
+    assert report["ok"], report["problems"]
+    assert len(report["prompt_estimate_vs_actual"]) == 4
+
+
+def test_capability_check_fails_without_a_tool_call() -> None:
+    t, _ = transport(lambda b: ok_body(content=[{"type": "text", "text": "5781"}]))
+    report = asyncio.run(capability_check(t, model=MODEL))
+    assert not report["ok"] and "did not call the tool" in report["problems"][0]

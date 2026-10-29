@@ -32,6 +32,9 @@ def main() -> int:
         print(f"unknown provider {provider!r}; use bedrock or groq")
         return 2
     print(json.dumps(report, indent=1))
+    if not report["ok"]:
+        print("capability check FAILED: " + "; ".join(report["problems"]))
+        return 1
     return 0
 
 

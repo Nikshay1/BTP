@@ -300,7 +300,9 @@ class Experiment:
                 rep,
                 client,
                 model=self.config.model,
+                max_completion_tokens=self.config.max_completion_tokens,
                 temperature=self.config.temperature,
+                reasoning_effort=self.config.reasoning_effort,  # type: ignore[arg-type]
                 seed=derive_seed(self.config.seed, task.task_id, rep, "decompose"),
             )
             tracer.close()

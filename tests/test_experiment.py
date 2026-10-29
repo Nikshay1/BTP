@@ -11,6 +11,7 @@ from bioalloc.evaluation.analysis import summarize
 from bioalloc.evaluation.experiment import Experiment, ExperimentConfig, TaskSelection, load_results
 from bioalloc.evaluation.registry import SYSTEMS
 from bioalloc.evaluation.rehearsal import RehearsalTransport
+from bioalloc.llm.base import LLMReply, LLMRequest
 from bioalloc.schemas import Budget
 from bioalloc.trace import read_manifest, read_trace, tokens_from_trace
 
@@ -263,3 +264,31 @@ def test_utf8_cut_mid_character_is_a_torn_tail(tmp_path: Path) -> None:
     exp = Experiment(cfg, RehearsalTransport(), tmp_path, root=ROOT)
     assert len(asyncio.run(exp.run())) == 1
     assert len(load_results(results)) == 2
+
+
+class RecordingTransport(RehearsalTransport):
+    def __init__(self) -> None:
+        super().__init__()
+        self.requests: list[LLMRequest] = []
+
+    async def send(self, request: LLMRequest) -> LLMReply:
+        self.requests.append(request)
+        return await super().send(request)
+
+
+def test_decomposer_uses_the_configured_effort_and_limit(tmp_path: Path) -> None:
+    # Regression (Sol, D23 review): the decomposer once ignored reasoning_effort and the
+    # completion limit, so its calls ran at the provider's default effort.
+    cfg = config(["direct"]).model_copy(
+        update={
+            "tasks": TaskSelection(split="train", per_family={"reasoning": 1}),
+            "reasoning_effort": "low",
+            "max_completion_tokens": 1500,
+        }
+    )
+    transport = RecordingTransport()
+    asyncio.run(Experiment(cfg, transport, tmp_path, root=ROOT).run())
+    decomposer = [r for r in transport.requests if r.sample_id.startswith("decomposer:")]
+    assert decomposer, "the reasoning task was not decomposed by the model"
+    assert all(r.reasoning_effort == "low" for r in transport.requests)
+    assert all(r.max_completion_tokens == 1500 for r in decomposer)

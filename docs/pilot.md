@@ -56,7 +56,8 @@ decides the main-study backbone and size (D23).
 
    or a Bedrock API key: `AWS_BEARER_TOKEN_BEDROCK=...` with `AWS_REGION`.
 3. Capability check (four calls, well under a cent). It confirms that usage is reported, that
-   low effort is accepted, and that tool calls and their read-back work:
+   low effort is accepted, that tool calls and their read-back work, and that the ledger's
+   prompt estimate is not below the real prompt count. It exits with an error if a step fails:
 
    ```sh
    uv run python scripts/capability_check.py
@@ -75,6 +76,10 @@ decides the main-study backbone and size (D23).
    ```
 
    Both can be stopped and restarted; finished runs are skipped.
+
+   `--max-usd` is a stop threshold, not an exact ceiling: once spending passes it no new run
+   starts, but the (up to four) runs in flight finish. At Sonnet prices a run at its 120,000-token
+   cap costs at most about US$1.80, so spending can end up to about US$7 above the threshold.
 
 ## Building VAL (optional, for the grader cross-check)
 

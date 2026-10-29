@@ -487,6 +487,27 @@ Remaining risk is limited to a power cut at an exact moment; it is accepted for 
   so repeated requests are independent samples. Prompt caching is off, so the ledger's two prices
   are exact. Tested offline with a stand-in boto3 client; the first live step is the capability
   check.
+- **Spending stops** are thresholds: runs in flight finish after the threshold is passed, so the
+  pilot can end up to about US$7 above US$40 (four runs at their token cap). Accepted: the total
+  stays far below the credit.
+
+## R4. Review of the Bedrock switch (2026-10-29)
+
+GPT-6.1 Sol (high effort) reviewed commit 9b2b6ce and found no invalid request reachable from the
+executors, but five issues, handled as follows:
+
+1. The decomposer ignored the configured effort and completion limit, so reasoning-task
+   decompositions ran at the provider's default effort. Fixed; regression test fails without it.
+2. The capability check answered only the first of several tool calls, which the provider rejects.
+   It now answers every call, and fails (exit code 1) when the tool is not called, the read-back
+   is wrong, or a reply is cut off. Regression test with two parallel calls.
+3. Spending stops are thresholds, not ceilings. Documented (D23, `docs/pilot.md`).
+4. When usage is unknown the ledger charges its prompt reservation, which left out the hidden
+   tool-use prompt that providers bill. Reservations now add 600 tokens when tools are offered
+   (Anthropic documents about 350), and the capability check prints the estimate next to the
+   real prompt count.
+5. Money tests did not check the ledger. Added: exact dollar charge after throttling, full
+   reservation charged and never resent for 424, 408, 500 and read timeouts.
 
 ## Open questions found while planning (settled by D10-D14)
 
