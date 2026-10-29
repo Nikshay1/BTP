@@ -758,6 +758,32 @@ where the single agent sits at 67% on Logistics: inside the D26 target region. D
   feedback; octopus acts locally with check feedback. Speculative until measured; development
   tasks only.
 
+## R13. Logistics comparison at the primary cap (2026-10-29)
+
+`runs/logistics-compare-v1`: 150 runs, US$12.37, 15 Logistics training problems, 2 repetitions,
+21,000 tokens per task (D27). Reviewed by Claude only; a Sol review is owed.
+
+| System | Valid plans | Mean tokens | US$/run | US$ per success |
+|---|---|---|---|---|
+| single agent | 22/30 (73%) | 11,138 | 0.066 | 0.090 |
+| octopus | 20/30 (67%) | 12,085 | 0.071 | 0.106 |
+| bee (certificate stop) | 18/30 (60%) | 17,213 | 0.139 | 0.231 |
+| Direct | 17/30 (57%) | 5,703 | 0.040 | 0.071 |
+| ant | 0/30 | 19,053 | 0.096 | - |
+
+- **No mechanism beats the single agent at equal tokens.** Paired differences: bee -0.13
+  (95% CI -0.30 to 0.07), octopus -0.07 (-0.20 to 0.07). With 15 tasks the detectable effect is
+  about 0.25, so small differences cannot be resolved.
+- **Some complementarity:** choosing the best system per task would solve 25/30 against the
+  single agent's 22/30 (bee alone solves 095 and 250 more often, octopus 235). Too few tasks and
+  repetitions to rely on.
+- **Bee** stopped on a certificate in 18 runs and ran out of budget in 12: five scouts cost about
+  17,000 tokens per round, and scouts get no feedback on a rejected plan, while the single agent's
+  strength is revision against the simulator's message.
+- **Ant is infeasible here:** it finished no path. Each step is one call carrying the whole
+  problem (about 3,500 tokens), a Logistics plan needs 20 or more actions, and the cap buys about
+  six calls. A step-per-call ant cannot do long-horizon planning at a realistic budget.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
