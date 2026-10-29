@@ -1,15 +1,16 @@
 """A tiny live check of the provider before the pilot (docs/pilot.md, step 2).
 
-Three requests, a few hundred tokens in all: a JSON answer, the same request again with the same
-seed, and a tool round trip with the calculator. It reports what the Groq adapter assumes but could
-not verify offline: that usage is reported (and whether reasoning tokens are itemized), the finish
-reasons, whether the seed reproduces the reply, and that tool calls and their read-back work.
+Up to four requests, a few hundred tokens in all: a JSON answer, the same request again with the
+same seed, and a tool round trip with the calculator. It reports what the adapters assume but
+could not verify offline: that usage is reported (and whether reasoning tokens are itemized),
+the finish reasons, whether the seed reproduces the reply, and that tool calls and their read-back
+work.
 """
 
 from __future__ import annotations
 
 import json
-from typing import Any
+from typing import Any, Literal
 
 from bioalloc.llm.base import LLMRequest, Message, Transport
 from bioalloc.tasks.common import CALCULATOR
@@ -17,7 +18,9 @@ from bioalloc.tasks.common import CALCULATOR
 MODEL = "openai/gpt-oss-120b"
 
 
-async def capability_check(transport: Transport, model: str = MODEL) -> dict[str, Any]:
+async def capability_check(
+    transport: Transport, model: str = MODEL, reasoning_effort: Literal["low"] | None = "low"
+) -> dict[str, Any]:
     ask = LLMRequest(
         model=model,
         messages=(
@@ -29,7 +32,7 @@ async def capability_check(transport: Transport, model: str = MODEL) -> dict[str
         max_completion_tokens=256,
         temperature=0.6,
         seed=12345,
-        reasoning_effort="low",
+        reasoning_effort=reasoning_effort,
     )
     first = await transport.send(ask)
     second = await transport.send(ask.model_copy(update={"sample_id": "repeat"}))
@@ -42,7 +45,7 @@ async def capability_check(transport: Transport, model: str = MODEL) -> dict[str
         max_completion_tokens=256,
         temperature=0.6,
         seed=12345,
-        reasoning_effort="low",
+        reasoning_effort=reasoning_effort,
         tools=(CALCULATOR.spec.wire(),),
     )
     tool_reply = await transport.send(tool_ask)

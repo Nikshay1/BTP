@@ -1,22 +1,28 @@
 # Pilot
 
-The pilot is the first run on the real backbone (GPT-OSS-120B on Groq, D3). Its purpose is
+The pilot is the first run on a real model: Claude Sonnet 4.6 on Amazon Bedrock at low effort
+(D23; D3's GPT-OSS-120B is suspended until the pilot shows what a run costs). Its purpose is
 feasibility, not results: measure what a task run costs, check that the runtime checks behave,
 look for floor and ceiling effects, and estimate how often systems disagree, which sets the power
 of the main study (D13). It uses training tasks only.
 
 ## What it runs
 
-`configs/pilot.json`: 30 training tasks from split v2 (10 planning, 10 tools, 10 reasoning),
-3 repetitions, 8 systems (single agent, Direct, ant, bee and octopus alone, fixed, random,
-specialist), cap of 120,000 tokens, 60 model calls, 40 tool calls and 10 minutes per task.
-720 task runs in total. The learned selectors are not in it; they are trained in M3.
+1. `configs/pilot-smoke.json`: one training task per family, one repetition, 8 systems: 24 runs,
+   stop at US$5. It catches broken prompts and adapter problems before the real pilot.
+2. `configs/pilot.json` (pilot-v2): 18 training tasks from split v2 (6 planning, 6 tools, 6
+   reasoning), 2 repetitions, 8 systems (single agent, Direct, ant, bee and octopus alone, fixed,
+   random, specialist): 288 runs, stop at US$40. Cap of 120,000 tokens, 60 model calls, 40 tool
+   calls and 10 minutes per task.
+
+The learned selectors are not in it; they are trained in M3. After the pilot, its cost per run
+decides the main-study backbone and size (D23).
 
 ## Before running it (readiness checklist)
 
 | Item | Status |
 |---|---|
-| Design decisions recorded (D10-D22), system list fixed | done |
+| Design decisions recorded (D10-D23), system list fixed | done |
 | Executors and all Table 3 controls pass offline tests | done |
 | Ledger and trace agree on every run; tool calls and imported costs traced | done |
 | Strong (goal) and weak acceptance kept apart; acceptance never reported as correctness | done |
@@ -24,30 +30,51 @@ specialist), cap of 120,000 tokens, 60 model calls, 40 tool calls and 10 minutes
 | Pilot tasks from training groups only; data snapshots and split file hashed | done |
 | Public task files contain no answers (GSM8K solutions only in the private file) | done |
 | Offline CI: lint, strict types, tests, no network or key | done |
-| Full offline rehearsal of the pilot config (720 runs) | done |
+| Offline rehearsal of both pilot configs | done |
+| Independent code review of the M2 batch (R2, R3) | done |
+| Bedrock adapter tested offline (stand-in boto3 client) | done |
+| AWS access to Sonnet 4.6 and credits that cover it | **open**: Nikshay |
 | Cross-check of the plan simulator against the pinned VAL binary | **open**: VAL build needs Nikshay (see below) |
 | Hand-labelled sample of checker and grader verdicts | **open**: after the first live runs |
-| Independent code review of the M2 batch (R2: 19 findings, 18 fixed, 1 gated) | done; re-review of the fixes in progress |
-| Groq key with a spend cap | **open**: Nikshay |
 
 ## How to run it
 
-1. Put the key in `.env` at the repository root (never committed): `GROQ_API_KEY=...`, and set a
-   monthly spend limit in the Groq console.
-2. First a tiny capability check (four calls, well under a cent) to confirm the API behaves as the
-   adapter assumes (usage and reasoning-token reporting, finish reasons, seed, tool read-back):
+1. AWS setup (once):
+   - In the Bedrock console, open **Model access** and enable Anthropic Claude Sonnet 4.6 (the
+     first time, AWS asks for a short use-case form).
+   - In **Billing → Credits**, check that the credits list Amazon Bedrock (or the Claude models)
+     under the services they apply to. Some promotional credits exclude third-party models.
+   - Set a budget alert in **Billing → Budgets** (for example at US$50).
+   - The IAM user needs `bedrock:InvokeModel` on the model and the inference profile.
+2. Put the credentials in `.env` at the repository root (never committed). Either an access key:
+
+   ```sh
+   AWS_ACCESS_KEY_ID=...
+   AWS_SECRET_ACCESS_KEY=...
+   AWS_REGION=us-east-1
+   ```
+
+   or a Bedrock API key: `AWS_BEARER_TOKEN_BEDROCK=...` with `AWS_REGION`.
+3. Capability check (four calls, well under a cent). It confirms that usage is reported, that
+   low effort is accepted, and that tool calls and their read-back work:
 
    ```sh
    uv run python scripts/capability_check.py
    ```
-3. Then the pilot, with a hard spending stop:
+4. Smoke test, then look at the results before going on:
 
    ```sh
-   uv run bioalloc experiment run configs/pilot.json --max-usd 5
-   uv run bioalloc experiment analyze runs/pilot-v1 --compare bee single_agent
+   uv run bioalloc experiment run configs/pilot-smoke.json --max-usd 5
+   uv run bioalloc experiment analyze runs/pilot-smoke
+   ```
+5. The pilot:
+
+   ```sh
+   uv run bioalloc experiment run configs/pilot.json --max-usd 40
+   uv run bioalloc experiment analyze runs/pilot-v2 --compare bee single_agent
    ```
 
-   The run can be stopped and restarted; finished runs are skipped.
+   Both can be stopped and restarted; finished runs are skipped.
 
 ## Building VAL (optional, for the grader cross-check)
 

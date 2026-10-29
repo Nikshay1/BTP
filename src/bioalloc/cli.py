@@ -5,8 +5,12 @@ from __future__ import annotations
 import argparse
 from collections.abc import Sequence
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from bioalloc import __version__
+
+if TYPE_CHECKING:
+    from bioalloc.llm.base import Transport
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -86,6 +90,34 @@ def read_env_key(name: str) -> str | None:
     return None
 
 
+AWS_ENV = (
+    "AWS_ACCESS_KEY_ID",
+    "AWS_SECRET_ACCESS_KEY",
+    "AWS_SESSION_TOKEN",
+    "AWS_BEARER_TOKEN_BEDROCK",
+    "AWS_REGION",
+    "AWS_PROFILE",
+)
+
+
+def is_bedrock_model(model: str) -> bool:
+    return "anthropic." in model
+
+
+def bedrock_transport() -> Transport:
+    """A Bedrock transport. AWS settings in .env are copied into the environment for boto3, which
+    otherwise falls back to its usual chain (~/.aws/credentials, profiles)."""
+    import os
+
+    from bioalloc.llm.bedrock import BedrockTransport
+
+    for name in AWS_ENV:
+        value = read_env_key(name)
+        if value and not os.environ.get(name):
+            os.environ[name] = value
+    return BedrockTransport(region=os.environ.get("AWS_REGION", "us-east-1"))
+
+
 def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float | None) -> int:
     import asyncio
     import json
@@ -97,7 +129,6 @@ def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float
         RunRecord,
         SpendingLimitReached,
     )
-    from bioalloc.llm.base import Transport
 
     config = ExperimentConfig.model_validate(json.loads(config_path.read_text()))
     transport: Transport
@@ -106,6 +137,8 @@ def experiment_run(config_path: Path, out: Path, rehearsal: bool, max_usd: float
 
         config = config.model_copy(update={"mode": "debug", "name": f"{config.name}-rehearsal"})
         transport = RehearsalTransport()
+    elif is_bedrock_model(config.model):
+        transport = bedrock_transport()
     else:
         from bioalloc.llm.groq import GroqTransport
 

@@ -34,6 +34,11 @@ was checked, and what carries over.
   and grader verdicts, and the independent review of the M2 batch (`docs/pilot.md`). MATH is
   deferred to a later split version.
 
+**Update (29 October 2026):** the pilot moves to Claude Sonnet 4.6 on Amazon Bedrock at low effort,
+paid from AWS credit (D23). Bedrock adapter added and tested offline; the pilot is now a 24-run
+smoke test followed by a 288-run pilot with a US$40 stop. Waiting on AWS model access and the
+credentials in `.env` (`docs/pilot.md`).
+
 Carried over from M1 (all now addressed above):
 
 - Stored LLM decomposition, replayed identically to every system, with its cost charged equally.

@@ -36,7 +36,8 @@ named milestone).
 
 ## D3. Backbone model: GPT-OSS-120B served by Groq
 
-- **Date:** 2026-10-26 · **Status:** active (chosen by Nikshay)
+- **Date:** 2026-10-26 · **Status:** suspended for the pilot by D23; the main-study backbone is
+  decided after the pilot
 - **Decision:** the primary hosted backbone from the December pilot onward is `openai/gpt-oss-120b`
   on Groq. Listed price at the time of the decision: US$0.15 per million input tokens and US$0.60
   per million output tokens (Groq model page, checked 2026-10-26).
@@ -459,6 +460,33 @@ the kernel if the runner dies); trace events are fsynced so spending survives a 
 pass handled a crash that cuts a multi-byte UTF-8 character, fsyncs the rewritten results file and
 directory entries, and limits fsync to spending-relevant events (about 14 ms per run on btrfs).
 Remaining risk is limited to a power cut at an exact moment; it is accepted for the pilot.
+
+## D23. Pilot backbone: Claude Sonnet 4.6 on Amazon Bedrock, low effort
+
+- **Date:** 2026-10-29 · **Status:** active (backbone, effort and budget chosen by Nikshay)
+- **Amends:** D3, D19 (provider), D21 (size and spending stop)
+- **Decision:** the pilot runs on Claude Sonnet 4.6 through Amazon Bedrock, paid from about
+  US$200-250 of AWS credit. Model ID `global.anthropic.claude-sonnet-4-6` (global cross-region
+  profile, no regional surcharge). Listed price US$3 per million input tokens and US$15 per million
+  output tokens. Effort `low` (`output_config.effort`), thinking off, temperature 0.6, at most 2,048
+  output tokens per call, the same for every system.
+- **Why thinking is off:** Claude requires temperature 1 when thinking is on; keeping it off keeps
+  the D3 temperature and spends no hidden output tokens. Low effort was Nikshay's choice.
+- **Budget:** at Sonnet prices the plan's 165-310 million tokens would cost about US$1,000-1,900,
+  far beyond the credit. Nikshay chose to run a smaller pilot first and decide the main-study
+  backbone from its measured cost per run: either Sonnet at a reduced study size, or a cheaper model.
+- **Pilot size:** a 24-run smoke test (`configs/pilot-smoke.json`: one task per family, one
+  repetition, stop at US$5) to catch broken prompts cheaply, then `configs/pilot.json` (pilot-v2):
+  6 tasks per family, 2 repetitions, 8 systems, 288 runs, stop at US$40. The offline rehearsal
+  gives a lower bound of US$5.2; real replies are longer, so the expected cost is about US$15-40.
+- **Adapter:** `bioalloc.llm.bedrock` calls `invoke_model` through boto3 with the Anthropic
+  Messages body (`anthropic_version: bedrock-2023-05-31`). The Anthropic SDK is not used because its
+  current releases send an API version that Bedrock rejects for Sonnet 4.6. botocore retries are
+  off; throttling and quota errors are `RateLimited` and retried by the metered client as in D19
+  (Bedrock sends no retry-after, so backoff starts at 1 s). The seed is not sent (Claude has none),
+  so repeated requests are independent samples. Prompt caching is off, so the ledger's two prices
+  are exact. Tested offline with a stand-in boto3 client; the first live step is the capability
+  check.
 
 ## Open questions found while planning (settled by D10-D14)
 

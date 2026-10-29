@@ -7,7 +7,7 @@ B.Tech final-year project (2026-27), Department of Computer Science and Engineer
 ## Status
 
 M1 done; M2 built up to the pilot (26 October 2026). All executors, controls and baselines, four
-task suites with frozen splits, the Groq adapter, the experiment runner and analysis work offline;
+task suites with frozen splits, the Groq and Bedrock adapters, the experiment runner and analysis work offline;
 the pilot on the real backbone waits for an API key. See `docs/progress.md`, `docs/pilot.md` and
 `docs/decisions.md`.
 
@@ -37,7 +37,7 @@ Prepare the datasets once (needs the network), then rehearse the pilot offline:
 ```sh
 uv run --group prep python scripts/prepare_data.py gsm8k planbench
 uv run bioalloc experiment run configs/pilot.json --rehearsal
-uv run bioalloc experiment analyze runs/pilot-v1-rehearsal
+uv run bioalloc experiment analyze runs/pilot-v2-rehearsal
 ```
 
 ## Contents
