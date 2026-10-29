@@ -82,6 +82,10 @@ class MacroAnt:
         facts = problem.init
         plan: list[str] = []
         tau: dict[str, float] = {}
+        # Weight of a shape never seen yet: tau0 decayed as often as every other weight, so a new
+        # shape has no edge over an old one that was never rewarded (R17).
+        baseline = p.tau0
+        achieved: set[tuple[str, ...]] = set(g for g in problem.goal if g in facts)
         feedback = ""
         reason = "decision_limit"
         for decision in range(p.max_decisions):
@@ -94,6 +98,7 @@ class MacroAnt:
                 break
             except LLMError:
                 feedback = "The last proposal failed; propose again."
+                baseline = self._evaporate(tau, baseline)
                 continue
             legal, rejected = [], []
             for rank, raw in enumerate(proposals[: p.candidates], start=1):
@@ -102,41 +107,57 @@ class MacroAnt:
                     rejected.append(f"segment {rank}: {result}")
                 else:
                     legal.append((rank, raw, result))
+            # Every rejected segment's reason reaches the next decision, whatever was chosen.
             feedback = (
-                "Your proposed segments could not be applied: " + "; ".join(rejected)
-                if rejected and not legal
+                "These proposed segments could not be applied: " + "; ".join(rejected)
+                if rejected
                 else ""
             )
             if not legal:
                 ctx.emit("ant_macro_choices", {"decision": decision, "rejected": rejected})
-                self._evaporate(tau)
+                baseline = self._evaporate(tau, baseline)
                 continue
             for _, _, (steps, _) in legal:
-                tau.setdefault(feature(steps), p.tau0)
+                tau.setdefault(feature(steps), baseline)
             weights = [
                 (tau[feature(steps)] ** p.alpha) * ((1.0 / rank) ** p.beta)
                 for rank, _, (steps, _) in legal
             ]
-            index = 0 if p.greedy else ctx.rng.choices(range(len(legal)), weights=weights)[0]
+            completing = [
+                i
+                for i, (_, _, (_, after)) in enumerate(legal)
+                if all(g in after for g in problem.goal)
+            ]
+            if completing:
+                # A segment that reaches the goal is a certificate: it is taken at once, by every
+                # variant, instead of being left to the sampler (R17).
+                index, probs = completing[0], [float(i == completing[0]) for i in range(len(legal))]
+            elif p.greedy:
+                index, probs = 0, [float(i == 0) for i in range(len(legal))]
+            else:
+                index = ctx.rng.choices(range(len(legal)), weights=weights)[0]
+                probs = [w / sum(weights) for w in weights]
             rank, raw, (steps, after) = legal[index]
-            newly = [g for g in problem.goal if g in after and g not in facts]
-            total = sum(weights)
+            # A milestone is a goal atom made true for the first time in this run (R17).
+            newly = [g for g in problem.goal if g in after and g not in achieved]
             ctx.emit(
                 "ant_macro_choices",
                 {
                     "decision": decision,
                     "rejected": rejected,
                     "candidates": [
-                        {"rank": r, "feature": feature(s), "weight": w, "p": w / total}
-                        for (r, _, (s, _)), w in zip(legal, weights, strict=True)
+                        {"rank": r, "feature": feature(s), "weight": w, "p": pr}
+                        for (r, _, (s, _)), w, pr in zip(legal, weights, probs, strict=True)
                     ],
                     "chosen": rank,
+                    "completing": bool(completing),
                     "milestone": len(newly),
                 },
             )
-            self._evaporate(tau)
+            baseline = self._evaporate(tau, baseline)
             if newly:
                 tau[feature(steps)] += p.delta
+                achieved.update(newly)
             facts = after
             plan += ["(" + " ".join(s) + ")" for s in steps]
             if all(g in facts for g in problem.goal):
@@ -147,9 +168,12 @@ class MacroAnt:
             raise BudgetExceeded("budget ran out before any segment was applied")
         return ExecutorOutcome(output={"plan": list[JsonValue](plan)})
 
-    def _evaporate(self, tau: dict[str, float]) -> None:
+    def _evaporate(self, tau: dict[str, float], baseline: float) -> float:
+        """Evaporate every weight; returns the decayed weight for shapes not seen yet."""
+        p = self.params
         for k in tau:
-            tau[k] = max(self.params.tau_min, (1 - self.params.rho) * tau[k])
+            tau[k] = max(p.tau_min, (1 - p.rho) * tau[k])
+        return max(p.tau_min, (1 - p.rho) * baseline)
 
     def _simulate(self, domain: Any, problem: Any, facts: Any, raw: Any) -> Any:
         """(steps, facts after) for a fully applicable segment, else the reason it is not."""

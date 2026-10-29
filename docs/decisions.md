@@ -900,7 +900,8 @@ equivalence on Logistics holds under coupled replies.
 
 ## D30. Macro ant with milestone rewards (amends D10 for planning)
 
-- **Date:** 2026-10-29 · **Status:** implemented, not yet run (design by GPT-6.1 Sol, R14)
+- **Date:** 2026-10-29 · **Status:** implemented and revised after review (R17), not yet run
+  (design by GPT-6.1 Sol, R14)
 - **Why:** the step-per-call ant cannot finish long plans at the primary cap (R13), and with a
   whole-task reward its learning cannot act before the task is solved (R14).
 - **Mechanism** (`bioalloc.executors.ant_macro.MacroAnt`): at most 5 decisions; each is one call
@@ -933,6 +934,34 @@ response to floor effects fixed in advance). Sol's difficulty check: tuning witn
 36, 52 and 64 actions for 5, 7 and 9 packages; from R13, roughly 60-80%, 35-60% and 15-40%
 single-agent success at 21,000 tokens, with four cities at the lower end (uncertain: no comparable
 four-city problems were run before). The US$35 stop is the `--max-usd 35` flag, not the config.
+
+## R17. Review of the R16 fixes and the macro ant (2026-10-29)
+
+GPT-6.1 Sol (high): no new findings on R16; the repair tuning run is cleared. Five problems in the
+macro ant (D30), all fixed with executor-level tests that fail on the old code:
+
+1. A legal candidate that reaches the goal could be left untaken by the sampler (reproduced on
+   `logisticsgen-v1-c3-p7-07-0`). A completing segment is now taken at once, by every variant.
+2. A milestone compared with the previous state, so a package delivered, picked up and
+   delivered again earned two rewards. A milestone is now a goal atom made true for the first
+   time in the run.
+3. Shapes seen for the first time started at tau0 while older ones had evaporated, a hidden
+   novelty bias (0.7826/0.2174 instead of 0.8/0.2 with no deposits). New shapes now start at
+   tau0 decayed as often as every other weight; a failed call also evaporates.
+4. Rejection reasons reached the next decision only when every candidate was rejected; now all
+   are passed on.
+5. The greedy control's trace reported sampling probabilities; it now reports the probabilities
+   actually used (1 and 0), and a completing choice is marked.
+
+Still a design risk to measure, not fix: two candidates with the same shape cancel the pheromone
+factor, and one legal candidate gives no choice. The first run reports how often candidates
+differ in shape, milestones before the last decision, and later probability changes due to
+deposits; ant work stops there if reinforcement has no room to act.
+
+Macro check (Sol's sizing): `configs/macro-check.json`, the six tuning instances
+`logisticsgen-v1-c{3,4}-p{5,7,9}-07-0`, ant_macro and its four controls, two repetitions, the
+repair run's settings and one outer attempt: 60 runs, at most 300 calls, about US$3.60-5.94
+(centrally US$4.32), stop at US$8. A mechanism check, not an efficacy comparison.
 
 ## Open questions found while planning (settled by D10-D14)
 

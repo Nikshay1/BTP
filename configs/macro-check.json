@@ -1,0 +1,46 @@
+{
+ "name": "macro-check-v1",
+ "mode": "measurement",
+ "model": "global.anthropic.claude-sonnet-4-6",
+ "temperature": 1.0,
+ "reasoning_effort": "low",
+ "max_completion_tokens": 2048,
+ "pricing": {
+  "input_per_m": 3.0,
+  "output_per_m": 15.0
+ },
+ "systems": [
+  "ant_macro",
+  "ant_macro_no_deposit",
+  "ant_macro_no_evaporation",
+  "ant_macro_uniform",
+  "macro_greedy"
+ ],
+ "tasks": {
+  "split_file": "data/splits/logistics-gen-v1.json",
+  "split": "tune",
+  "task_ids": [
+   "logisticsgen-v1-c3-p5-07-0",
+   "logisticsgen-v1-c3-p7-07-0",
+   "logisticsgen-v1-c3-p9-07-0",
+   "logisticsgen-v1-c4-p5-07-0",
+   "logisticsgen-v1-c4-p7-07-0",
+   "logisticsgen-v1-c4-p9-07-0"
+  ]
+ },
+ "repetitions": 2,
+ "seed": 1,
+ "budget": {
+  "max_tokens": 21000,
+  "max_model_calls": 60,
+  "max_elapsed_s": 600,
+  "max_tool_calls": 40
+ },
+ "max_attempts": 1,
+ "concurrency": 4,
+ "decompose": {
+  "planning": "single",
+  "tools": "natural",
+  "reasoning": "model"
+ }
+}
