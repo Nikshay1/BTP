@@ -714,6 +714,50 @@ Re-review of commit c73f66e: no new findings (FIFO fairness, sibling and ancesto
 wakeups, retries, deadlines, call limits, small completion limits, ledger consistency, and the
 D26 config, tasks and snapshot hashes). Cleared for the calibration run.
 
+## R12. Difficulty calibration results (2026-10-29)
+
+`runs/calibration-v1`: 60 runs, US$2.49, no errors, timeouts or imputed usage. Reviewed by Claude
+only (GPT-6.1 Sol reviews were paused for the rest of the session at Nikshay's request, to save
+his Codex usage; a Sol review of this and D27 is owed).
+
+| Subset | Single agent | Direct |
+|---|---|---|
+| Core planning, tools, reasoning (6 each) | 6/6 each | 6/6 each |
+| Extra Logistics (12) | 12/12, US$0.096/run | 5/12, US$0.044/run |
+| All Logistics (15) | 15/15, US$0.087/run | 8/15 |
+
+At the generous 120,000-token cap the single agent is at ceiling everywhere. On Logistics it gets
+there by revising against the simulator's rejection: only 2 of 15 first plans were valid, and the
+hardest problems took 4 to 8 calls and up to 47,000 tokens. Truncating the recorded runs at a
+token cap (a counterfactual, one repetition) gives the single agent 9/15 Logistics at 12,000
+tokens, 10/15 (67%) at 16,000-25,000, 13/15 at 30,000 and 15/15 at 50,000. The research plan's
+primary cap, twice the single agent's mean (10,532 tokens over the panel), is about 21,000 tokens,
+where the single agent sits at 67% on Logistics: inside the D26 target region. Direct stays at
+8/15 at every cap.
+
+## D27. Stop on a certificate; Logistics comparison at the primary cap
+
+- **Date:** 2026-10-29 · **Status:** active (implemented; Sol review owed)
+- **Amends:** D10 (ant stopping), D14 (bee stopping), D18 (majority vote)
+- **Decision 1:** bee, its no-stop control and majority vote return a goal-verified answer
+  (D15: a goal-level check passed, none failed) as soon as one exists, and ant stops at its first
+  goal-verified path (its weights are still updated). Octopus and the single agent already stop
+  this way. Each has `stop_on_certificate` (default on) to restore the earlier rule. Why: in the
+  second smoke test, fixed's ant spent 36% of its run searching after a verified plan, and bee
+  paid four recruitment calls after a verified plan in round 0. The certificate is public (the
+  plan simulator), so this uses no private information; it only matters where a goal check
+  exists (planning), and ant's learning signal is unchanged.
+- **Decision 2:** the primary token cap is 21,000 per task (twice the calibration single-agent
+  mean, rounded), fixed now, before any comparison. `configs/logistics-compare.json` runs single
+  agent, Direct, octopus, bee and ant on the 15 calibration Logistics problems, two repetitions,
+  at that cap: 150 runs, about US$8-14, stop at US$15.
+- **Question it answers:** at equal tokens, does any mechanism reach a verified Logistics plan
+  more often than the single agent (67% counterfactually)? The single agent revises one growing
+  conversation (about 6,000 tokens per call by its seventh plan); bee samples independent
+  short-context plans, which at temperature 1.0 differ (3 distinct plans of 4 in D25) but get no
+  feedback; octopus acts locally with check feedback. Speculative until measured; development
+  tasks only.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

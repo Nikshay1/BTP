@@ -12,8 +12,9 @@ delta * reward (once per kind, so longer paths earn nothing extra).
 Weights live in a table private to the task run and the subtask, initialized from a frozen
 snapshot (uniform in M2), shared by retries of the same subtask, and dropped when the task ends.
 
-The search stops after ``max_paths`` paths, or once ``min_finished`` paths have finished and the
-best candidate has not changed for ``patience`` paths, or when the budget runs out. The best
+The search stops at the first goal-verified path (D27), after ``max_paths`` paths, or once
+``min_finished`` paths have finished and the best candidate has not changed for ``patience``
+paths, or when the budget runs out. The best
 candidate ranks goal-verified first, then not rejected by any check, then fewest tokens.
 
 Controls (Table 3): ``no_deposit`` (delta = 0), ``no_evaporation`` (rho = 0) and ``uniform``
@@ -58,6 +59,9 @@ class AntParams:
     max_choices: int = 30
     min_finished: int = 2
     patience: int = 3
+    # D27: stop at the first goal-verified path (its weights are still updated). Off restores the
+    # D10 search, which keeps looking for a cheaper verified path.
+    stop_on_certificate: bool = True
 
 
 @dataclass(frozen=True)
@@ -123,6 +127,9 @@ class Ant:
                     best, unchanged = candidate, 0
                 else:
                     unchanged += 1
+                if self.params.stop_on_certificate and candidate.verified:
+                    stop_reason = "certificate"
+                    break
             if finished >= self.params.min_finished and unchanged >= self.params.patience:
                 stop_reason = "stagnation"
                 break

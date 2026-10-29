@@ -229,3 +229,74 @@ def test_bee_votes_on_intermediate_nodes_without_a_contract(tmp_path: Path) -> N
     coord = Coordinator({"bee": Bee(model="m")}, Constant("bee"), CoordinatorConfig(max_attempts=1))
     result = asyncio.run(coord.run(graph, GSM8K(), llm, Tracer(tmp_path, "r")))
     assert result.status == "completed" and result.answer == {"partial": 12}
+
+
+class GoalFamily(Family):
+    """As Family, plus a goal-level check that confirms only {"x": 42} (unknown otherwise)."""
+
+    class Goal:
+        name = "goal"
+        evidence = "goal"
+
+        def evaluate(self, subtask, output, upstream):  # type: ignore[no-untyped-def]
+            ok = isinstance(output, dict) and output.get("x") == 42
+            return CheckResult(
+                check="goal", verdict="pass" if ok else "unknown", evidence="goal", reason=""
+            )
+
+    def checks(self, s):  # type: ignore[no-untyped-def]
+        return [self.Valid(), self.Goal()]
+
+
+def run_goal(fake: FakeTransport, tmp: Path, executor) -> tuple[RunResult, list]:  # type: ignore[no-untyped-def, type-arg]
+    llm = MeteredClient(
+        fake, Account(Budget(max_tokens=10**7, max_model_calls=200)), "coordinator", "coordinator"
+    )
+    coord = Coordinator(
+        {executor.name: executor}, Constant(executor.name), CoordinatorConfig(max_attempts=1)
+    )
+    tracer = Tracer(tmp, "r")
+    result = asyncio.run(coord.run(GRAPH, GoalFamily(), llm, tracer))
+    tracer.close()
+    return result, list(read_trace(tmp))
+
+
+MINORITY_CERTIFIED = {(0, 0): 5, (1, 0): 42, (2, 0): 5, (3, 0): 5, (4, 0): 7}
+
+
+def test_bee_returns_a_certified_answer_at_once(tmp_path: Path) -> None:
+    # D27: one scout's answer is goal-verified in round 0; no recruitment or quorum is needed.
+    fake = FakeTransport().respond(SOLVE, answers(MINORITY_CERTIFIED))
+    result, events = run_goal(fake, tmp_path, Bee(model="m"))
+    assert result.answer == {"x": 42} and len(fake.requests) == 5
+    assert stop_of(events)["reason"] == "certificate" and stop_of(events)["scout"] == 1
+
+
+def test_bee_without_certificate_stopping_keeps_the_d14_rule(tmp_path: Path) -> None:
+    table = {**MINORITY_CERTIFIED, **{(i, r): 5 for i in range(5) for r in range(1, 6)}}
+    fake = (
+        FakeTransport()
+        .respond(SOLVE, answers(table))
+        .respond(ASSESS, lambda r: json.dumps({"accept": True, "confidence": 0.9}))
+    )
+    _, events = run_goal(fake, tmp_path, Bee(model="m", stop_on_certificate=False))
+    assert stop_of(events)["reason"] != "certificate" and len(fake.requests) > 5
+
+
+def test_majority_returns_a_certified_vote_over_the_plurality(tmp_path: Path) -> None:
+    fake = FakeTransport().respond(SOLVE, answers(MINORITY_CERTIFIED))
+    result, events = run_goal(fake, tmp_path, MajorityVote(model="m"))
+    assert result.answer == {"x": 42} and stop_of(events)["reason"] == "certificate"
+    plain = FakeTransport().respond(SOLVE, answers(MINORITY_CERTIFIED))
+    result, _ = run_goal(
+        plain, tmp_path / "plain", MajorityVote(model="m", stop_on_certificate=False)
+    )
+    assert result.answer == {"x": 5}
+
+
+def test_a_certificate_found_in_the_last_round_is_returned(tmp_path: Path) -> None:
+    # Round 0: all rejected; round 1 (the last, max_rounds=1): scout 3 is goal-verified.
+    table = {(i, 0): -1 for i in range(5)} | {(i, 1): 5 for i in range(5)} | {(3, 1): 42}
+    fake = FakeTransport().respond(SOLVE, answers(table))
+    result, events = run_goal(fake, tmp_path, Bee(model="m", max_rounds=1))
+    assert result.answer == {"x": 42} and stop_of(events)["reason"] == "certificate"

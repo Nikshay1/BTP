@@ -221,6 +221,21 @@ def test_verified_paths_are_reinforced_and_state_never_leaks_between_runs(tmp_pa
     assert again[0]["tau"] == paths[0]["tau"]
 
 
+def test_ant_stops_at_the_first_verified_path(tmp_path: Path) -> None:
+    # D27: the search ends as soon as a path is goal-verified (its weights are still updated).
+    result, paths = run_counter(tmp_path / "on", Ant(model="m"))
+    assert result.answer == {"value": 3}
+    assert paths[-1]["reward"] == 1 and sum(p["reward"] for p in paths) == 1
+    stops = [e.data for e in read_trace(tmp_path / "on") if e.kind == "executor_stop"]
+    assert stops == [
+        {"reason": "certificate", "paths_finished": len([p for p in paths if p["finished"]])}
+    ]
+    _, longer = run_counter(
+        tmp_path / "off", Ant(model="m", params=AntParams(stop_on_certificate=False))
+    )
+    assert len(longer) > len(paths)
+
+
 def test_no_deposit_control_never_reinforces(tmp_path: Path) -> None:
     _, paths = run_counter(tmp_path, ant_controls("m")["ant_no_deposit"])
     assert all(v <= 1.0 for p in paths for v in p["tau"].values())

@@ -38,6 +38,7 @@ from pydantic import JsonValue
 
 from bioalloc import prompts
 from bioalloc.budget import BudgetExceeded, MeteredClient
+from bioalloc.checks import goal_verified
 from bioalloc.executors.base import (
     ExecutionContext,
     ExecutorOutcome,
@@ -61,6 +62,8 @@ class Scout:
     # right after inhibition still returns an answer it had.
     last_option: str | None = None
     last_output: JsonValue = None
+    # The scout's own answer passed a goal-level public check (D15): a certificate.
+    verified: bool = False
 
 
 @dataclass
@@ -78,8 +81,9 @@ class _Answerer:
         seed: int,
         tag: str,
         client: MeteredClient | None = None,
-    ) -> tuple[str | None, JsonValue]:
-        """One independent answer through Direct's bounded episode; (option, output)."""
+    ) -> tuple[str | None, JsonValue, bool]:
+        """One independent answer through Direct's bounded episode; (option, output, whether a
+        goal-level check verified it)."""
         client = dataclasses.replace(client or ctx.llm, agent=agent)
         sub_ctx = dataclasses.replace(ctx, llm=client)
         request = LLMRequest(
@@ -93,12 +97,12 @@ class _Answerer:
         )
         episode = await tool_episode(sub_ctx, request, 4)
         if incompleteness(episode) is not None:
-            return None, None
+            return None, None, False
         output = parse_json(episode.reply.content)
-        verdict, _ = ctx.check(subtask, output)
+        verdict, results = ctx.check(subtask, output)
         if verdict == "fail":
-            return None, output
-        return ctx.normalize(output), output
+            return None, output, False
+        return ctx.normalize(output), output, goal_verified(results)
 
 
 async def _gather_budgeted(coros: list) -> tuple[list, bool]:  # type: ignore[type-arg]
@@ -130,6 +134,8 @@ class Bee:
     temperature: float = 0.6
     reasoning_effort: str | None = None
     name: str = "bee"
+    # D27: return a goal-verified scout answer at once instead of waiting for a quorum.
+    stop_on_certificate: bool = True
     _answerer: _Answerer = field(init=False)
 
     def __post_init__(self) -> None:
@@ -148,6 +154,9 @@ class Bee:
         for rnd in range(1, self.max_rounds + 1):
             support = self._support(scouts)
             ctx.emit("bee_round", {"round": rnd - 1, "support": dict(support)})
+            certified = self._certified(scouts)
+            if certified is not None:
+                return self._finish_certified(certified, scouts, ctx)
             if support and max(support.values()) >= self.quorum:
                 reason = "quorum"
                 break
@@ -168,9 +177,33 @@ class Bee:
         else:
             support = self._support(scouts)
             ctx.emit("bee_round", {"round": self.max_rounds, "support": dict(support)})
+            certified = self._certified(scouts)
+            if certified is not None:
+                return self._finish_certified(certified, scouts, ctx)
             if support and max(support.values()) >= self.quorum:
                 reason = "quorum"
         return self._finish(scouts, ctx, reason)
+
+    def _certified(self, scouts: list[Scout]) -> Scout | None:
+        """The first scout (by index) holding a goal-verified answer, if stopping on one is on."""
+        if not self.stop_on_certificate:
+            return None
+        return next((s for s in scouts if s.verified and s.option is not None), None)
+
+    def _finish_certified(
+        self, scout: Scout, scouts: list[Scout], ctx: ExecutionContext
+    ) -> ExecutorOutcome:
+        ctx.emit(
+            "executor_stop",
+            {
+                "reason": "certificate",
+                "support": dict(self._support(scouts)),
+                "quorum_reached": False,
+                "from_released": False,
+                "scout": scout.index,
+            },
+        )
+        return ExecutorOutcome(output=scout.output)
 
     def _support(self, scouts: list[Scout]) -> Counter[str]:
         return Counter(s.option for s in scouts if s.option is not None)
@@ -185,7 +218,7 @@ class Bee:
         results, budget_hit = await _gather_budgeted(coros)
         for s, r in zip(who, results, strict=True):
             if r is not None:
-                s.option, s.output = r
+                s.option, s.output, s.verified = r
         return budget_hit
 
     def _inhibit(self, scouts: list[Scout], ctx: ExecutionContext) -> None:
@@ -199,7 +232,7 @@ class Bee:
         ]
         for s in released:
             s.last_option, s.last_output = s.option, s.output
-            s.option = None
+            s.option, s.verified = None, False
         ctx.emit("bee_inhibition", {"released": [s.index for s in released]})
 
     async def _recruit(
@@ -227,6 +260,7 @@ class Bee:
             if accepted:
                 rep = self._representative(scouts, o)
                 s.option, s.output, s.confidence = o, rep.output, confidence
+                s.verified = rep.verified
         ctx.emit("bee_recruitment", {"round": rnd, "decisions": decisions})
         return budget_hit
 
@@ -302,12 +336,14 @@ class MajorityVote:
     temperature: float = 0.6
     reasoning_effort: str | None = None
     name: str = "majority"
+    # D27: a goal-verified vote is returned at once (the same certificate access as bee).
+    stop_on_certificate: bool = True
 
     async def execute(self, subtask: Subtask, ctx: ExecutionContext) -> ExecutorOutcome:
         answerer = _Answerer(
             self.model, self.max_completion_tokens, self.temperature, self.reasoning_effort
         )
-        votes: list[tuple[str, JsonValue]] = []
+        votes: list[tuple[str, JsonValue, bool]] = []
         budget_hit = False
         if self.max_calls is None:
             coros = [
@@ -343,10 +379,16 @@ class MajorityVote:
                 )
                 if results[0] is not None and results[0][0] is not None:
                     votes.append(results[0])
+                    if self.stop_on_certificate and results[0][2]:
+                        break
                 if refused and ctx.llm.account.exhausted():
                     budget_hit = True
                     break
-        tally = Counter(o for o, _ in votes)
+        tally = Counter(o for o, _, _ in votes)
+        certified = next((v for v in votes if v[2]), None) if self.stop_on_certificate else None
+        if certified is not None:
+            ctx.emit("executor_stop", {"reason": "certificate", "tally": dict(tally)})
+            return ExecutorOutcome(output=certified[1])
         ctx.emit(
             "executor_stop", {"reason": "budget" if budget_hit else "votes", "tally": dict(tally)}
         )
@@ -355,4 +397,4 @@ class MajorityVote:
                 raise BudgetExceeded("budget ran out before any usable vote")
             return ExecutorOutcome(output=None, incomplete="no usable vote")
         winner = min(tally, key=lambda o: (-tally[o], o))
-        return ExecutorOutcome(output=next(out for o, out in votes if o == winner))
+        return ExecutorOutcome(output=next(out for o, out, _ in votes if o == winner))
