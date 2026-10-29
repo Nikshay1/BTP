@@ -634,6 +634,54 @@ Final re-review of commit 5043a9f: no new findings (213 adversarial assertions, 
 replies parsed exactly as before, diversity report verified on repetitions with tool
 continuations). Cleared for the diversity check and the second smoke test.
 
+## R9. Diversity check and second smoke test (2026-10-29)
+
+Runs: `runs/diversity-t06`, `runs/diversity-t10` (32 Direct runs, about US$0.33) and
+`runs/pilot-smoke-2` (48 runs, US$3.55 counting shared decompositions once, of which US$0.18 is
+imputed for five timed-out calls). Reviewed by Claude and GPT-6.1 Sol (high); traces, results
+and recomputed grades agree on all 80 records.
+
+- **No parser-induced failures observed.** The failures are substantive: Direct's Logistics plans
+  break action preconditions (0 of 10 valid), ant answers GSM8K by guessing (no calculator, no
+  reward signal; 75 instead of 315) and exhausts its reservations on Logistics (US$0.51), and five
+  bee scout calls hung for 120 s (one, then four together). Successful replies never took more
+  than 9 s (1,688 tokens in 8.8 s), so the hang is not slow generation; cause unknown.
+- **Ceiling on these samples.** The single agent solved 6/6 at US$0.023 per run. Octopus 6/6 at
+  1.09 times its cost, bee 6/6 at 4.4 times, ant 4/6 at 5.7 times. Even a hindsight oracle
+  picking the cheapest correct bio run per task costs more than the single agent: no present
+  reason to train a selector. Single-node tasks give octopus nothing to exploit over the single
+  agent, which uses the same worker.
+- **Temperature 1.0:** no observed accuracy loss (12/16 at both); on Logistics both temperatures
+  emit 3 distinct invalid plans, with somewhat different errors at 1.0. Kept (D25).
+- **Savings found in traces:** fixed's ant found a verified Logistics plan after 24 calls and spent
+  11 more (36% of the run); bee had a verified plan in round 0 and paid four recruitment calls to
+  reach quorum. Stopping on a public goal certificate is the first mechanism change to try.
+
+Fixed: the diversity report now reads every attempt's output (emitted, unreadable and accepted
+options separately; it had reported 0 distinct Logistics plans instead of 3); reservations use
+1.75 characters per token, which keeps all 580 distinct live prompts at least 10% above their real
+count (2.5 fell short on 114 Logistics prompts, worst 2,225 reserved against 2,711); the analysis
+table shows runs with imputed usage; paired comparisons flag a degenerate result (no discordant
+pairs), which is not evidence of equivalence. Planning checks and grading share one simulator,
+so their agreement is not independent validation (VAL remains open).
+
+Decision: pilot-v2 (288 runs) is not run as configured. Next is a baseline-only calibration (D26).
+
+## D26. Difficulty calibration before any mechanism comparison
+
+- **Date:** 2026-10-29 · **Status:** active
+- **Replaces:** running pilot-v2 as configured (D24 tasks stay as the panel's core)
+- **Decision:** `configs/calibration.json` runs only the single agent and Direct, once, on 30
+  training tasks: the 18 D24 pilot tasks plus the 12 training Logistics problems with the most
+  goal atoms (6 or 7 packages, against 5 in the smoke test), never two from one group, chosen by
+  `scripts/select_calibration_tasks.py`; a test checks the rule independently. 60 runs, about
+  US$2-3, stop at US$6.
+- **Why:** the comparison only means something where the single agent itself sometimes fails.
+  The target development region is a single-agent success rate of roughly 60-85%. If the
+  calibration finds it (likely in Logistics), the next step compares single agent, octopus and a
+  bee with certificate stopping there; if not, harder task families (branching tool workflows,
+  MATH) go into a split v3 before more paid runs.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

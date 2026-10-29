@@ -118,6 +118,9 @@ def paired(
         "s_d": s_d,
         "mde_from_sd": 2.8 * s_d / math.sqrt(n) if n else math.nan,
         "mde_from_discordance": 2.8 * math.sqrt(q / n) if n else math.nan,
+        # With no discordant pairs the interval and MDE collapse to zero; that is no evidence the
+        # systems are equivalent, only that this sample cannot tell them apart (R9).
+        "degenerate": discordant == 0,
     }
 
 

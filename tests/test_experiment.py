@@ -325,3 +325,43 @@ def test_pilot_configs_hold_exactly_the_d24_selection() -> None:
     median = (train_q[len(train_q) // 2 - 1] + train_q[len(train_q) // 2]) / 2
     chosen_q = [t for t in pilot if t.startswith("gsm8k-")]
     assert len(chosen_q) == 6 and all(words[t] >= median for t in chosen_q)
+
+
+def test_calibration_config_holds_exactly_the_d26_selection() -> None:
+    import importlib.util
+    import sys
+
+    from bioalloc.evaluation import planbench_data, splits
+    from bioalloc.tasks.strips import parse_problem
+
+    sys.path.insert(0, str(ROOT / "scripts"))
+    spec = importlib.util.spec_from_file_location(
+        "cal", ROOT / "scripts" / "select_calibration_tasks.py"
+    )
+    assert spec and spec.loader
+    cal = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(cal)
+    chosen = cal.calibration()
+    ids = chosen["planning"] + chosen["tools"] + chosen["reasoning"] + chosen["logistics_hard"]
+    cfg = json.loads((ROOT / "configs" / "calibration.json").read_text())
+    assert cfg["tasks"]["task_ids"] == ids and cfg["systems"] == ["single_agent", "direct"]
+    assignments = {a.task_id: a for a in splits.load(ROOT / "data/splits/v2.json")}
+    assert len({assignments[t].group for t in ids}) == len(ids) == 30
+    assert all(assignments[t].split == "train" for t in ids)
+    # Independently: no unused training Logistics group has more goal atoms than the fewest
+    # chosen.
+    items = {i.task.id: i for i in planbench_data.load()}
+
+    def goals(t: str) -> int:
+        return len(parse_problem(str(items[t].task.inputs["problem"])).goal)
+
+    floor = min(goals(t) for t in chosen["logistics_hard"])
+    used = {assignments[t].group for t in ids}
+    assert not [
+        t
+        for t, a in assignments.items()
+        if a.split == "train"
+        and t.startswith("planbench-logistics-")
+        and a.group not in used
+        and goals(t) > floor
+    ]

@@ -77,7 +77,13 @@ decides the main-study backbone and size (D23).
    uv run bioalloc experiment run configs/pilot-smoke.json --max-usd 8
    uv run bioalloc experiment analyze runs/pilot-smoke-2
    ```
-6. The pilot (after a difficulty check, R6):
+6. Difficulty calibration (D26; single agent and Direct on 30 training tasks, about US$2-3):
+
+   ```sh
+   uv run bioalloc experiment run configs/calibration.json --max-usd 6
+   uv run bioalloc experiment analyze runs/calibration-v1
+   ```
+7. The pilot (not run as configured, R9; replaced by targeted comparisons after D26):
 
    ```sh
    uv run bioalloc experiment run configs/pilot.json --max-usd 40

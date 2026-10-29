@@ -66,9 +66,10 @@ class CachedReplyInMeasurement(RuntimeError):
 
 
 def _chars_to_tokens(n: int) -> int:
-    # 2.5 characters per token keeps every prompt of the first live smoke test (Claude Sonnet 4.6,
-    # 183 distinct requests) at least 10% above its real count; 3 fell short on planning prompts.
-    return math.ceil(n * 2 / 5)
+    # 1.75 characters per token keeps every prompt of the live runs so far (Claude Sonnet 4.6,
+    # 580 distinct requests from both smoke tests and the diversity check) at least 10% above its
+    # real count; PDDL problems tokenize densely, and 2.5 fell short on Logistics prompts.
+    return math.ceil(n * 4 / 7)
 
 
 # Providers add a hidden system prompt when tools are offered and bill it as input (Anthropic

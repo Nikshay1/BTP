@@ -61,11 +61,11 @@ def test_siblings_wait_for_reservations_instead_of_failing(tmp_path: Path) -> No
     fake = FakeTransport().always(tiny, tiny)
     llm = MeteredClient(
         SlowTransport(fake),
-        Account(Budget(max_tokens=400, max_model_calls=10)),
+        Account(Budget(max_tokens=600, max_model_calls=10)),
         "coordinator",
         "coordinator",
     )
-    # Each Direct call reserves roughly 300 tokens, so only one fits at a time.
+    # Each Direct call reserves 434 tokens (R9 margin), so only one fits at a time.
     coord = Coordinator(
         {"direct": Direct(model="m", max_completion_tokens=200)}, Constant("direct")
     )

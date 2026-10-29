@@ -186,12 +186,23 @@ def experiment_analyze(run_dir: Path, comparisons: list[list[str]]) -> int:
     assignments = load_split(REPO_ROOT / config["tasks"]["split_file"])
     groups = {x.task_id: x.group for x in assignments}
     families = {x.task_id: x.family for x in assignments}
-    cols = ("system", "runs", "success", "within_budget", "mean_tokens", "mean_calls", "mean_usd")
-    print("  ".join(f"{c:>14}" for c in cols))
+    # usage_incomplete: runs with a call whose usage was unknown and charged at its full
+    # reservation (R9), so their tokens and dollars are partly imputed.
+    cols = (
+        "system",
+        "runs",
+        "success",
+        "within_budget",
+        "usage_incomplete_runs",
+        "mean_tokens",
+        "mean_calls",
+        "mean_usd",
+    )
+    print("  ".join(f"{c.removesuffix('_runs'):>17}" for c in cols))
     for row in summarize(records):
         print(
             "  ".join(
-                f"{row[c]:>14.3f}" if isinstance(row[c], float) else f"{row[c]:>14}" for c in cols
+                f"{row[c]:>17.3f}" if isinstance(row[c], float) else f"{row[c]:>17}" for c in cols
             )
         )
     for a, b in comparisons:

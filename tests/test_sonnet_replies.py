@@ -63,10 +63,11 @@ def test_normalization_leaves_well_formed_and_kindless_items_alone() -> None:
     assert normalize_candidate("FINISH") == "FINISH"
 
 
-def test_reservations_cover_every_real_prompt_of_the_smoke_test() -> None:
-    with gzip.open(FIXTURES / "sonnet46_smoke_prompts.json.gz", "rt") as f:
+def test_reservations_cover_every_real_prompt_so_far() -> None:
+    # Every distinct request of both smoke tests and the diversity check (R9).
+    with gzip.open(FIXTURES / "sonnet46_live_prompts.json.gz", "rt") as f:
         rows = json.load(f)
-    assert len(rows) == 183
+    assert len(rows) == 580
     short = [
         (reserve_prompt_tokens(LLMRequest.model_validate(r["request"])), r["prompt_tokens"])
         for r in rows

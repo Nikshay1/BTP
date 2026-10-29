@@ -4,9 +4,10 @@ Usage: uv run python scripts/diversity_report.py runs/diversity-t06 runs/diversi
 
 Both configs run Direct once per repetition on single-node tasks with one attempt, so every
 repetition of a task sends the same first request and only the provider's sampling differs. Per
-task and temperature the report gives: distinct first request bodies (must be 1), distinct final
-answers after the task family's own normalization (the options bee would count), unreadable or
-invalid answers, distinct final reply texts, and correct runs. What matters for bee and for
+task and temperature the report gives: distinct first request bodies (must be 1), distinct
+emitted answers after the task family's own normalization (accepted or not), unreadable ones,
+distinct accepted answers (the options bee would count), distinct final reply texts, and correct
+runs. What matters for bee and for
 repetition statistics is whether errors differ, not wording.
 """
 
@@ -30,13 +31,18 @@ def trace(run_dir: str) -> list[dict[str, Any]]:
 
 
 def summarize(exp_dir: Path, loader: TaskLoader) -> dict[str, dict[str, int]]:
+    """Per task: first request bodies; emitted answers (what the solver proposed, read from each
+    attempt's output, whether or not the checks accepted it) as normalized options; how many
+    emitted answers were unreadable; how many passed the public checks (accepted runs, whose
+    distinct options bee would count); distinct final reply texts; correct runs."""
     rows: dict[str, dict[str, Any]] = defaultdict(
         lambda: {
             "bodies": set(),
-            "options": set(),
+            "emitted": set(),
+            "accepted": set(),
             "texts": set(),
             "runs": 0,
-            "invalid": 0,
+            "unreadable": 0,
             "ok": 0,
         }
     )
@@ -57,18 +63,24 @@ def summarize(exp_dir: Path, loader: TaskLoader) -> dict[str, dict[str, int]]:
         replies = [e for e in events if e["kind"] == "llm_reply"]
         if replies:
             row["texts"].add(replies[-1]["data"]["reply"]["content"])
+        for e in events:
+            if e["kind"] == "attempt_end":
+                option = task.task_family.normalize(subtask, e["data"]["result"].get("output"))
+                if option is None:
+                    row["unreadable"] += 1
+                else:
+                    row["emitted"].add(option)
         answer = next((e["data"].get("answer") for e in events if e["kind"] == "run_end"), None)
-        option = task.task_family.normalize(subtask, answer)
-        if option is None:
-            row["invalid"] += 1
-        else:
-            row["options"].add(option)
+        accepted = task.task_family.normalize(subtask, answer)
+        if accepted is not None:
+            row["accepted"].add(accepted)
     return {
         t: {
             "runs": r["runs"],
             "request_bodies": len(r["bodies"]),
-            "distinct_answers": len(r["options"]),
-            "invalid": r["invalid"],
+            "emitted_options": len(r["emitted"]),
+            "unreadable": r["unreadable"],
+            "accepted_options": len(r["accepted"]),
             "distinct_texts": len(r["texts"]),
             "correct": r["ok"],
         }
