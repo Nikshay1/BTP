@@ -27,6 +27,7 @@ from bioalloc.decomposition import PublicTask
 from bioalloc.evaluation import gsm8k_data, planbench_data, toolsuite_data
 from bioalloc.evaluation.toy_data import Grade
 from bioalloc.executors.ant import ant_controls
+from bioalloc.executors.ant_macro import macro_controls
 from bioalloc.executors.base import Executor
 from bioalloc.executors.bee import Bee, MajorityVote
 from bioalloc.executors.conventional import PlanThenExecute, SingleAgent, act_observe
@@ -184,6 +185,11 @@ SYSTEMS = (
     "majority_staged",
     "bee_feedback3",
     "majority_feedback3",
+    "ant_macro",
+    "ant_macro_no_deposit",
+    "ant_macro_no_evaporation",
+    "ant_macro_uniform",
+    "macro_greedy",
 )
 
 
@@ -205,6 +211,7 @@ def executor_pool(m: ModelSettings) -> dict[str, Executor]:
     }
     pool.update(ant_controls(m.model, **kw))
     pool.update(repair_executors(m.model, **kw))
+    pool.update(macro_controls(m.model, **kw))
     return pool
 
 

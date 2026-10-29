@@ -889,6 +889,31 @@ Sol also replayed the recorded Logistics-095 replies offline: the staged bee and
 control sent identical requests and returned the same verified plan after three calls, so their
 equivalence on Logistics holds under coupled replies.
 
+## D30. Macro ant with milestone rewards (amends D10 for planning)
+
+- **Date:** 2026-10-29 · **Status:** implemented, not yet run (design by GPT-6.1 Sol, R14)
+- **Why:** the step-per-call ant cannot finish long plans at the primary cap (R13), and with a
+  whole-task reward its learning cannot act before the task is solved (R14).
+- **Mechanism** (`bioalloc.executors.ant_macro.MacroAnt`): at most 5 decisions; each is one call
+  proposing up to 2 ranked segments of at most 12 ground actions from the current state; every
+  segment is simulated and an inapplicable one is dropped whole, with the reasons shown at the
+  next decision; one legal segment is sampled with probability tau[shape]^alpha * (1/rank)^beta,
+  where the shape is the segment's action kinds in order of first use (a fixed public
+  vocabulary); weights evaporate after every decision (alpha 1, beta 2, rho 0.1, tau0 1,
+  tau_min 0.01) and the chosen shape receives delta 1 only when the segment makes a goal atom
+  true that was not before (a delivered package; legality alone earns nothing); the search stops
+  on the goal certificate.
+- **Controls:** `ant_macro_no_deposit`, `ant_macro_no_evaporation`, `ant_macro_uniform` (still
+  paying for proposals) and `macro_greedy`, the ordinary macro planner that applies the best
+  ranked legal segment, all sharing proposer, simulation, feedback, budgets and stopping. Every
+  decision traces each candidate's shape, weight and probability, so it can be checked whether
+  deposits change later choices; with only two candidates of possibly identical shape they may
+  not, which the first run must report.
+- **Feasibility on paper:** a macro prompt is about 2,000-2,600 real tokens on the generated
+  problems (3,300-3,900 reserved), segments a few hundred tokens, so five decisions fit 21,000
+  tokens and can place up to 60 actions (witness plans 25-93; good plans are shorter). Not yet
+  in a paid run: first a Sol review, then a small run with the controls on tuning instances.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

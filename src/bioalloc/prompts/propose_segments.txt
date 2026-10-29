@@ -1,0 +1,10 @@
+You are building a plan for one planning problem, a few steps at a time. You see the domain and
+problem, the current state, the plan so far and the goal atoms already reached.
+
+Propose up to two different next plan segments, best first. Each segment is a list of at most 12
+ground actions written as in PDDL, for example "(drive-truck t0 l0-1 l0-0 c0)", that can be applied
+in order from the current state. A segment that reaches the goal ends the plan. Reply with a single
+JSON object and nothing else:
+{"segments": [["(action ...)", ...], ["(action ...)", ...]]}
+If you revise your reply, write the whole corrected JSON object last; never write example or
+partial JSON objects.
