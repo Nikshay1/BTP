@@ -65,3 +65,28 @@ Speaker: Nikshay. To summarise where we are. Phase 1 is done: the framework, the
 ## 16. What we take from Phase 1
 
 Speaker: Nikshay. To close, three points. First, a strong single agent is the real bar, and most bio-inspired designs do not clear it as first written; we measured that fairly instead of assuming the opposite. Second, on long planning, what decides the winner is whether the system uses feedback, not the animal metaphor. Third, inside one task family the differences between systems are mostly sampling noise, so the selector we build next has to choose across different kinds of subtask. The code, every decision and every run are in our repository. Thank you, we are happy to take questions.
+## Likely panel questions
+
+**"Your mechanisms lose to a single agent. So what is the contribution?"**
+A fair, enforced-budget comparison that most multi-agent papers skip, plus an explanation from the traces of why each mechanism loses (no feedback, too few calls, no legal options). Kim et al. 2026 and Wang et al. 2024 report the same pattern; we measured it under stricter controls. The selector, the actual research question (RQ2), is the next phase.
+
+**"Why not use a weaker or open model, where coordination may help more?"**
+Possible in Phase 2. We chose a strong model on purpose: a gain that only appears with a weak model may disappear as models improve. The framework is model-agnostic (Bedrock and Groq adapters exist).
+
+**"Is 15 or 30 problems enough?"**
+No, and we say so: with 15 problems we detect only about 25-point differences. That is why we generated 180 problems and kept 120 as a held-out test.
+
+**"Why did you not run the held-out test?"**
+We wrote the rule before the tuning run: a variant goes to the test only if it beats the single agent, or matches it with 20% fewer tokens. None did. Running the test anyway would spend the unseen problems on a variant we already know does not qualify.
+
+**"How do you make sure the comparison is fair?"**
+Same model, prompt, decomposition and checks for every system; a ledger that refuses a call before it is sent if it would break the budget; frozen, hashed splits; and controls that remove only the biological part (for example bee without stop signals).
+
+**"Isn't 'bee' just majority voting?"**
+On Logistics it reduced to independent sampling, which we show from the traces. That is why we have a matched majority-vote control with the same number of calls; bee's inhibition matters only when there are several accepted but unverified answers, which Phase 2's reasoning tasks have.
+
+**"What did it cost?"**
+About US$52 of AWS credit for every live run so far, about 7 to 14 cents per task run.
+
+**"What exactly is new compared with Symphony-Coord or MasRouter?"**
+They route among agents, roles, models or graph shapes. We route among coordination mechanisms with their own control flow, and test each against controls without its biological component.
