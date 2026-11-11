@@ -10,7 +10,8 @@ log=runs/resume-aime.log
 run_until_done() {  # config, max-usd
   while true; do
     echo "$(date -u +%FT%TZ) start $1" >>"$log"
-    uv run bioalloc experiment run "$1" --max-usd "$2" >>"$log" 2>&1
+    uv run bioalloc experiment run "$1" --max-usd "$2" \
+      --accept-code-change "driver, scripts and docs only" >>"$log" 2>&1
     rc=$?
     echo "$(date -u +%FT%TZ) exit $rc for $1" >>"$log"
     case $rc in
