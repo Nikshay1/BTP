@@ -1097,6 +1097,34 @@ repetitions, 21,000 tokens.
   it. Ant-style search should be tried where the options are several, cheap and checkable (for
   example a choice between tools or sub-plans), not on single steps of a long plan.
 
+## D31. Quorum-sensing bee on competition maths (AIME)
+
+- **Date:** 2026-11-11 · **Status:** test pre-registered here, before the test run
+- **Why:** Phase 1 tested the mechanisms where a single agent is strongest: planning with a
+  simulator, whose rejections let one agent revise until it succeeds (R13, R21). Bee's biological
+  strength is different: honeybee swarms sense a quorum and commit early when scouts agree, and
+  keep collecting evidence when they disagree (Seeley et al.). That only matters where answers
+  cannot be checked, so independent opinions carry information. Competition maths is that regime.
+- **Suite:** AIME 2020-2025, 178 problems with one integer answer (one problem with two accepted
+  answers excluded), pinned and hash-checked (`aime_data.py`), served through the GSM8K family
+  (format check only, calculator tool, no goal check). Split `data/splits/aime-v1.json`: 30 tune,
+  148 test by hashed order of problem text.
+- **Systems:** `single_agent`; `majority5`, five independent answers, one at a time, plurality
+  (ties by canonical order); `bee_quorum5`, the same five scouts in the same order, stopping as
+  soon as ceil(0.6 x 5) = 3 agree, otherwise D14's inhibition and recruitment rounds (D28's
+  `ScoutRepair` with schedule 0-4). With the same order, a quorum of 3 among 5 is always the
+  plurality of 5, so bee's quorum stop alone cannot cost accuracy against majority5; it saves the
+  calls after the quorum. Where no quorum forms, bee's rounds can change the answer.
+- **Tuning (`runs/aime-tune-v1`, 60 runs, US$5.04):** single agent 21/30 (70%), 6,781 tokens;
+  majority5 24/30 (80%), 22,450 tokens; majority5 won 3 problems and lost none. Two majority5
+  runs hit the 40,000-token cap, so the test cap is 60,000 tokens (30 calls) for every system.
+- **Test (`configs/aime-test.json`):** the three systems on the 148 test problems, one
+  repetition, 4,096 completion tokens, temperature 1.0, low effort. Primary questions:
+  (1) bee_quorum5 accuracy minus single agent, paired over problems, 95% bootstrap CI;
+  (2) bee_quorum5 tokens relative to majority5, and its accuracy difference to majority5.
+  Report: `uv run python scripts/vote_report.py runs/aime-test-v1`. A 3-scout pair
+  (`bee_quorum3`, `majority3`) follows only if quota and budget allow, as a secondary result.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
