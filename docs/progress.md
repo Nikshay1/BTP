@@ -77,3 +77,23 @@ Carried over from M1 (all now addressed above):
    `uv run bioalloc experiment run configs/macro-check.json --max-usd 8 --accept-code-change "R18 quota handling"`
 4. Analyse both with Sol: D29's pre-registered advancement rule per stratum; whether macro-ant
    deposits change later choices.
+
+## Session of 11 November 2026 (details in docs/decisions.md R20-R22)
+
+- R19's three open findings fixed (bee gather, throttle surviving backoff and deadline, allow-list
+  resume guard with review-pinned blobs in `resume-reviews.json`); Sol's one review found one more
+  gap, fixed the same day (R20).
+- Repair tuning finished (R21): single agent 24/60, short-memory scout 23/60, staged bee 18/60,
+  three-scout bee 15/60. No candidate passes D29's rule, so there is no test run; the 120 test
+  instances stay unseen and are kept for the Phase 2 selector. No complementarity within the
+  generated suite.
+- Macro-ant check finished (R22): 2/60 across the macro ant and its controls; 70% of decisions had
+  no legal segment, so the pheromone had nothing to act on.
+- Live spending to date: about US$52 (US$50.85 in recorded runs).
+- Panel material for 17 November: the Phase 1 report `report/main.tex` (Overleaf, pdfLaTeX), the
+  slide deck (claude.ai artifact) and `presentation/speaker-notes.md`.
+
+**Phase 2, in order:** multi-step tool and reasoning graphs where subtasks differ in kind;
+hand-labelled sample of checker verdicts; learn the rule table and LinUCB selector from recorded
+outcomes and evaluate on held-out tasks (including the untouched generated Logistics test set);
+crow and starfish modules; failure injection (RQ4); full study and ablations.

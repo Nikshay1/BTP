@@ -994,7 +994,7 @@ configs). The provenance record keeps every accepted change with both commits, t
 reason. `budget.py` is not on that list because it also holds bookkeeping, so a change to it must
 be argued in the reason and reviewed; here it only changes what happens after a refusal.
 
-## R19. Review of the R18 fix and resume guard (2026-10-29) — OPEN, fix before any resume
+## R19. Review of the R18 fix and resume guard (2026-10-29) — fixed 2026-11-11 (R20)
 
 GPT-6.1 Sol (high): "fix first". Verified meanwhile: all 166 kept tuning runs are byte-for-byte
 unchanged, reconcile with their traces and contain no rate-limit event of any kind; the
@@ -1017,6 +1017,85 @@ Open findings, to fix next session:
    `pyproject.toml`), and excluding all of `budget.py` would let admission or fitting changes
    through. Replace it by an allow list (unclassified changes are refused), with narrow,
    reviewed exceptions for the R18 changes.
+
+## R20. R19 fixes and their review (2026-11-11)
+
+Fixed in 2e4d1ef, with regression tests in `tests/test_r19.py` that fail when each fix is
+reverted:
+
+1. Bee's `_gather_budgeted` raises a throttle (any exception other than `BudgetExceeded` or
+   `LLMError`) as soon as one scout raises it, then cancels and settles the other scouts.
+2. `MeteredClient` marks the run's root account (`Account.throttled`) whenever it raises
+   `ProviderThrottled`, and also when a backoff is cancelled or runs past the deadline. The
+   experiment raises `ProviderThrottled` after a decomposition or run whose root account is
+   marked, so no executor or deadline can turn a throttle into a recorded failure.
+3. The resume guard is an allow list (`RESUME_SAFE`: docs, tests, scripts, report, presentation
+   and similar). Any other changed file is accepted only at the exact git blob pinned in
+   `resume-reviews.json` under the `--accept-code-change` reason, read from the commit itself.
+
+GPT-6.1 Sol (high), one review: both resumes pass the allow list and the pins; one finding, a
+429 followed by a retried call that times out or is cancelled at the deadline still produced
+`budget_exhausted` with the root unmarked (reproduced through `run_one`). Fixed in 18a3a5f
+(`TransportTimeout` and cancellation of the retried call after a 429 now mark the run), with
+two more tests; the pin of `budget.py` was updated. None of the 74 resumed tuning runs contains
+a rate-limit event, so the gap never fired.
+
+## R21. Repair tuning result (2026-11-11)
+
+`runs/repair-tune-v1` complete: 240 runs (166 from 29 October, 74 resumed under 2e4d1ef),
+US$26.08 in recorded runs (US$26.55 actual spending including set-aside traces). 30 tuning
+instances of the generated suite, two repetitions, 21,000 tokens. Report:
+`uv run python scripts/tuning_report.py runs/repair-tune-v1`.
+
+| System | Valid plans | Mean tokens | US$/run | US$/success |
+|---|---|---|---|---|
+| single agent | 24/60 (40%) | 15,301 | 0.093 | 0.231 |
+| `scout_short_memory` | 23/60 (38%) | 15,968 | 0.105 | 0.273 |
+| `bee_staged` | 18/60 (30%) | 16,561 | 0.113 | 0.378 |
+| `bee_feedback3` | 15/60 (25%) | 16,900 | 0.124 | 0.496 |
+
+Per stratum (cities-packages, solved of 10): single agent 7, 5, 1 / 6, 3, 2 for c3-p5, c3-p7,
+c3-p9 / c4-p5, c4-p7, c4-p9; the short-memory scout 6, 7, 0 / 7, 3, 0. Nine packages is near the
+floor for every system (at most 2 of 10).
+
+- **D29 rule: no candidate advances.** The best candidate, the short-memory scout, neither beats
+  the single agent's success nor matches it with 20% fewer tokens (it uses 4% more). By the
+  pre-registered rule there is no test run, and the 120 test instances stay untouched; they are
+  kept for the Phase 2 selector evaluation.
+- **Short memory costs nothing in accuracy:** one scout that sees only its latest answer and the
+  latest feedback is within one success of the full-conversation single agent. Spreading repair
+  over two or three scouts is worse: each new scout starts from scratch and pays for a fresh
+  first plan.
+- **No complementarity on this suite:** every instance that any system solved was also solved at
+  least once by the single agent (18 of 30 instances solved by someone). Picking the best system
+  per instance would give 29/60 against 24/60, but that gain comes from extra samples on the same
+  instances, not from systems being good at different instances. The 25/30 upper bound of R13 is
+  likely inflated the same way. Complementarity (RQ1) has to be looked for across task types, not
+  within one family.
+
+## R22. Macro-ant check (2026-11-11)
+
+`runs/macro-check-v1` complete: 60 runs (all resumed under 2e4d1ef; the 29 October attempt kept
+none), US$4.84 actual. Macro ant and its four controls (D30) on 6 tuning instances, two
+repetitions, 21,000 tokens.
+
+| System | Valid plans |
+|---|---|
+| `ant_macro` | 0/12 |
+| `ant_macro_no_deposit` | 1/12 |
+| `ant_macro_no_evaporation` | 0/12 |
+| `ant_macro_uniform` | 0/12 |
+| `macro_greedy` | 1/12 |
+
+- In 209 of 299 decisions no proposed segment was legal (a precondition failed; the reasons were
+  shown at the next decision), 75 had one legal segment and only 15 had two. Pheromone can change
+  a choice only with two or more legal candidates, so deposits had almost nothing to act on, as
+  R17 warned. 24% of decisions reached a new goal atom. Most runs ended at the five-decision limit
+  with 12-36 actions applied; witness plans need 25-93.
+- **Conclusion:** the macro ant is not a candidate for planning at this cap; the result is a
+  property of the proposer (illegal long segments), and the ant's learning cannot be judged from
+  it. Ant-style search should be tried where the options are several, cheap and checkable (for
+  example a choice between tools or sub-plans), not on single steps of a long plan.
 
 ## Open questions found while planning (settled by D10-D14)
 

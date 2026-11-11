@@ -30,8 +30,6 @@
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 \newcommand{\head}[1]{\textbf{#1}}
 \newcommand{\runin}[1]{\textbf{#1}\quad}
-% Marks a number that the running experiments will fill in. Remove before submission.
-\newcommand{\pending}[1]{\textcolor{red!70!black}{[#1]}}
 \hyphenation{meta-heu-ris-tic pher-o-mone}
 \emergencystretch=1.2em
 
@@ -64,13 +62,15 @@ covers Phase~1. We built \texttt{bioalloc}, a Python framework with a common exe
 ledger that admits a model call only if it fits, append-only traces of every call, runtime checks kept
 separate from the grader, frozen task splits and a resumable experiment runner. With Claude Sonnet~4.6 as the
 backbone we ran smoke tests, a difficulty calibration, a comparison of five systems on PlanBench Logistics
-at a 21,000-token cap, a tuning run of redesigned mechanisms on a generated Logistics suite and
-\pending{a held-out test}. The single agent solved every calibration task when given a generous budget and
+at a 21,000-token cap, and tuning runs of redesigned mechanisms on a generated Logistics suite. The single agent solved every calibration task when given a generous budget and
 remained the strongest system on Logistics (73\% of runs against 67\% for octopus, 60\% for bee, 57\% for a
 single direct call and 0\% for the step-per-call ant). Trace analysis shows why: the single agent revises
 its plan against the simulator's message, and the first versions of the mechanisms did not use that
-feedback. Choosing the best system per task would have solved 25 of 30 runs instead of 22, which is the room
-an allocation policy can use in Phase~2.
+feedback. Redesigned scouts that repair their own rejected plans came within one success of the single agent
+(23/60 against 24/60) but did not pass the pre-registered rule for a held-out test, and a macro ant that
+proposes plan segments solved 2 of 60 runs because most of its decisions had no legal option. Within one task
+family the per-problem differences between systems are explained by sampling, so Phase~2 moves the
+allocation question to task graphs that mix different kinds of subtask.
 \end{abstract}
 
 \section{Introduction}
@@ -354,23 +354,41 @@ tokens.
 \toprule
 \head{System} & \head{Valid plans} & \head{Mean tokens} & \head{US\$/run} \\
 \midrule
-Single agent & \pending{--/60} & \pending{--} & \pending{--} \\
-Short-memory scout & \pending{--/60} & \pending{--} & \pending{--} \\
-Staged bee (2 scouts) & \pending{--/60} & \pending{--} & \pending{--} \\
-Bee, 3 scouts & \pending{--/60} & \pending{--} & \pending{--} \\
+Single agent & 24/60 (40\%) & 15,301 & 0.093 \\
+Short-memory scout & 23/60 (38\%) & 15,968 & 0.105 \\
+Staged bee (2 scouts) & 18/60 (30\%) & 16,561 & 0.113 \\
+Bee, 3 scouts & 15/60 (25\%) & 16,900 & 0.124 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\pending{Tuning result and which variant advances, per stratum.} \pending{Macro-ant check: success of the
-macro ant and its four controls, and whether deposits changed later choices.}
+The run cost US\$26.08. No candidate advanced: the best, the short-memory scout, neither beat the single
+agent nor matched it with fewer tokens (it used 4\% more). Short memory costs nothing in accuracy: a scout that
+sees only its latest answer and the latest feedback is within one success of the full-conversation single
+agent. Spreading repair over two or three scouts is worse, because each new scout pays for a fresh first
+plan. By stratum, the single agent solved 7, 5 and 1 of 10 runs with 5, 7 and 9 packages in three cities,
+and 6, 3 and 2 in four; nine packages is near the floor for every system.
+
+Every instance that any system solved was also solved at least once by the single agent (18 of 30 instances
+were solved by someone). Picking the best system per instance would give 29/60, but that gain comes from more
+samples on the same instances, not from systems being good at different instances; the 25/30 bound on
+PlanBench is probably inflated the same way.
+
+\runin{Macro ant.} The macro ant and its four controls (no deposit, no evaporation, uniform weights and a
+greedy macro planner) ran on 6 tuning instances, two repetitions each (60 runs, US\$4.84). Together they
+solved 2 runs. In 209 of 299 decisions no proposed segment was legal (a precondition failed), and only 15
+decisions offered two legal segments, the only case in which pheromone can change a choice. The mechanism's
+learning therefore had almost nothing to act on; ant-style search needs several cheap, checkable options,
+such as choices between tools or sub-plans, rather than single steps of a long plan.
 
 \subsection{Held-out test}
-\pending{Test result on the 120 held-out instances, two repetitions, with the paired difference and its
-confidence interval.}
+The pre-registered rule sends a variant to the 120 held-out instances only if it passes the tuning screen.
+None did, so no test was run and the test instances remain unseen by any system. They are kept for the
+evaluation of the learned selector in Phase~2.
 
 \subsection{Cost}
-All live work so far cost about \pending{US\$--} of AWS credit. A full study at Sonnet~4.6 prices was
+All live work so far cost about US\$52 of AWS credit (US\$50.85 in recorded runs, the rest in runs set
+aside after a provider quota stopped an experiment). A full study at Sonnet~4.6 prices was
 estimated at US\$1,000--1,900, which is why each experiment was sized from measured cost per run.
 
 \section{Discussion and Threats to Validity}
@@ -415,8 +433,10 @@ Phase~1 delivered a framework in which bio-inspired mechanisms, conventional bas
 can be compared at equal, enforced compute, and a first set of measurements with it. A strong single agent
 is the real bar: on long Logistics plans it solved 73\% of runs at 21,000 tokens, and none of the first
 mechanism designs beat it. The traces explain the result (the ant ran out of calls, the bee's scouts never
-saw feedback) and led to redesigns that use feedback. Different systems won on different problems, which
-is the opportunity that per-subtask allocation, the subject of Phase~2, is meant to use.
+saw feedback) and led to redesigns that use feedback; the best of them matched the single agent within one
+success but did not beat it. Within one task family the differences between systems are sampling, so
+per-subtask allocation, the subject of Phase~2, has to be tested on task graphs that mix different kinds of
+work. The held-out instances are untouched and reserved for that test.
 
 \section*{Code and records}
 Code, configurations, run traces and the decision log are in \url{https://github.com/Nikshay1/BTP}.
