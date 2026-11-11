@@ -156,3 +156,54 @@ def test_resume_guard_is_an_allow_list_with_pinned_reviews(tmp_path: Path, monke
     resume("fix")
     monkeypatch.setattr(ex, "_git", fake_git("docs/decisions.md\ntests/test_x.py", "b" * 40))
     resume("docs")
+
+
+class LimitedThenHangs:
+    """429 on the first request; the retried request never returns."""
+
+    def __init__(self) -> None:
+        self.calls = 0
+
+    async def send(self, request):  # type: ignore[no-untyped-def]
+        from bioalloc.llm.base import RateLimited
+
+        self.calls += 1
+        if self.calls == 1:
+            raise RateLimited("Too many requests", retry_after=1)
+        await asyncio.sleep(3600)
+
+
+def test_a_retry_that_runs_into_the_deadline_after_a_429_is_a_throttle() -> None:
+    # R20 (found by Sol): the retried call was sent and then timed out at the deadline.
+    import time
+
+    offset = [0.0]
+
+    def clock() -> float:
+        return time.monotonic() + offset[0]
+
+    async def sleep(s: float) -> None:
+        offset[0] += 9.7  # the backoff leaves 0.3 s of a 10 s budget
+
+    account = Account(Budget(max_tokens=10_000, max_model_calls=5, max_elapsed_s=10), clock=clock)
+    client = MeteredClient(LimitedThenHangs(), account, "worker", "w", sleep=sleep)  # type: ignore[arg-type]
+    with pytest.raises(ProviderThrottled):
+        asyncio.run(client.complete(req()))
+    assert account.throttled is not None
+
+
+def test_cancelling_a_retried_call_after_a_429_marks_the_run_throttled() -> None:
+    async def go() -> None:
+        async def sleep(s: float) -> None:
+            return None
+
+        account = Account(Budget(max_tokens=10_000, max_model_calls=5))
+        client = MeteredClient(LimitedThenHangs(), account, "worker", "w", sleep=sleep)  # type: ignore[arg-type]
+        task = asyncio.ensure_future(client.complete(req()))
+        await asyncio.sleep(0.2)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+        assert account.throttled is not None
+
+    asyncio.run(go())

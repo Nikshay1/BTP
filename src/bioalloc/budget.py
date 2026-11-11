@@ -473,17 +473,24 @@ class MeteredClient:
                     # 429: mark the run as throttled before the cancellation goes on (R19).
                     self._throttled("cancelled while rate limited")
                     raise
-            except (BudgetExceeded, TimeoutError) as exc:
-                # After a 429, a deadline reached during the backoff shows up here as a refused
-                # admission or a timeout. It is the provider's doing, not the task's (R19).
+            except (BudgetExceeded, TimeoutError, TransportTimeout) as exc:
+                # After a 429, a deadline reached during the backoff or the retried call shows up
+                # here as a refused admission or a timeout. It is the provider's doing, not the
+                # task's (R19, R20).
                 if limited is not None and self._out_of_time():
                     raise self._throttled("deadline reached after rate limiting") from exc
+                raise
+            except asyncio.CancelledError:
+                # The deadline cancelled the retried call itself (R20).
+                if limited is not None:
+                    self._throttled("cancelled after rate limiting")
                 raise
         raise AssertionError("unreachable")
 
     def _out_of_time(self) -> bool:
         left = self.account.time_left()
-        return left is not None and left <= 0
+        # asyncio may fire a deadline up to its clock resolution early, so allow a margin.
+        return left is not None and left <= 0.05
 
     def _throttled(self, reason: str) -> ProviderThrottled:
         """Record the throttle on the run's root account and return the exception to raise."""
