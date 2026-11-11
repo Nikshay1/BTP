@@ -1,0 +1,38 @@
+{
+ "name": "aime-tune-v2",
+ "mode": "measurement",
+ "model": "global.anthropic.claude-sonnet-4-6",
+ "temperature": 1.0,
+ "reasoning_effort": "low",
+ "max_completion_tokens": 4096,
+ "pricing": {
+  "input_per_m": 3.0,
+  "output_per_m": 15.0
+ },
+ "systems": [
+  "bee_quorum5",
+  "majority5"
+ ],
+ "tasks": {
+  "split_file": "data/splits/aime-v1.json",
+  "split": "tune",
+  "per_family": {
+   "reasoning": 30
+  }
+ },
+ "repetitions": 1,
+ "seed": 1,
+ "budget": {
+  "max_tokens": 60000,
+  "max_model_calls": 30,
+  "max_elapsed_s": 900,
+  "max_tool_calls": 40
+ },
+ "max_attempts": 1,
+ "concurrency": 6,
+ "decompose": {
+  "planning": "single",
+  "tools": "natural",
+  "reasoning": "single"
+ }
+}

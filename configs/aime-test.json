@@ -1,5 +1,5 @@
 {
- "name": "aime-test-v1",
+ "name": "aime-test-v2",
  "mode": "measurement",
  "model": "global.anthropic.claude-sonnet-4-6",
  "temperature": 1.0,

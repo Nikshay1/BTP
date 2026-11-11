@@ -237,3 +237,15 @@ def test_quorum_bee_matches_its_plurality_control_on_the_schedule() -> None:
     ex = repair_executors("m")
     assert ex["bee_quorum5"].schedule == ex["majority5"].schedule == (0, 1, 2, 3, 4)
     assert ex["bee_quorum5"].quorum == 3 and ex["bee_quorum3"].quorum == 2
+
+
+def test_d31_scouts_get_the_single_agents_step_limit() -> None:
+    # R23: with 4 completions per episode, scouts that used the calculator were cut off and lost
+    # their vote, while the single agent has 12 steps in one conversation.
+    from bioalloc.executors.conventional import SingleAgent
+    from bioalloc.executors.repair import repair_executors
+
+    ex = repair_executors("m")
+    steps = SingleAgent(model="m").max_steps
+    assert all(ex[n].episode_completions == steps for n in ("bee_quorum5", "majority5"))
+    assert ex["bee_staged"].episode_completions == 4  # D28's runs are unchanged

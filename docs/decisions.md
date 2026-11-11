@@ -1125,6 +1125,26 @@ repetitions, 21,000 tokens.
   Report: `uv run python scripts/vote_report.py runs/aime-test-v1`. A 3-scout pair
   (`bee_quorum3`, `majority3`) follows only if quota and budget allow, as a secondary result.
 
+## R23. AIME test v1 stopped: scouts were cut off by a 4-completion episode limit (2026-11-11)
+
+The first test run (`runs/aime-test-v1`, stopped by hand after 156 runs on 52 test problems,
+US$14.48) showed both voting systems below the single agent (majority5 71%, bee_quorum5 74%,
+single agent 79% on about 50 problems). A majority of five samples losing to one sample pointed
+to a mechanical cause, and the traces showed it: `ScoutRepair` gives each solve episode at most 4
+completions (tool rounds included). Scouts that used the calculator three or more times were cut
+off with no answer, and with one episode per scout (D31's schedule) a cut-off scout lost its
+vote; in `aime-2020-II-06` every scout was cut off. The single agent works in one conversation
+of up to 12 steps and simply continues. The comparison was therefore not fair to the voters.
+
+- **Fix:** `ScoutRepair.episode_completions`, 12 (the single agent's `max_steps`) for the D31
+  systems; D28's Logistics variants keep 4 so their recorded runs stay valid. Test in
+  `tests/test_r19.py`.
+- **Disclosure:** 52 of the 148 test problems were seen in v1 (results only; nothing was tuned
+  on them). The tuning majority5 result in D31 was made under the same limit.
+- **Next:** re-check the voters on the tuning problems (`configs/aime-tune-v2.json`), then run
+  the full test again under the fixed code as `aime-test-v2`, with D31's primary questions
+  unchanged. v1 is kept and reported as aborted.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

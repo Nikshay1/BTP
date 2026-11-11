@@ -77,6 +77,10 @@ class ScoutRepair(Bee):
     theta: float = 0.6
     sigma: float = 0.2
     name: str = "bee_staged"
+    # Completions per solve episode, tool rounds included. D28's Logistics variants keep 4; D31's
+    # reasoning scouts get the single agent's 12 steps, since a scout cut off by this limit loses
+    # its vote while the single agent carries on in its conversation (R23).
+    episode_completions: int = 4
     _memory: dict[int, _Memory] = field(default_factory=dict, init=False)
 
     def __post_init__(self) -> None:
@@ -138,7 +142,9 @@ class ScoutRepair(Bee):
             sample_id=f"{scout.agent}/e{mem.episodes}",
         )
         mem.episodes += 1
-        episode = await tool_episode(dataclasses.replace(ctx, llm=client), request, 4)
+        episode = await tool_episode(
+            dataclasses.replace(ctx, llm=client), request, self.episode_completions
+        )
         mem.last_reply = episode.reply.content
         problem = incompleteness(episode)
         if problem is not None:
@@ -253,7 +259,15 @@ def repair_executors(model: str, **kw: JsonValue) -> dict[str, ScoutRepair]:
         "bee_quorum5": (QUORUM_FIVE, "bee"),
         "majority5": (QUORUM_FIVE, "plurality"),
     }
+    d31 = {"bee_quorum3", "majority3", "bee_quorum5", "majority5"}
     return {
-        name: ScoutRepair(model=model, schedule=sched, consensus=cons, name=name, **kw)  # type: ignore[arg-type]
+        name: ScoutRepair(
+            model=model,
+            schedule=sched,
+            consensus=cons,
+            name=name,
+            episode_completions=12 if name in d31 else 4,
+            **kw,  # type: ignore[arg-type]
+        )
         for name, (sched, cons) in specs.items()
     }
