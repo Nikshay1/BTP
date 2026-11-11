@@ -420,16 +420,22 @@ def test_resume_accepts_only_code_changes_that_do_not_touch_solving(
 
     with pytest.raises(ExperimentMismatch, match="different code"):
         resume(None)
-    monkeypatch.setattr(ex, "_git", lambda *a: "src/bioalloc/executors/bee.py\nsrc/bioalloc/cli.py")
+    monkeypatch.setattr(
+        ex,
+        "_git",
+        lambda *a: "src/bioalloc/executors/bee.py\nsrc/bioalloc/cli.py" if a[0] == "diff" else None,
+    )
     with pytest.raises(ExperimentMismatch, match="how tasks are solved"):
         resume("throttling fix")
-    monkeypatch.setattr(ex, "_git", lambda *a: "src/bioalloc/cli.py\ndocs/decisions.md")
+    monkeypatch.setattr(
+        ex, "_git", lambda *a: "docs/decisions.md\ntests/test_x.py" if a[0] == "diff" else None
+    )
     resume("throttling fix")
     after = json.loads(prov.read_text())
     assert after["code"] != recorded["code"]
     change = after["code_changes"][-1]
     assert change["reason"] == "throttling fix" and change["files"] == [
-        "src/bioalloc/cli.py",
         "docs/decisions.md",
+        "tests/test_x.py",
     ]
     assert change["from"]["git_commit"] == "0" * 40

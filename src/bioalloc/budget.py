@@ -156,6 +156,9 @@ class Account:
     imported_elapsed: float = field(default=0.0, init=False)
     # Calls waiting for admission, in arrival order (used at the root only).
     _queue: deque[object] = field(default_factory=deque, init=False)
+    # Set on the root when the provider throttled a call of this run (R19). Sticky: whatever an
+    # executor or the deadline does afterwards, the run ended because of the provider.
+    throttled: str | None = field(default=None, init=False)
 
     def __post_init__(self) -> None:
         self.started = self.clock()
@@ -446,6 +449,7 @@ class MeteredClient:
     async def complete(self, request: LLMRequest) -> LLMReply:
         """One model call. A rate-limited attempt releases its reservation, waits, and goes through
         admission again; it is an HTTP retry, not a model call, and is traced as such."""
+        limited: RateLimited | None = None
         for retry in range(self.max_rate_limit_retries + 1):
             try:
                 return await self._complete_once(request)
@@ -453,18 +457,41 @@ class MeteredClient:
                 # A daily quota will not clear within a run, and 429s past every retry mean the
                 # provider is unavailable: neither is a property of the task (R18).
                 if "per day" in str(exc).lower() or retry == self.max_rate_limit_retries:
-                    self._emit("provider_throttled", {"agent": self.agent, "error": str(exc)})
-                    raise ProviderThrottled(str(exc)) from exc
+                    raise self._throttled(str(exc)) from exc
                 delay = exc.retry_after if exc.retry_after is not None else min(30.0, 2.0**retry)
                 left = self.account.time_left()
                 if left is not None and delay >= left:
-                    self._emit("provider_throttled", {"agent": self.agent, "error": str(exc)})
-                    raise ProviderThrottled("deadline reached while rate limited") from exc
+                    raise self._throttled("deadline reached while rate limited") from exc
                 self._emit(
                     "rate_limited", {"agent": self.agent, "retry": retry + 1, "delay_s": delay}
                 )
-                await self.sleep(delay)
+                limited = exc
+                try:
+                    await self.sleep(delay)
+                except asyncio.CancelledError:
+                    # The deadline (or a sibling's failure) cancelled us while we waited out a
+                    # 429: mark the run as throttled before the cancellation goes on (R19).
+                    self._throttled("cancelled while rate limited")
+                    raise
+            except (BudgetExceeded, TimeoutError) as exc:
+                # After a 429, a deadline reached during the backoff shows up here as a refused
+                # admission or a timeout. It is the provider's doing, not the task's (R19).
+                if limited is not None and self._out_of_time():
+                    raise self._throttled("deadline reached after rate limiting") from exc
+                raise
         raise AssertionError("unreachable")
+
+    def _out_of_time(self) -> bool:
+        left = self.account.time_left()
+        return left is not None and left <= 0
+
+    def _throttled(self, reason: str) -> ProviderThrottled:
+        """Record the throttle on the run's root account and return the exception to raise."""
+        root = self.account.root
+        if root.throttled is None:
+            root.throttled = reason
+        self._emit("provider_throttled", {"agent": self.agent, "error": reason})
+        return ProviderThrottled(reason)
 
     async def _complete_once(self, request: LLMRequest) -> LLMReply:
         prompt_est = reserve_prompt_tokens(request)

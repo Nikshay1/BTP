@@ -130,30 +130,30 @@ class ExperimentMismatch(RuntimeError):
     """An experiment directory holds runs made under a different configuration or code."""
 
 
-# Files that decide how a task is solved: a resume never accepts a change to any of them (R18).
-SOLVING_CODE = (
-    "src/bioalloc/prompts/",
-    "src/bioalloc/executors/",
-    "src/bioalloc/tasks/",
-    "src/bioalloc/coordinator.py",
-    "src/bioalloc/decomposition.py",
-    "src/bioalloc/checks.py",
-    "src/bioalloc/actions.py",
-    "src/bioalloc/tools.py",
-    "src/bioalloc/graph.py",
-    "src/bioalloc/schemas.py",
-    "src/bioalloc/features.py",
-    "src/bioalloc/policies.py",
-    "src/bioalloc/evaluation/registry.py",
-    "src/bioalloc/evaluation/logistics_gen.py",
-    "src/bioalloc/evaluation/planbench_data.py",
-    "src/bioalloc/evaluation/gsm8k_data.py",
-    "src/bioalloc/evaluation/toolsuite_data.py",
-    "src/bioalloc/llm/bedrock.py",
-    "src/bioalloc/llm/groq.py",
-    "data/",
-    "configs/",
+# What a resume may see changed (R19). It is an allow list: a changed file that is not listed here
+# is refused, so a new module that affects solving cannot slip through.
+RESUME_SAFE = (
+    "docs/",
+    "tests/",
+    "scripts/",
+    "research-plan/",
+    "report/",
+    "presentation/",
+    "README.md",
+    "LICENSE",
+    ".github/",
+    ".gitignore",
+    "resume-reviews.json",
 )
+# Reviewed exceptions: a file outside RESUME_SAFE is accepted only if a review named by the
+# ``--accept-code-change`` reason pinned its exact content (git blob id) in resume-reviews.json.
+# Any later edit to that file changes the blob, so it is refused again until reviewed.
+RESUME_REVIEWS = "resume-reviews.json"
+
+
+def _blob(commit: str, path: str) -> str | None:
+    out = _git("rev-parse", f"{commit}:{path}")
+    return out.strip() if out else None
 
 
 class ProviderUnavailable(RuntimeError):
@@ -244,7 +244,16 @@ class Experiment:
         if files is None:
             raise ExperimentMismatch("cannot list the code changes; refusing to resume")
         changed = [f for f in files.splitlines() if f]
-        solving = [f for f in changed if f.startswith(SOLVING_CODE)]
+        commit = str(new.get("git_commit"))
+        # Read from the commit, not the work tree, so the record cannot be edited uncommitted.
+        text = _git("show", f"{commit}:{RESUME_REVIEWS}")
+        reviews = json.loads(text) if text else {}
+        pinned: dict[str, str] = reviews.get(str(self.accept_code_change), {}).get("files", {})
+        solving = [
+            f
+            for f in changed
+            if not f.startswith(RESUME_SAFE) and (f not in pinned or _blob(commit, f) != pinned[f])
+        ]
         if solving or old.get("uv_lock_sha256") != new.get("uv_lock_sha256"):
             raise ExperimentMismatch(
                 f"{self.out}: the code change touches how tasks are solved "
@@ -373,6 +382,8 @@ class Experiment:
                 seed=derive_seed(self.config.seed, task.task_id, rep, "decompose"),
             )
             tracer.close()
+            if account.throttled is not None:
+                raise ProviderThrottled(account.throttled)
         else:
             assert task.public is not None
             record = deterministic(task.public.as_single_node(), rep)
@@ -419,6 +430,10 @@ class Experiment:
         coordinator = Coordinator(system.executors, system.policy, system.config, seed=seed)
         try:
             result = await coordinator.run(graph, task.task_family, llm, tracer)
+            if account.throttled is not None:
+                # An executor or the deadline may have turned the throttle into an ordinary
+                # failure; the root account remembers it, so the run stays unrecorded (R19).
+                raise ProviderThrottled(account.throttled)
         except BaseException:
             tracer.close()
             finish_manifest(run_dir, manifest, "crashed", {})

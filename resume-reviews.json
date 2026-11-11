@@ -1,0 +1,12 @@
+{
+ "R18 quota handling": {
+  "review": "docs/decisions.md R18-R20: these files change only what happens when the provider throttles (stop, mark and leave the run unrecorded) and how a resume is accepted; a run the provider never throttles sends the same requests and is graded the same way.",
+  "files": {
+   "src/bioalloc/budget.py": "2509639f7ac8cbb187bed911af1d617cedbeac03",
+   "src/bioalloc/cli.py": "b2bc9a245f539fd45bf89cbc8e6fec5b57c50cc6",
+   "src/bioalloc/evaluation/experiment.py": "c78db6cb3e53db4d07ad6003e9baadbc74db417a",
+   "src/bioalloc/llm/base.py": "dc0593f4dde710805815cc45cef559c64b5e3427",
+   "src/bioalloc/executors/bee.py": "de1688aa4d9eabff27b8fd9af837b937eec1326d"
+  }
+ }
+}

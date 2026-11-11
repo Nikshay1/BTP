@@ -106,8 +106,25 @@ class _Answerer:
 
 
 async def _gather_budgeted(coros: list) -> tuple[list, bool]:  # type: ignore[type-arg]
-    """Run concurrently; a call refused for budget or failed counts as no answer."""
-    results = await asyncio.gather(*coros, return_exceptions=True)
+    """Run concurrently; a call refused for budget or failed counts as no answer. Any other
+    exception (a provider throttle above all) is raised as soon as it happens: the other scouts
+    are cancelled and settled first, so none is left running and nothing waits for a hung one
+    until the deadline turns the throttle into a budget failure (R19)."""
+    tasks = [asyncio.ensure_future(c) for c in coros]
+    pending = set(tasks)
+    try:
+        while pending:
+            finished, pending = await asyncio.wait(pending, return_when=asyncio.FIRST_COMPLETED)
+            for t in finished:
+                exc = t.exception()
+                if exc is not None and not isinstance(exc, BudgetExceeded | LLMError):
+                    raise exc
+    finally:
+        for t in pending:
+            t.cancel()
+        if pending:
+            await asyncio.gather(*pending, return_exceptions=True)
+    results = [t.exception() or t.result() for t in tasks]
     out: list = []  # type: ignore[type-arg]
     budget_hit = False
     for r in results:
