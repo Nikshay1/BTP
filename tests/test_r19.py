@@ -207,3 +207,33 @@ def test_cancelling_a_retried_call_after_a_429_marks_the_run_throttled() -> None
         assert account.throttled is not None
 
     asyncio.run(go())
+
+
+_AIME = Path(__file__).resolve().parents[1] / "data/prepared/aime/public.jsonl"
+
+
+@pytest.mark.skipif(not _AIME.exists(), reason="AIME snapshot not prepared")
+def test_aime_tasks_load_and_grade_exactly() -> None:
+    from test_experiment import ROOT
+
+    from bioalloc.evaluation import aime_data
+    from bioalloc.evaluation.experiment import select_tasks
+    from bioalloc.evaluation.registry import TaskLoader
+    from bioalloc.evaluation.splits import load as load_split
+
+    items = aime_data.load()
+    assert len(items) == 178 and all(0 <= int(i.reference) <= 999 for i in items)
+    split = load_split(ROOT / "data/splits/aime-v1.json")
+    assert sum(a.split == "tune" for a in split) == 30
+    task = TaskLoader().load(items[0].task.id)
+    assert task.grade({"answer": int(items[0].reference)}).correct
+    assert not task.grade({"answer": int(items[0].reference) + 1}).correct
+    assert select_tasks  # imported for the config check below
+
+
+def test_quorum_bee_matches_its_plurality_control_on_the_schedule() -> None:
+    from bioalloc.executors.repair import repair_executors
+
+    ex = repair_executors("m")
+    assert ex["bee_quorum5"].schedule == ex["majority5"].schedule == (0, 1, 2, 3, 4)
+    assert ex["bee_quorum5"].quorum == 3 and ex["bee_quorum3"].quorum == 2

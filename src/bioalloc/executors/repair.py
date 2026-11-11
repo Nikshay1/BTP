@@ -57,6 +57,8 @@ from bioalloc.schemas import Subtask
 SHORT_MEMORY = (0, 0, 0, 0, 0, 0)
 STAGED_TWO = (0, 0, 1, 0, 1, 0)
 ALL_START_THREE = (0, 1, 2, 0, 1, 2)
+QUORUM_THREE = (0, 1, 2)
+QUORUM_FIVE = (0, 1, 2, 3, 4)
 
 
 @dataclass
@@ -243,6 +245,13 @@ def repair_executors(model: str, **kw: JsonValue) -> dict[str, ScoutRepair]:
         "majority_staged": (STAGED_TWO, "plurality"),
         "bee_feedback3": (ALL_START_THREE, "bee"),
         "majority_feedback3": (ALL_START_THREE, "plurality"),
+        # D31: one episode per scout, launched one at a time. With no goal check (reasoning)
+        # every answer commits its scout, so the bee stops as soon as ceil(0.6 k) scouts agree
+        # (quorum sensing); the plurality control always pays for all k answers.
+        "bee_quorum3": (QUORUM_THREE, "bee"),
+        "majority3": (QUORUM_THREE, "plurality"),
+        "bee_quorum5": (QUORUM_FIVE, "bee"),
+        "majority5": (QUORUM_FIVE, "plurality"),
     }
     return {
         name: ScoutRepair(model=model, schedule=sched, consensus=cons, name=name, **kw)  # type: ignore[arg-type]

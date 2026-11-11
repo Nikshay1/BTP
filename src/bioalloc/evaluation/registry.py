@@ -69,6 +69,7 @@ class TaskLoader:
     def __init__(self, expected: dict[str, Any] | None = None) -> None:
         self._gsm8k: dict[str, gsm8k_data.GSM8KItem] | None = None
         self._plans: dict[str, planbench_data.PlanItem] | None = None
+        self._aime: dict[str, Any] | None = None
         self.expected = expected
 
     def _verify(self, name: str) -> None:
@@ -88,6 +89,16 @@ class TaskLoader:
             item = self._gsm8k[task_id]
             return StudyTask(
                 task_id, "reasoning", GSM8K(), lambda a: gsm8k_data.grade(item, a), public=item.task
+            )
+        if task_id.startswith("aime-"):
+            from bioalloc.evaluation import aime_data
+
+            if self._aime is None:
+                self._verify("aime")
+                self._aime = {i.task.id: i for i in aime_data.load()}
+            aime = self._aime[task_id]
+            return StudyTask(
+                task_id, "reasoning", GSM8K(), lambda a: aime_data.grade(aime, a), public=aime.task
             )
         if task_id.startswith("planbench-"):
             if self._plans is None:
@@ -185,6 +196,10 @@ SYSTEMS = (
     "majority_staged",
     "bee_feedback3",
     "majority_feedback3",
+    "bee_quorum3",
+    "majority3",
+    "bee_quorum5",
+    "majority5",
     "ant_macro",
     "ant_macro_no_deposit",
     "ant_macro_no_evaporation",

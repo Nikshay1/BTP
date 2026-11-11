@@ -1,0 +1,29 @@
+{
+ "counts": {
+  "first_year": 2020,
+  "tasks": 178
+ },
+ "excluded": [
+  {
+   "answer": "080 or 081 (both were accepted)",
+   "id": "aime-2022-II-08"
+  }
+ ],
+ "licence": "CC0 (1983-2023), MIT (2024, 2025)",
+ "prepared": {
+  "aime/private.jsonl": "c00589a492f5b6869995add2d4e7d6a17443ac1a296b6ee38d9e17a62384e52d",
+  "aime/public.jsonl": "6d7776d302015d8f817bc7c8d1164050639f00c48d785a5600ede9064418dca1"
+ },
+ "raw": {
+  "https://huggingface.co/datasets/Maxwell-Jia/AIME_2024/resolve/8d88b2876a82a080e2f172cc9b25d0d9d2cb4792/aime_2024_problems.parquet": "3cb34696a75837f848ea16f15a42f4130be655d5995e8cd24efcc54f4e6e1524",
+  "https://huggingface.co/datasets/gneubig/aime-1983-2024/resolve/5d610df981dec508dd93d0a16333a029ac1739d8/AIME_Dataset_1983_2024.csv": "959358884aa93b30b8d85ecb80fd8b577014498c08f7569faf88f675cc3fb9f4",
+  "https://huggingface.co/datasets/opencompass/AIME2025/resolve/a6ad95f611d72cf628a80b58bd0432ef6638f958/aime2025-I.jsonl": "b91b3c96f05d9635d2a0692b124ebe023c1ff59cb19c074275e6c4b349d0659e",
+  "https://huggingface.co/datasets/opencompass/AIME2025/resolve/a6ad95f611d72cf628a80b58bd0432ef6638f958/aime2025-II.jsonl": "16a2dcfbbf9db1b11f8a69a3ba5e4cac73e3641b19a37e2307e9c12240bbed5e"
+ },
+ "source": [
+  "https://huggingface.co/datasets/gneubig/aime-1983-2024/resolve/5d610df981dec508dd93d0a16333a029ac1739d8/AIME_Dataset_1983_2024.csv",
+  "https://huggingface.co/datasets/Maxwell-Jia/AIME_2024/resolve/8d88b2876a82a080e2f172cc9b25d0d9d2cb4792/aime_2024_problems.parquet",
+  "https://huggingface.co/datasets/opencompass/AIME2025/resolve/a6ad95f611d72cf628a80b58bd0432ef6638f958/aime2025-I.jsonl",
+  "https://huggingface.co/datasets/opencompass/AIME2025/resolve/a6ad95f611d72cf628a80b58bd0432ef6638f958/aime2025-II.jsonl"
+ ]
+}

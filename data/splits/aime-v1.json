@@ -1,0 +1,1081 @@
+{
+ "suite": "aime-v1",
+ "seed": "aime-v1|20261111",
+ "provenance": {
+  "aime": {
+   "aime/private.jsonl": "c00589a492f5b6869995add2d4e7d6a17443ac1a296b6ee38d9e17a62384e52d",
+   "aime/public.jsonl": "6d7776d302015d8f817bc7c8d1164050639f00c48d785a5600ede9064418dca1"
+  }
+ },
+ "sha256": "73b6fc5b012f882460535eaf67f1fdf67f9331173f5e293c1cc37170e53b4e3f",
+ "assignments": [
+  {
+   "family": "reasoning",
+   "group": "aime:9e7e7c6c397abddc",
+   "split": "tune",
+   "task_id": "aime-2020-I-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:9b6235599677c027",
+   "split": "test",
+   "task_id": "aime-2020-I-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:9836e956afdf1279",
+   "split": "test",
+   "task_id": "aime-2020-I-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:425e920998ddeb68",
+   "split": "test",
+   "task_id": "aime-2020-I-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:c7ec1aa4f592ba20",
+   "split": "test",
+   "task_id": "aime-2020-I-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:379031afa124994d",
+   "split": "test",
+   "task_id": "aime-2020-I-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:6d4a8f41366f8313",
+   "split": "test",
+   "task_id": "aime-2020-I-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ca39037ed61449be",
+   "split": "tune",
+   "task_id": "aime-2020-I-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:1883ebe68e95e058",
+   "split": "test",
+   "task_id": "aime-2020-I-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:727d23bb73233213",
+   "split": "tune",
+   "task_id": "aime-2020-I-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:869e9fb80dfeab0b",
+   "split": "test",
+   "task_id": "aime-2020-I-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:3d89105db6529536",
+   "split": "test",
+   "task_id": "aime-2020-I-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:d1d1cc86c66c47c5",
+   "split": "test",
+   "task_id": "aime-2020-I-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:0cb696ce1dcd613d",
+   "split": "tune",
+   "task_id": "aime-2020-I-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:e1a6a17e1824eb8e",
+   "split": "tune",
+   "task_id": "aime-2020-I-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:60be44675ca0e6bf",
+   "split": "test",
+   "task_id": "aime-2020-II-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:20329c3d6dd7274d",
+   "split": "tune",
+   "task_id": "aime-2020-II-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:220c0dd34a7f74a3",
+   "split": "test",
+   "task_id": "aime-2020-II-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:f55f2614ebbf84be",
+   "split": "tune",
+   "task_id": "aime-2020-II-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:00bffe1337d3740f",
+   "split": "test",
+   "task_id": "aime-2020-II-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:3ab6d1cb0d2f0bf1",
+   "split": "test",
+   "task_id": "aime-2020-II-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:6d2069f80c72c3df",
+   "split": "test",
+   "task_id": "aime-2020-II-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:e09014cb3db137f3",
+   "split": "test",
+   "task_id": "aime-2020-II-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:4e5f5cb93f7e5d7a",
+   "split": "test",
+   "task_id": "aime-2020-II-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:113dd3e28d27c763",
+   "split": "test",
+   "task_id": "aime-2020-II-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:b2f8424b53962c96",
+   "split": "test",
+   "task_id": "aime-2020-II-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:6b8f5cb96b2b15e9",
+   "split": "test",
+   "task_id": "aime-2020-II-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:0bd3e0419802f73f",
+   "split": "test",
+   "task_id": "aime-2020-II-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:43a29ba07c6159ac",
+   "split": "test",
+   "task_id": "aime-2020-II-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:173b1c10e2efcdcb",
+   "split": "test",
+   "task_id": "aime-2020-II-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:071acf9abe1a271c",
+   "split": "test",
+   "task_id": "aime-2021-I-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:77627e30fa87b5f5",
+   "split": "test",
+   "task_id": "aime-2021-I-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:98d5d132ec52aa69",
+   "split": "tune",
+   "task_id": "aime-2021-I-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:daaf181b551f9a7c",
+   "split": "tune",
+   "task_id": "aime-2021-I-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:f2ad9a7aa6e10f48",
+   "split": "test",
+   "task_id": "aime-2021-I-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:5e413c885cf22002",
+   "split": "test",
+   "task_id": "aime-2021-I-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:25478e6df186293f",
+   "split": "test",
+   "task_id": "aime-2021-I-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:2e0ee2e241cce214",
+   "split": "test",
+   "task_id": "aime-2021-I-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ac030665f60c8ba1",
+   "split": "test",
+   "task_id": "aime-2021-I-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:2233937b2722328c",
+   "split": "test",
+   "task_id": "aime-2021-I-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:11cc0c0cc5207a61",
+   "split": "test",
+   "task_id": "aime-2021-I-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:9427fd44609fcec9",
+   "split": "tune",
+   "task_id": "aime-2021-I-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:be180f5c45cc6b9f",
+   "split": "tune",
+   "task_id": "aime-2021-I-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:377fb5bebc3b2fee",
+   "split": "test",
+   "task_id": "aime-2021-I-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:69d4520337e91e21",
+   "split": "test",
+   "task_id": "aime-2021-I-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:94c5cd1e19ecf110",
+   "split": "test",
+   "task_id": "aime-2021-II-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ee816e6666d71a1d",
+   "split": "test",
+   "task_id": "aime-2021-II-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:07bb3c945a7a81b3",
+   "split": "test",
+   "task_id": "aime-2021-II-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:5dcb81e992fd7a8f",
+   "split": "test",
+   "task_id": "aime-2021-II-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:62e07539bd4d7c43",
+   "split": "test",
+   "task_id": "aime-2021-II-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:c7e179d8b7e449bb",
+   "split": "tune",
+   "task_id": "aime-2021-II-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:4637711e9053970f",
+   "split": "test",
+   "task_id": "aime-2021-II-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:49013bb9672e3a43",
+   "split": "test",
+   "task_id": "aime-2021-II-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ff7939c274a230b5",
+   "split": "test",
+   "task_id": "aime-2021-II-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:553954c8817c65c5",
+   "split": "test",
+   "task_id": "aime-2021-II-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:67448075c75cd15f",
+   "split": "test",
+   "task_id": "aime-2021-II-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:38819913ba6aba60",
+   "split": "test",
+   "task_id": "aime-2021-II-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:16f47cfa52edf03b",
+   "split": "test",
+   "task_id": "aime-2021-II-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:99aefa616810d2c3",
+   "split": "test",
+   "task_id": "aime-2021-II-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:247d137482985fec",
+   "split": "test",
+   "task_id": "aime-2021-II-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:0ebd0a4593916e2a",
+   "split": "test",
+   "task_id": "aime-2022-I-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:c666e00a9bda7e46",
+   "split": "test",
+   "task_id": "aime-2022-I-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:b2f4cc8b6e532534",
+   "split": "tune",
+   "task_id": "aime-2022-I-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:946331126596f482",
+   "split": "test",
+   "task_id": "aime-2022-I-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:811a5f23637dad34",
+   "split": "test",
+   "task_id": "aime-2022-I-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:75a700f340dfca80",
+   "split": "tune",
+   "task_id": "aime-2022-I-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:325363a7e70189e3",
+   "split": "tune",
+   "task_id": "aime-2022-I-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:7d61759794f5151c",
+   "split": "tune",
+   "task_id": "aime-2022-I-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:2540d0a207bbddf0",
+   "split": "test",
+   "task_id": "aime-2022-I-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ff2d3639903a9552",
+   "split": "test",
+   "task_id": "aime-2022-I-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:1ab8b74f2dd0048c",
+   "split": "test",
+   "task_id": "aime-2022-I-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:30bdfafd09661161",
+   "split": "test",
+   "task_id": "aime-2022-I-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:5dd3e8a4fed0dd2b",
+   "split": "test",
+   "task_id": "aime-2022-I-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:896beb83e084338e",
+   "split": "test",
+   "task_id": "aime-2022-I-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ddd4d7b7257bc87a",
+   "split": "test",
+   "task_id": "aime-2022-I-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:b6aacc3dde9769e8",
+   "split": "test",
+   "task_id": "aime-2022-II-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:9f0e00d138f58f49",
+   "split": "test",
+   "task_id": "aime-2022-II-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:aa5ab36624a4abb6",
+   "split": "test",
+   "task_id": "aime-2022-II-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:e5af1e06f9d1f79c",
+   "split": "test",
+   "task_id": "aime-2022-II-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:cc0caac0e02534a3",
+   "split": "test",
+   "task_id": "aime-2022-II-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:f469853f773bf227",
+   "split": "tune",
+   "task_id": "aime-2022-II-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:7865eb1dfd6bcc57",
+   "split": "test",
+   "task_id": "aime-2022-II-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:1a40786f3f86e823",
+   "split": "test",
+   "task_id": "aime-2022-II-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:fedcb4dd23379b9c",
+   "split": "test",
+   "task_id": "aime-2022-II-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:71c0518340c3eb20",
+   "split": "test",
+   "task_id": "aime-2022-II-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ad3629e1ec7e86a3",
+   "split": "test",
+   "task_id": "aime-2022-II-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:c529bae612fcc189",
+   "split": "test",
+   "task_id": "aime-2022-II-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:f40d56b72e57d23b",
+   "split": "tune",
+   "task_id": "aime-2022-II-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:2f7c49af4e8d4458",
+   "split": "test",
+   "task_id": "aime-2022-II-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:d91e1edb9a1be630",
+   "split": "test",
+   "task_id": "aime-2023-I-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:8a7a70f36e685000",
+   "split": "test",
+   "task_id": "aime-2023-I-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:febca9b14691a429",
+   "split": "test",
+   "task_id": "aime-2023-I-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:770ff20418ab8c9b",
+   "split": "test",
+   "task_id": "aime-2023-I-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:6825b04cff292de6",
+   "split": "test",
+   "task_id": "aime-2023-I-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:cfb1d52b7e3fa50c",
+   "split": "test",
+   "task_id": "aime-2023-I-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:be9ca0f3944db9d1",
+   "split": "test",
+   "task_id": "aime-2023-I-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:3342cd7806243594",
+   "split": "test",
+   "task_id": "aime-2023-I-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:3584bea34b46042c",
+   "split": "test",
+   "task_id": "aime-2023-I-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:d6f2f7487ad357d2",
+   "split": "test",
+   "task_id": "aime-2023-I-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:1b13b3d71eb0be06",
+   "split": "test",
+   "task_id": "aime-2023-I-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:a44ee395302c93b7",
+   "split": "tune",
+   "task_id": "aime-2023-I-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:8e41394e6d7b0848",
+   "split": "tune",
+   "task_id": "aime-2023-I-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:570e48df73187a81",
+   "split": "test",
+   "task_id": "aime-2023-I-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:dd731bbf43f016d3",
+   "split": "test",
+   "task_id": "aime-2023-II-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:2d682361d8d3e463",
+   "split": "test",
+   "task_id": "aime-2023-II-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:db541cdd34334956",
+   "split": "test",
+   "task_id": "aime-2023-II-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:3b123bc25edbc282",
+   "split": "test",
+   "task_id": "aime-2023-II-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:87517a6ddd72f4f1",
+   "split": "test",
+   "task_id": "aime-2023-II-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:fd8c7de09a873ef5",
+   "split": "test",
+   "task_id": "aime-2023-II-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:0629444d9b4cb5e4",
+   "split": "test",
+   "task_id": "aime-2023-II-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:9b7ebcc62ff4b8f8",
+   "split": "test",
+   "task_id": "aime-2023-II-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:950d9504e31cf881",
+   "split": "test",
+   "task_id": "aime-2023-II-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:564d6c6613866c75",
+   "split": "test",
+   "task_id": "aime-2023-II-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:af0f2551001cf30d",
+   "split": "test",
+   "task_id": "aime-2023-II-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:e7ea6dc20bc3c1b6",
+   "split": "test",
+   "task_id": "aime-2023-II-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:d37123d14c75b847",
+   "split": "test",
+   "task_id": "aime-2023-II-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:2847d26ef876d4df",
+   "split": "test",
+   "task_id": "aime-2023-II-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:22b5bc705cde4186",
+   "split": "tune",
+   "task_id": "aime-2023-II-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:bd2251da624590b5",
+   "split": "test",
+   "task_id": "aime-2024-I-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:d8db1ae7616f9f6e",
+   "split": "test",
+   "task_id": "aime-2024-I-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:0b085525765b0a40",
+   "split": "test",
+   "task_id": "aime-2024-I-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:254604bb0751875f",
+   "split": "test",
+   "task_id": "aime-2024-I-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:39078ca9f19c22ef",
+   "split": "test",
+   "task_id": "aime-2024-I-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:41a4cf91ca8df560",
+   "split": "test",
+   "task_id": "aime-2024-I-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:a6a11c6085db3522",
+   "split": "test",
+   "task_id": "aime-2024-I-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:dc5ce6bb472cec57",
+   "split": "test",
+   "task_id": "aime-2024-I-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:d8bb1dd6b16829dd",
+   "split": "test",
+   "task_id": "aime-2024-I-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:8fa0cacb0561ccdd",
+   "split": "test",
+   "task_id": "aime-2024-I-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:6a639d660545509c",
+   "split": "tune",
+   "task_id": "aime-2024-I-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:1699fef93ad35b14",
+   "split": "test",
+   "task_id": "aime-2024-I-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:6c22f8851963501d",
+   "split": "tune",
+   "task_id": "aime-2024-I-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:3d45c2c747ce59cc",
+   "split": "test",
+   "task_id": "aime-2024-I-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:920fc6cdef041a36",
+   "split": "test",
+   "task_id": "aime-2024-I-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:9521ca4e0310112d",
+   "split": "test",
+   "task_id": "aime-2024-II-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:a34a56356a27a3c0",
+   "split": "test",
+   "task_id": "aime-2024-II-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:5c51ee13f3f16c8a",
+   "split": "test",
+   "task_id": "aime-2024-II-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:7ec69ac4f2e9f791",
+   "split": "test",
+   "task_id": "aime-2024-II-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:c22d651debcd11ec",
+   "split": "test",
+   "task_id": "aime-2024-II-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:7cc61c87f4f5cd2f",
+   "split": "test",
+   "task_id": "aime-2024-II-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:47263bd9f7970f3d",
+   "split": "test",
+   "task_id": "aime-2024-II-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:17b74c7c4a21a233",
+   "split": "test",
+   "task_id": "aime-2024-II-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:376ee30c6d1f05d6",
+   "split": "test",
+   "task_id": "aime-2024-II-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:63d3407b7719d792",
+   "split": "test",
+   "task_id": "aime-2024-II-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:8903aab535cff199",
+   "split": "test",
+   "task_id": "aime-2024-II-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:65ea9e51790e9b7b",
+   "split": "test",
+   "task_id": "aime-2024-II-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:e4aea270d4742e3a",
+   "split": "test",
+   "task_id": "aime-2024-II-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:157310b50131434e",
+   "split": "test",
+   "task_id": "aime-2024-II-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:e77ed3a57d3360c1",
+   "split": "test",
+   "task_id": "aime-2024-II-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:dcf93c9ab8f50cb5",
+   "split": "tune",
+   "task_id": "aime-2025-I-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:7c172ecb6eaf5a46",
+   "split": "test",
+   "task_id": "aime-2025-I-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ecb428dc367852f8",
+   "split": "test",
+   "task_id": "aime-2025-I-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:78da5b1126b72a94",
+   "split": "test",
+   "task_id": "aime-2025-I-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:07d3fb2f6bae0f6d",
+   "split": "tune",
+   "task_id": "aime-2025-I-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:390ebe9b6fca07a8",
+   "split": "test",
+   "task_id": "aime-2025-I-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:9758b41de9e26571",
+   "split": "test",
+   "task_id": "aime-2025-I-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:744f7ae9b861a99e",
+   "split": "tune",
+   "task_id": "aime-2025-I-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:f5406855dddc314f",
+   "split": "test",
+   "task_id": "aime-2025-I-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:f049e2c484ae568a",
+   "split": "test",
+   "task_id": "aime-2025-I-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:91ea103a3caee967",
+   "split": "test",
+   "task_id": "aime-2025-I-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:98e1ac724c9c1c97",
+   "split": "test",
+   "task_id": "aime-2025-I-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:4c1fd6f254f7da29",
+   "split": "test",
+   "task_id": "aime-2025-I-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:7275005095f14093",
+   "split": "test",
+   "task_id": "aime-2025-I-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:1e75486b510ac5e9",
+   "split": "test",
+   "task_id": "aime-2025-I-15"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:7161467dc646fd29",
+   "split": "tune",
+   "task_id": "aime-2025-II-01"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:f891e0f14a200e59",
+   "split": "test",
+   "task_id": "aime-2025-II-02"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:bbd8dbc3fe894793",
+   "split": "test",
+   "task_id": "aime-2025-II-03"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:b4c3f4692047e39a",
+   "split": "test",
+   "task_id": "aime-2025-II-04"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:d00c80c41ebaf3f6",
+   "split": "test",
+   "task_id": "aime-2025-II-05"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:2f54e138ffb4e681",
+   "split": "test",
+   "task_id": "aime-2025-II-06"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:27ad96fa335076d4",
+   "split": "test",
+   "task_id": "aime-2025-II-07"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:26abe1cfb8f22f75",
+   "split": "tune",
+   "task_id": "aime-2025-II-08"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ea5ac1c75f7f6d9d",
+   "split": "test",
+   "task_id": "aime-2025-II-09"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:bf2a1bfbd0870b1e",
+   "split": "test",
+   "task_id": "aime-2025-II-10"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:4d26d980007d1fba",
+   "split": "test",
+   "task_id": "aime-2025-II-11"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:ce8fdecc2b6951e2",
+   "split": "test",
+   "task_id": "aime-2025-II-12"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:056b87df2f0f467d",
+   "split": "tune",
+   "task_id": "aime-2025-II-13"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:1488ad6e0d960ec4",
+   "split": "test",
+   "task_id": "aime-2025-II-14"
+  },
+  {
+   "family": "reasoning",
+   "group": "aime:bc33c0b7982b0096",
+   "split": "tune",
+   "task_id": "aime-2025-II-15"
+  }
+ ]
+}

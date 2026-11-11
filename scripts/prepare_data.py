@@ -7,9 +7,13 @@ from __future__ import annotations
 
 import sys
 
-from bioalloc.evaluation import gsm8k_data, planbench_data
+from bioalloc.evaluation import aime_data, gsm8k_data, planbench_data
 
-PREPARERS = {"gsm8k": gsm8k_data.prepare, "planbench": planbench_data.prepare}
+PREPARERS = {
+    "gsm8k": gsm8k_data.prepare,
+    "planbench": planbench_data.prepare,
+    "aime": aime_data.prepare,
+}
 
 
 def main(names: list[str]) -> int:

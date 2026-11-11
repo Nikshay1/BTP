@@ -15,4 +15,10 @@ jobs:
       - run: uv run ruff check
       - run: uv run ruff format --check
       - run: uv run mypy
+      - uses: actions/cache@v4
+        with:
+          path: data/raw
+          key: raw-data-${{ hashFiles('src/bioalloc/evaluation/*_data.py') }}
+      # Pinned, hash-checked snapshots that the tests read (data/prepared is not committed).
+      - run: uv run --frozen --group prep python scripts/prepare_data.py
       - run: uv run pytest -q
