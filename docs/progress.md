@@ -89,6 +89,8 @@ Carried over from M1 (all now addressed above):
   generated suite.
 - Macro-ant check finished (R22): 2/60 across the macro ant and its controls; 70% of decisions had
   no legal segment, so the pheromone had nothing to act on.
+- AIME (D31): test v1 aborted after an unfair episode limit was found (R23); tuning re-check
+  passed its gate on 12 November (R24), and `aime-test-v2` is running.
 - Live spending to date: about US$52 (US$50.85 in recorded runs).
 - Panel material for 17 November: the Phase 1 report `report/main.tex` (Overleaf, pdfLaTeX), the
   slide deck (claude.ai artifact) and `presentation/speaker-notes.md`.

@@ -1145,6 +1145,19 @@ of up to 12 steps and simply continues. The comparison was therefore not fair to
   the full test again under the fixed code as `aime-test-v2`, with D31's primary questions
   unchanged. v1 is kept and reported as aborted.
 
+## R24. AIME tuning re-check under the fixed episode limit (2026-11-12)
+
+`runs/aime-tune-v2` (60 runs, US$8.41; 9 runs on 11 November, the rest on 12 November after the
+daily quota reset): majority5 23/30 (77%), 30,013 tokens per problem; bee_quorum5 22/30 (73%),
+25,719 tokens (0.86x majority5); bee minus majority5 -0.033 (95% CI -0.133 to +0.067; 1 win,
+2 losses). The two systems draw their own samples, so the gap is within sampling noise. The
+longer episodes cost tokens (majority5 22,450 in v1) and did not change accuracy on these
+problems.
+
+- **Gate (written in `scripts/resume_aime.sh` before the check finished):** majority5 must solve
+  at least as many tuning problems as the single agent (21/30). 23 >= 21, so `aime-test-v2`
+  started at 17:20 UTC with D31's primary questions unchanged.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
