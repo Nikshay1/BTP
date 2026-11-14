@@ -1216,6 +1216,9 @@ per-step supervisor call had the same pattern with 256 (not used on AIME).
   aborted; the test runs as `luna-aime-test-v2` with D32's primary questions unchanged.
 - **Sonnet:** the change alters `bee.py`, so the 14 unfinished runs of `aime-test-v2` would run under
   different code; if they are finished, that is disclosed with them.
+- **Re-check (`runs/luna-aime-tune-v2`, 30 runs, US$0.11):** bee_quorum5 24/30 (80%), 9,068 tokens
+  per problem; no assessment cut off; 15 of 64 released scouts accepted another answer. Quorum on
+  22 problems (22 solved), recruitment rounds on 8 (2 solved). `luna-aime-test-v2` started.
 
 ## Open questions found while planning (settled by D10-D14)
 
