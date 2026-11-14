@@ -77,7 +77,7 @@ Speaker: Nikshay. To close, three points. First, on planning tasks where the sys
 ## Likely panel questions
 
 **"Your mechanisms lose to a single agent on planning. So what is the contribution?"**
-They lose on planning, where the simulator gives the single agent feedback, and we explain why from the traces. On maths without a checker the quorum bee wins by 15.5 points on a held-out test fixed in advance. Showing that the winner flips with the kind of task is the evidence that per-subtask allocation (RQ2, the selector) is worth building, and it comes from a fair, enforced-budget comparison that most multi-agent papers skip.
+They lose on planning, where the simulator gives the single agent feedback, and we explain why from the traces. On maths without a checker, voting wins by 13 to 16 points on a held-out test fixed in advance. On the same model, GPT-6 Luna, the winner flips: single agent 90% against bee 47% on planning, bee 87% against single agent 71% on maths. That flip is the evidence that per-subtask allocation (RQ2, the selector) is worth building, and it comes from a fair, enforced-budget comparison that most multi-agent papers skip.
 
 **"Why not use a weaker or open model, where coordination may help more?"**
 Possible in Phase 2. We chose a strong model on purpose: a gain that only appears with a weak model may disappear as models improve. The framework is model-agnostic (Bedrock, OpenAI and Groq adapters exist), and the maths test already runs on a second model, GPT-6 Luna.
@@ -91,20 +91,29 @@ We wrote the rule before the tuning run: a variant goes to the test only if it b
 **"How do you make sure the comparison is fair?"**
 Same model, prompt, decomposition and checks for every system; a ledger that refuses a call before it is sent if it would break the budget; frozen, hashed splits; and controls that remove only the biological part (for example bee without stop signals).
 
+**"Isn't this just self-consistency? Voting over samples is known to beat one sample."**
+Yes, most of the maths gain is self-consistency (Wang et al., 2023, which we cite), and we say so on the slide: plain majority of five gets 84.5% against the bee's 86.5%. We do not claim the bee discovers voting. Our claims are two. First, the task-type flip: the same voting that wins on maths loses badly on planning, where one agent with feedback wins, so voting is the right tool only for some subtasks; that is what the selector is for. Second, the bee's quorum rule makes voting cheaper and tells you when to trust it.
+
 **"Isn't 'bee' just majority voting?"**
-Partly, and we measured exactly which part is more. On AIME the bee and a plain majority of five are within noise (86.5% against 84.5%). The quorum stop is the part that helps: where three scouts agree, the bee stops early, uses about two thirds of the tokens and is right 97% of the time. The recruitment rounds, where scouts judge each other's answers, cost more and did not beat a plain vote. So we keep the quorum and treat recruitment as something to redesign or drop.
+Partly, and we measured which part is more. The quorum stop is the part that helps: where three of five scouts agree, the bee stops early and is right 97% of the time, against 43% where no quorum forms. The recruitment rounds, where scouts judge each other's answers, cost almost twice the tokens and did not beat a plain vote. If we keep the quorum and replace recruitment by a plain vote, the same recorded answers give 126 correct against the majority's 125 at 0.75 times the tokens. On Sonnet the saving was the same (0.78 times) but accuracy fell below the majority, so "same accuracy, cheaper" is a hypothesis we will test properly in Phase 2. That analysis was done after the test and we label it so.
+
+**"Is +15 points worth five times the cost?"**
+Depends on the task, which is our point. A correct AIME answer costs US$0.0006 from the single agent and US$0.0029 from the bee, both well under a cent; when correctness matters and nothing can check the answer, that is cheap. On planning, the extra tokens buy nothing: the single agent is both better and cheaper. A selector should spend votes only where answers cannot be checked, and the quorum tells it when to stop spending.
 
 **"What did it cost?"**
-About US$125 of AWS credit on Sonnet for everything in Phase 1, and about US$1.20 on GPT-6 Luna for the whole AIME tuning and test. The maths test itself (444 runs) cost 77 cents.
+About US$125 of AWS credit on Sonnet for everything in Phase 1, and about US$1.60 on GPT-6 Luna for the whole AIME tuning and test plus the planning replication. The maths test itself (444 runs) cost 77 cents, the planning replication (150 runs) 39 cents.
 
 **"Why did you change the model in the middle?"**
-Cost and quota. Sonnet costs US$3/US$15 per million tokens and Bedrock's daily token quota stopped every long run; Luna costs US$0.10/US$0.50, about 30 times less, with no daily quota. Every Phase 1 result is reported as a Sonnet result, and no experiment mixes models. The full study now fits well under US$100 instead of US$1,000-1,900.
+Cost and quota. Sonnet costs US$3/US$15 per million tokens and Bedrock's daily token quota stopped every long run; Luna costs US$0.10/US$0.50, about 30 times less, with no daily quota. Every Phase 1 result is reported with its model, and no experiment mixes models. Having both is also a strength: the planning comparison gives the same order on both models. The full study now fits well under US$100 instead of US$1,000-1,900.
 
-**"Planning is on Sonnet and maths on Luna. Isn't the contrast just the model?"**
-That is the honest limit, and we state it. Two things point against it: Sonnet on 141 of the 148 maths problems shows the same order (majority 83.9%, bee 78.3%, single agent 76.4%), and the reason the single agent wins on planning, simulator feedback, does not exist on maths. Phase 2's first step is to run both families on Luna.
+**"Isn't the planning-versus-maths contrast just a difference of models?"**
+No: we ran both on the same model. On GPT-6 Luna the single agent beats the bee on planning by 43 points (CI +20 to +67) and the bee beats the single agent on maths by 15.5 points (CI +8 to +23). Claude Sonnet shows the same order on both families. The remaining limit is that each family is one suite (Logistics, AIME).
+
+**"Didn't your own rule say the Luna planning run was at ceiling?"**
+Yes, and we report that. Before the run we wrote that if the single agent solved 90% or more, the problems would be at Luna's ceiling and could not separate the systems. It solved exactly 90%. But the rule was meant for the case where everyone is near the top, and here the bee and the direct call were at 47% and the ant at 0, with the single-agent-minus-bee interval well clear of zero. We show the flag and the numbers rather than quietly reinterpret the rule.
 
 **"Did you look at the test before deciding?"**
-No. The maths test, its two questions and a gate were written in the decision log before it ran. Two earlier test runs were stopped because we found bugs that were unfair to the voters (scouts cut off by a call limit, and recruitment replies cut off by a 512-token limit that Luna's hidden reasoning used up). Both are disclosed in the log, fixed with tests, and the reported runs are fresh.
+No. The maths test, its two questions and a gate were written in the decision log before it ran, and so was the planning replication on Luna. Two earlier test runs were stopped because we found bugs that were unfair to the voters (scouts cut off by a call limit, and recruitment replies cut off by a 512-token limit that Luna's hidden reasoning used up). Both are disclosed in the log, fixed with tests, and the reported runs are fresh.
 
 **"What exactly is new compared with Symphony-Coord or MasRouter?"**
 They route among agents, roles, models or graph shapes. We route among coordination mechanisms with their own control flow, and test each against controls without its biological component.
