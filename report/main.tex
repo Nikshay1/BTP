@@ -71,11 +71,13 @@ feedback. Redesigned scouts that repair their own rejected plans came within one
 proposes plan segments solved 2 of 60 runs because most of its decisions had no legal option. We then
 tested the regime the bee is built for, answers that cannot be checked: on 148 held-out AIME competition
 problems with GPT-6 Luna as backbone, in a test fixed in advance, a quorum-sensing bee with five scouts
-solved 86.5\% against 70.9\% for the single agent (+15.5 points, 95\% CI +8.1 to +23.0) at about six times
-the tokens, and a plain majority of five solved 84.5\%. When three scouts agreed, the bee was right 97\% of
-the time. The better mechanism therefore depends on the kind of task, while within one family the
-per-problem differences are explained by sampling; Phase~2 tests allocation on task graphs that mix both
-kinds of subtask.
+solved 86.5\% against 70.9\% for the single agent (+15.5 points, 95\% CI +8.1 to +23.0) at about five times
+the cost per correct answer, and a plain majority of five solved 84.5\%, so most of the gain is
+self-consistency. The bee's own contribution is its quorum: when three scouts agreed it was right 97\% of
+the time, and a quorum stop followed by a plain vote used a quarter fewer tokens than the majority. On the
+same backbone the Logistics comparison gave the single agent 90\% against the bee's 47\%. The better
+mechanism therefore depends on the kind of task, while within one family the per-problem differences are
+explained by sampling; Phase~2 tests allocation on task graphs that mix both kinds of subtask.
 \end{abstract}
 
 \section{Introduction}
@@ -260,7 +262,8 @@ repetitions would not differ). The same model is
 used for every role. The competition-maths test (Section~\ref{sec:aime}) runs on GPT-6 Luna through OpenAI's
 Responses API, at low reasoning effort and temperature 1.0, chosen for cost (US\$0.10 and US\$0.50 per million
 input and output tokens against US\$3 and US\$15) and because Bedrock's daily token quota stopped every long
-Sonnet run. Within any one experiment all systems share one backbone.
+Sonnet run; the Logistics comparison was repeated on Luna to separate the task from the model. Within any
+one experiment all systems share one backbone.
 
 \runin{Tasks.}
 Split v2 holds 450 study tasks from GSM8K, PlanBench Blocksworld and Logistics, our tool suite and the
@@ -321,6 +324,13 @@ Ant & 0/30 (0\%) & 19,053 & 0.096 & -- \\
 No mechanism beat the single agent. The paired differences are $-0.13$ for bee (95\% CI $-0.30$ to $0.07$)
 and $-0.07$ for octopus ($-0.20$ to $0.07$); with 15 tasks the detectable effect is about 0.25, so small
 differences cannot be resolved. Direct was the cheapest per success.
+
+\runin{Replication on GPT-6 Luna.} We repeated the comparison with only the model changed, after writing
+down how it would be read (150 runs, US\$0.39). The order was the same and sharper: single agent 27/30
+(90\%), octopus 26/30 (87\%), bee 14/30 (47\%), direct 14/30 (47\%), ant 0/30. The single agent's margin
+over the bee is $+0.43$ (95\% CI $+0.20$ to $+0.67$). The reading fixed in advance had named a single-agent
+rate of 90\% or more as Luna's ceiling, at which the systems could not be separated; the single agent hit
+exactly 90\%, but bee, direct and ant were far below it, so we report both the flag and the separation.
 
 \runin{Why, from the traces.}
 \begin{itemize}
@@ -436,21 +446,27 @@ Quorum bee & 128 (86.5\%) & 6,441 & 0.0025 & $+15.5$ (CI $+8.1$ to $+23.0$) \\
 \end{table}
 
 Both voting systems beat the single agent clearly (the bee won 30 problems and lost 7). The bee and the
-majority are within noise of each other ($+2.0$ points, CI $-2.0$ to $+6.8$). On Claude Sonnet~4.6, in a run
-stopped by the daily quota at 141 of 148 problems, the order was the same with a smaller gap (majority
-83.9\%, bee 78.3\%, single agent 76.4\%).
+majority are within noise of each other ($+2.0$ points, CI $-2.0$ to $+6.8$), so most of the gain is the
+known effect of voting over independent samples, self-consistency~\cite{wang2023selfconsistency}. It is paid
+for in tokens: a correct answer costs US\$0.0006 from the single agent and US\$0.0029 from the bee. On Claude
+Sonnet~4.6, in a run stopped by the daily quota at 141 of 148 problems, the order was the same with a
+smaller gap (majority 83.9\%, bee 78.3\%, single agent 76.4\%).
 
 \runin{Inside the bee (analysis after the test).} On 120 of the 148 problems three scouts agreed; the bee
 stopped there and was right on 116 (97\%), using 0.69 times the majority's tokens. On the other 28 its
 recruitment rounds solved 12 (43\%, the majority 14) at 1.87 times the majority's tokens. The quorum is thus
 both a cheaper stop and a strong confidence signal, while the recruitment rounds, in which language-model
-scouts judge each other's answers, add cost without beating a plain vote. A selector can trust a quorum
-answer and spend more, or a different mechanism, on the problems without one.
+scouts judge each other's answers, add cost without beating a plain vote. Re-reading the same runs with the
+quorum stop kept and recruitment replaced by a plain vote of the five recorded scout answers gives 126
+correct against the majority's 125 at 0.75 times its tokens. On the partial Sonnet run the saving is the
+same (0.78 times) but accuracy fell below the majority (110 against 120 of 141), so equal accuracy at lower
+cost is a hypothesis for a pre-registered test, not a result. A selector can trust a quorum answer and
+spend more, or a different mechanism, on the problems without one.
 
 \subsection{Cost}
 The Sonnet work cost about US\$125 of AWS credit (US\$122.68 in recorded runs, the rest in runs set aside
-after a provider quota stopped an experiment); the AIME work on Luna, including tuning, probes and the
-aborted run, cost about US\$1.20. A full study at Sonnet~4.6 prices was estimated at US\$1,000--1,900; at
+after a provider quota stopped an experiment); the AIME work and the Logistics replication on Luna,
+including tuning, probes and the aborted run, cost about US\$1.60. A full study at Sonnet~4.6 prices was estimated at US\$1,000--1,900; at
 Luna's prices it fits well under US\$100, which is why Phase~2 uses Luna.
 
 \section{Discussion and Threats to Validity}
@@ -463,11 +479,11 @@ tasks with headroom; we chose that region by calibration before comparing system
 Fifteen PlanBench problems detect only large effects; the generated suite exists to give the held-out test
 120 instances.
 
-\runin{Two families, two backbones.}
-The planning results use Claude Sonnet~4.6 and the maths test GPT-6 Luna, so the contrast between the two
-families also crosses models; the partial Sonnet maths run points the same way. Phase~2 runs both families
-on one backbone. The mechanisms' remaining expected strengths (search, bounded local work) need multi-step
-graphs with heterogeneous subtasks.
+\runin{One suite per family.}
+The task-type contrast now holds on one backbone (Luna) and in the same direction on a second (Sonnet), but
+each family is one suite: Logistics for planning and AIME for unverifiable answers. The analysis of the
+bee's quorum was made after the tests and is reported as such. The mechanisms' remaining expected strengths
+(search, bounded local work) need multi-step graphs with heterogeneous subtasks.
 
 \runin{Fairness.}
 Shared prompts, decomposition, checks and an enforced budget remove the most common confound in
@@ -481,7 +497,7 @@ multi-agent comparisons (extra compute); the controls separate the biological co
 \toprule
 \head{Period} & \head{Work} \\
 \midrule
-Dec 2026--Jan 2027 & Planning and maths on one backbone (Luna); mechanisms on multi-step graphs that mix both; hand-labelled sample of checker verdicts \\
+Dec 2026--Jan 2027 & Mechanisms on multi-step graphs that mix planning and maths; pre-registered test of the quorum-stop vote; hand-labelled sample of checker verdicts \\
 Jan--Feb 2027 & Learn the allocation policy (rule table, then LinUCB) from recorded outcomes (RQ2) \\
 Feb--Mar 2027 & Crow (tool-prerequisite planning) and starfish (checkpoint recovery); failure injection (RQ4) \\
 Mar--Apr 2027 & Full study with ablations (RQ2, RQ3) and the cost at which coordination stops paying (RQ5) \\
@@ -498,8 +514,9 @@ is the real bar: on long Logistics plans it solved 73\% of runs at 21,000 tokens
 mechanism designs beat it. The traces explain the result (the ant ran out of calls, the bee's scouts never
 saw feedback) and led to redesigns that use feedback; the best of them matched the single agent within one
 success but did not beat it. On competition maths, where no check exists, the picture reverses: a
-quorum-sensing bee beat the single agent by 15.5 points on 148 held-out problems, and a quorum among its
-scouts marked answers that were right 97\% of the time. Which mechanism wins depends on the kind of task,
+quorum-sensing bee beat the single agent by 15.5 points on 148 held-out problems, most of it from voting
+itself, and a quorum among its scouts marked answers that were right 97\% of the time; on the same backbone
+the single agent still won planning by 43 points. Which mechanism wins depends on the kind of task,
 which is the premise of per-subtask allocation, the subject of Phase~2; the held-out Logistics instances are
 untouched and reserved for that test.
 
