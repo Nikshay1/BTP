@@ -113,4 +113,7 @@ crow and starfish modules; failure injection (RQ4); full study and ablations.
   bee minus single agent +15.5 points (CI +8.1 to +23.0). A quorum among scouts is right 97% of
   the time. Luna spend so far about US$1.15 (tune 0.18, re-check 0.11, test 0.77, probes and
   smoke 0.08).
+- Planning comparison on Luna (D33, R27, US$0.39): single agent 90%, octopus 87%, bee 47%, direct 47%,
+  ant 0%; single agent minus bee +43 points (CI +20 to +67). Same ordering as on Sonnet; the task-type
+  contrast now holds on one backbone.
 

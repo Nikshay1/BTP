@@ -1271,6 +1271,31 @@ systems, 444 runs, all completed, US$0.77 (13:39-14:40 UTC).
   the problems are at Luna's ceiling and the replication cannot separate the systems, which we
   report as such rather than as support. Either way the result is reported.
 
+## R27. Planning comparison on Luna: the single agent wins again (2026-11-14)
+
+`runs/luna-logistics-compare` (D33; 150 runs, all within budget, US$0.39):
+
+| system | valid plans | mean tokens | US$ per success |
+|---|---|---|---|
+| single_agent | 27/30 (90%) | 8,897 | 0.0023 |
+| octopus | 26/30 (87%) | 10,130 | 0.0027 |
+| bee | 14/30 (47%) | 16,419 | 0.0095 |
+| direct | 14/30 (47%) | 5,610 | 0.0030 |
+| ant | 0/30 | 18,466 | none solved |
+
+- **Question:** single_agent minus bee +0.433 (95% group bootstrap CI +0.200 to +0.667). Against
+  octopus +0.033 (CI 0.000 to +0.100), against direct +0.433 (CI +0.267 to +0.633).
+- **Against D33's reading:** the single agent solved exactly 90% of runs, which D33 named as the
+  ceiling threshold ("cannot separate the systems"). That rule was written to catch every system
+  being near the top; here bee, direct and ant are far below, and the single-agent-minus-bee
+  interval excludes zero. We report both: by the rule as written the run is flagged as near
+  Luna's ceiling for the single agent; the observed separation between the single agent and bee is
+  large and clear. The Sonnet ordering (R13: single agent 73%, octopus 67%, bee 60%, direct 57%,
+  ant 0%) is the same on Luna.
+- **Consequence:** on one backbone, GPT-6 Luna, the single agent beats bee on Logistics planning by
+  43 points (R27) and the quorum bee beats the single agent on AIME maths by 15.5 points (R26).
+  The task-type contrast no longer rests on a change of model.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
