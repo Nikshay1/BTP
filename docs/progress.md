@@ -99,3 +99,14 @@ Carried over from M1 (all now addressed above):
 hand-labelled sample of checker verdicts; learn the rule table and LinUCB selector from recorded
 outcomes and evaluate on held-out tasks (including the untouched generated Logistics test set);
 crow and starfish modules; failure injection (RQ4); full study and ablations.
+
+## 14 November 2026 (details in docs/decisions.md D32)
+
+- Backbone for new work switched to GPT-6 Luna on OpenAI's Responses API (D32), about 30x cheaper
+  than Sonnet 4.6 and without a daily token quota. Phase 1 results stay Sonnet results.
+- `aime-test-v2` (Sonnet) stands at 430 of 444 runs; the Bedrock path is kept to finish it.
+- Luna AIME tuning check and test pre-registered in D32 (`configs/luna-aime-*.json`), expected
+  cost about US$1-3.
+- Codex reviews are unavailable (the ChatGPT login rejects every model since 14 November); the
+  D32 adapter was reviewed by hand and checked live.
+

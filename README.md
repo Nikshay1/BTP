@@ -6,10 +6,18 @@ B.Tech final-year project (2026-27), Department of Computer Science and Engineer
 
 ## Status
 
-M1 done; M2 built up to the pilot (26 October 2026). All executors, controls and baselines, four
-task suites with frozen splits, the Groq and Bedrock adapters, the experiment runner and analysis work offline;
-the pilot on the real backbone waits for an API key. See `docs/progress.md`, `docs/pilot.md` and
+Phase 1 done (November 2026): executors, controls and baselines, task suites with frozen splits,
+the experiment runner and analysis, and measured runs on Claude Sonnet 4.6 (Bedrock). New work runs
+on GPT-6 Luna through OpenAI's Responses API (decision D32). See `docs/progress.md` and
 `docs/decisions.md`.
+
+## Backbone and keys
+
+The model in an experiment config picks the adapter: `gpt-*` names go to OpenAI (Responses API,
+`OPENAI_API_KEY`), `*anthropic.*` names to Bedrock (AWS settings), anything else to Groq
+(`GROQ_API_KEY`). Keys are read from the environment or from `.env` (git-ignored). Check a provider
+for well under a cent with `uv run python scripts/capability_check.py openai`. Luna configs are
+`configs/luna-*.json` (temperature 1, reasoning effort low, US$0.10 / US$0.50 per million tokens).
 
 ## Development
 

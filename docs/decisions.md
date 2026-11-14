@@ -1158,6 +1158,40 @@ problems.
   at least as many tuning problems as the single agent (21/30). 23 >= 21, so `aime-test-v2`
   started at 17:20 UTC with D31's primary questions unchanged.
 
+## D32. Backbone for new work: GPT-6 Luna on OpenAI (2026-11-14)
+
+- **Date:** 2026-11-14 · **Status:** decided; the Luna AIME runs below are pre-registered here
+- **Why:** cost and quota. Sonnet 4.6 on Bedrock costs US$3 / US$15 per million input / output
+  tokens and its daily token quota stopped every long run (R18, R23, R24). GPT-6 Luna lists at
+  US$0.10 / US$0.50, about 30x cheaper; the AIME tuning check and test (490 runs, 8.9M input and
+  1.7M output tokens) cost US$52.60 on Sonnet and would cost about US$1.75 on Luna, before any
+  difference in answer length. OpenAI limits are per minute, not per day.
+- **What does not change:** every Phase 1 result stays a Sonnet result and is reported as such;
+  no Sonnet run is mixed with a Luna run inside one experiment. `aime-test-v2` (Sonnet) stopped at
+  430 of 444 runs (141 of 148 problems complete) when the driver was turned off; the Bedrock path
+  is kept so it can be finished.
+- **Adapter (`src/bioalloc/llm/openai.py`):** OpenAI's Responses API. Luna accepts function tools
+  with a reasoning effort other than `none` only there, and our tasks use tools (calculator,
+  simulator). The adapter is stateless like the others: the whole conversation is sent each call
+  and Luna's hidden reasoning is not replayed between tool rounds (accepted by the API). Spent
+  credit (`insufficient_quota`) ends the run unrecorded at once, like a daily quota (R18). The API
+  has no seed. Temperature must be 1, which every config already uses.
+- **Setting:** `reasoning_effort` `low`, the same value as the Sonnet configs. Exploratory probe on
+  the 30 AIME tuning problems only (one sample each, no tools, through the API directly, US$0.05):
+  `none` 6/30 (Luna answers at once without working when told to reply with JSON only), `low`
+  16/30, `medium` 28/30. `low` leaves headroom; `medium` is at ceiling. No test problem was used.
+- **Checks:** live capability check passes (JSON answer, tool call and read-back, usage with
+  reasoning tokens itemized); the prompt-token reservation overestimates Luna's prompts (806
+  reserved against 79 used with a tool), the safe direction. Smoke run `luna-smoke-2`: 9 runs on
+  3 tuning problems, 7 correct, US$0.019.
+- **Pre-registered Luna AIME plan:** `configs/luna-aime-tune.json` (single_agent, bee_quorum5,
+  majority5 on the 30 tuning problems, the D31 settings with Luna), then, only if majority5 solves
+  at least as many tuning problems as single_agent (the R24 gate), `configs/luna-aime-test.json`
+  (the three systems on the 148 test problems) with D31's primary questions unchanged:
+  (1) bee_quorum5 minus single_agent, paired, 95% bootstrap CI; (2) bee_quorum5 tokens relative to
+  majority5 and its accuracy difference to majority5. Reports: `scripts/vote_report.py` and, as
+  exploratory, `scripts/quorum_report.py`.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
