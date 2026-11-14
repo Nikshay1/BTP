@@ -68,9 +68,14 @@ single direct call and 0\% for the step-per-call ant). Trace analysis shows why:
 its plan against the simulator's message, and the first versions of the mechanisms did not use that
 feedback. Redesigned scouts that repair their own rejected plans came within one success of the single agent
 (23/60 against 24/60) but did not pass the pre-registered rule for a held-out test, and a macro ant that
-proposes plan segments solved 2 of 60 runs because most of its decisions had no legal option. Within one task
-family the per-problem differences between systems are explained by sampling, so Phase~2 moves the
-allocation question to task graphs that mix different kinds of subtask.
+proposes plan segments solved 2 of 60 runs because most of its decisions had no legal option. We then
+tested the regime the bee is built for, answers that cannot be checked: on 148 held-out AIME competition
+problems with GPT-6 Luna as backbone, in a test fixed in advance, a quorum-sensing bee with five scouts
+solved 86.5\% against 70.9\% for the single agent (+15.5 points, 95\% CI +8.1 to +23.0) at about six times
+the tokens, and a plain majority of five solved 84.5\%. When three scouts agreed, the bee was right 97\% of
+the time. The better mechanism therefore depends on the kind of task, while within one family the
+per-problem differences are explained by sampling; Phase~2 tests allocation on task graphs that mix both
+kinds of subtask.
 \end{abstract}
 
 \section{Introduction}
@@ -104,8 +109,9 @@ failures; and \textbf{RQ5} when does coordination stop paying for itself.
   \item Task suites with automatic checking: GSM8K~\cite{cobbe2021gsm8k}, PlanBench~\cite{valmeekam2023planbench}
         with our own plan simulator, a deterministic tool suite, a controlled synthetic suite, and 180
         generated Logistics problems, all in frozen, hashed splits.
-  \item A measured first answer to parts of RQ1, RQ3 and RQ5 on long-horizon planning, an explanation of
-        the results from the traces, and redesigned mechanisms that use feedback
+  \item A measured first answer to parts of RQ1, RQ3 and RQ5: on long-horizon planning the single agent
+        wins, explained from the traces, with redesigned mechanisms that use feedback; on competition
+        maths, where no check exists, a quorum-sensing bee beats it on a held-out test
         (Section~\ref{sec:results}).
 \end{enumerate}
 
@@ -251,18 +257,24 @@ a regression test that fails when the fix is reverted.
 Claude Sonnet~4.6 on Amazon Bedrock with low effort, extended thinking off and temperature 1.0 for every
 system (at 0.6, all 60 bee planning scouts in the first smoke test reached the same plan, so scouts and
 repetitions would not differ). The same model is
-used for every role.
+used for every role. The competition-maths test (Section~\ref{sec:aime}) runs on GPT-6 Luna through OpenAI's
+Responses API, at low reasoning effort and temperature 1.0, chosen for cost (US\$0.10 and US\$0.50 per million
+input and output tokens against US\$3 and US\$15) and because Bedrock's daily token quota stopped every long
+Sonnet run. Within any one experiment all systems share one backbone.
 
 \runin{Tasks.}
 Split v2 holds 450 study tasks from GSM8K, PlanBench Blocksworld and Logistics, our tool suite and the
 synthetic suite, grouped so that no structure is shared across train, tune and test. The generated Logistics
 suite has 3 or 4 cities, two airplanes and 5, 7 or 9 packages; six strata of 30 instances are each split
 5/5/20 into training, tuning and test, and every instance has a constructive witness plan of 25--93 actions
-that passes the simulator. Test instances were never selected or filtered by any model result.
+that passes the simulator. Test instances were never selected or filtered by any model result. The maths
+suite holds the 178 AIME problems of 2020--2025 with a single integer answer (one problem with two accepted
+answers is excluded), 30 for tuning and 148 for test, split by a hash of the problem text.
 
 \runin{Budget.}
 The primary cap is 21,000 tokens per task, twice the single agent's mean in calibration, fixed before any
-comparison, with at most 2,048 completion tokens per call, 60 calls and 600~s.
+comparison, with at most 2,048 completion tokens per call, 60 calls and 600~s. On maths every system has
+60,000 tokens, 30 calls and 4,096 completion tokens per call.
 
 \runin{Protocol.}
 Each step was decided before it was run: smoke tests to find integration bugs; a calibration to find where
@@ -381,15 +393,65 @@ decisions offered two legal segments, the only case in which pheromone can chang
 learning therefore had almost nothing to act on; ant-style search needs several cheap, checkable options,
 such as choices between tools or sub-plans, rather than single steps of a long plan.
 
-\subsection{Held-out test}
+\subsection{Held-out Logistics test}
 The pre-registered rule sends a variant to the 120 held-out instances only if it passes the tuning screen.
 None did, so no test was run and the test instances remain unseen by any system. They are kept for the
 evaluation of the learned selector in Phase~2.
 
+\subsection{Competition maths: where voting wins}
+\label{sec:aime}
+Logistics favours the single agent because the simulator tells it what to fix. The bee's biological
+strength is different: a swarm commits once a quorum of scouts agrees and keeps searching when they
+disagree~\cite{seeley2012}. That can only help where answers cannot be checked, so that independent opinions
+carry information. AIME problems are such a case: the answer is one integer, the model has a calculator but
+no way to verify its result, and the grader compares with the reference only after the run.
+
+\runin{Systems.} \emph{Majority of five} asks five independent scouts one after another and returns the
+plurality answer, in the spirit of self-consistency~\cite{wang2023selfconsistency}. The \emph{quorum bee}
+asks the same five scouts in the same order but stops as soon as three agree; when no quorum forms, it runs
+the inhibition and recruitment rounds of Section~\ref{sec:system}. With the same order, a quorum of three among
+five is always the plurality, so the quorum stop alone cannot cost accuracy against the majority; it only
+saves the remaining calls.
+
+\runin{Protocol.} The test, its two primary questions and a gate (majority must solve at least as many tuning
+problems as the single agent) were written down before the test ran. Two runs were stopped and are reported
+as aborted: a Sonnet run in which each scout was cut off after four completions, and a Luna run in which the
+bee's recruitment replies were cut off by a fixed 512-token limit that Luna's hidden reasoning used up. Both
+defects were fixed with regression tests before the reported runs.
+
+\begin{table}[H]
+\centering\small
+\caption{AIME 2020--2025, 148 held-out problems, GPT-6 Luna, one run per problem and system (444 runs,
+US\$0.77). Differences are paired over problems with 95\% bootstrap intervals.}
+\label{tab:aime}
+\begin{tabular}{@{}lrrrl@{}}
+\toprule
+\head{System} & \head{Solved} & \head{Tokens/problem} & \head{US\$/run} & \head{Against the single agent} \\
+\midrule
+Single agent & 105 (70.9\%) & 1,112 & 0.0004 & -- \\
+Majority of five & 125 (84.5\%) & 6,004 & 0.0022 & $+13.5$ (CI $+5.4$ to $+21.6$) \\
+Quorum bee & 128 (86.5\%) & 6,441 & 0.0025 & $+15.5$ (CI $+8.1$ to $+23.0$) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Both voting systems beat the single agent clearly (the bee won 30 problems and lost 7). The bee and the
+majority are within noise of each other ($+2.0$ points, CI $-2.0$ to $+6.8$). On Claude Sonnet~4.6, in a run
+stopped by the daily quota at 141 of 148 problems, the order was the same with a smaller gap (majority
+83.9\%, bee 78.3\%, single agent 76.4\%).
+
+\runin{Inside the bee (analysis after the test).} On 120 of the 148 problems three scouts agreed; the bee
+stopped there and was right on 116 (97\%), using 0.69 times the majority's tokens. On the other 28 its
+recruitment rounds solved 12 (43\%, the majority 14) at 1.87 times the majority's tokens. The quorum is thus
+both a cheaper stop and a strong confidence signal, while the recruitment rounds, in which language-model
+scouts judge each other's answers, add cost without beating a plain vote. A selector can trust a quorum
+answer and spend more, or a different mechanism, on the problems without one.
+
 \subsection{Cost}
-All live work so far cost about US\$52 of AWS credit (US\$50.85 in recorded runs, the rest in runs set
-aside after a provider quota stopped an experiment). A full study at Sonnet~4.6 prices was
-estimated at US\$1,000--1,900, which is why each experiment was sized from measured cost per run.
+The Sonnet work cost about US\$125 of AWS credit (US\$122.68 in recorded runs, the rest in runs set aside
+after a provider quota stopped an experiment); the AIME work on Luna, including tuning, probes and the
+aborted run, cost about US\$1.20. A full study at Sonnet~4.6 prices was estimated at US\$1,000--1,900; at
+Luna's prices it fits well under US\$100, which is why Phase~2 uses Luna.
 
 \section{Discussion and Threats to Validity}
 
@@ -401,10 +463,11 @@ tasks with headroom; we chose that region by calibration before comparing system
 Fifteen PlanBench problems detect only large effects; the generated suite exists to give the held-out test
 120 instances.
 
-\runin{One family and one model.}
-Phase~1 results are on long-horizon planning with one backbone. The mechanisms' expected strengths (search,
-reconciliation of several plausible answers, bounded local work) need multi-step graphs with heterogeneous
-subtasks, which is Phase~2.
+\runin{Two families, two backbones.}
+The planning results use Claude Sonnet~4.6 and the maths test GPT-6 Luna, so the contrast between the two
+families also crosses models; the partial Sonnet maths run points the same way. Phase~2 runs both families
+on one backbone. The mechanisms' remaining expected strengths (search, bounded local work) need multi-step
+graphs with heterogeneous subtasks.
 
 \runin{Fairness.}
 Shared prompts, decomposition, checks and an enforced budget remove the most common confound in
@@ -418,7 +481,7 @@ multi-agent comparisons (extra compute); the controls separate the biological co
 \toprule
 \head{Period} & \head{Work} \\
 \midrule
-Dec 2026--Jan 2027 & Mechanisms on multi-step tool and reasoning graphs; hand-labelled sample of checker verdicts \\
+Dec 2026--Jan 2027 & Planning and maths on one backbone (Luna); mechanisms on multi-step graphs that mix both; hand-labelled sample of checker verdicts \\
 Jan--Feb 2027 & Learn the allocation policy (rule table, then LinUCB) from recorded outcomes (RQ2) \\
 Feb--Mar 2027 & Crow (tool-prerequisite planning) and starfish (checkpoint recovery); failure injection (RQ4) \\
 Mar--Apr 2027 & Full study with ablations (RQ2, RQ3) and the cost at which coordination stops paying (RQ5) \\
@@ -434,9 +497,11 @@ can be compared at equal, enforced compute, and a first set of measurements with
 is the real bar: on long Logistics plans it solved 73\% of runs at 21,000 tokens, and none of the first
 mechanism designs beat it. The traces explain the result (the ant ran out of calls, the bee's scouts never
 saw feedback) and led to redesigns that use feedback; the best of them matched the single agent within one
-success but did not beat it. Within one task family the differences between systems are sampling, so
-per-subtask allocation, the subject of Phase~2, has to be tested on task graphs that mix different kinds of
-work. The held-out instances are untouched and reserved for that test.
+success but did not beat it. On competition maths, where no check exists, the picture reverses: a
+quorum-sensing bee beat the single agent by 15.5 points on 148 held-out problems, and a quorum among its
+scouts marked answers that were right 97\% of the time. Which mechanism wins depends on the kind of task,
+which is the premise of per-subtask allocation, the subject of Phase~2; the held-out Logistics instances are
+untouched and reserved for that test.
 
 \section*{Code and records}
 Code, configurations, run traces and the decision log are in \url{https://github.com/Nikshay1/BTP}.

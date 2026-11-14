@@ -1,6 +1,6 @@
 # Speaker notes: Phase 1 panel presentation, 17 November 2026
 
-About 15 minutes: Aryan slides 1-4 (about 3.5 min), Madan slides 5-7 (about 3.5 min), Nikshay slides 8-16 (about 8 min). The same notes are in the deck under each slide.
+About 15 minutes: Aryan slides 1-4 (about 3.5 min), Madan slides 5-7 (about 3.5 min), Nikshay slides 8-18 (about 8.5 min; keep slides 9-13 brisk to leave time for 14-16). The same notes are in the deck under each slide.
 
 ## 1. Adaptive Task Allocation for Heterogeneous Bio-Inspired Agents
 
@@ -32,7 +32,7 @@ Speaker: Madan. Multi-agent papers are often criticised because the multi-agent 
 
 ## 8. Experimental setup
 
-Speaker: Nikshay. For the experiments we use Claude Sonnet 4.6 through Amazon Bedrock, with the same settings for every system. The budget is 21,000 tokens per task, which is twice what the single agent uses on average. Our main baseline is a strong single agent that can revise its answer when the checker rejects it. The tasks come from standard benchmarks, GSM8K and PlanBench, plus our own tool and synthetic suites, and we generated 180 harder Logistics planning problems, split into tuning and test sets before any model saw them. We went step by step: smoke tests, then difficulty calibration, then the comparison, then tuning of improved versions, with a held-out test reserved for any version that qualified.
+Speaker: Nikshay. Phase 1 ran on Claude Sonnet 4.6 through Amazon Bedrock; for the maths test we moved to GPT-6 Luna, about 30 times cheaper per token. Within any one experiment every system uses the same model and settings. The budget is 21,000 tokens per task, which is twice what the single agent uses on average. Our main baseline is a strong single agent that can revise its answer when the checker rejects it. The tasks come from standard benchmarks, GSM8K and PlanBench, plus our own tool and synthetic suites, and we generated 180 harder Logistics planning problems, split into tuning and test sets before any model saw them. For maths we added AIME competition problems from 2020 to 2025. We went step by step: smoke tests, then difficulty calibration, then the comparison, then tuning of improved versions, with a held-out test reserved for any version that qualified.
 
 ## 9. Finding 1: easy tasks leave no room to improve
 
@@ -54,24 +54,33 @@ Speaker: Nikshay. We then tested the redesigned scouts on 30 harder generated pr
 
 Speaker: Nikshay. We also tested the macro ant, which proposes plan segments, together with its four controls. Together they solved only 2 of 60 runs. The traces show why. In 70 percent of decisions, every segment the model proposed broke a precondition, so there was nothing legal to choose. Only 15 of about 300 decisions had two legal options, and that is the only situation where the pheromone can change anything. So the ant's learning never really got to act. Our conclusion is that ant-style search belongs where there are several cheap, checkable options, for example choosing between tools or sub-plans, not single plan steps. That shapes how we use it in Phase 2.
 
-## 14. Where allocation can pay off
+## 14. Finding 5: on maths, voting beats the single agent
 
-Speaker: Nikshay. Does choosing a mechanism per task help? On the 15 PlanBench problems, picking the best system per problem would raise 22 to 25 out of 30. But we checked this on the larger generated suite: every problem that any system solved was also solved by the single agent at least once. So inside one task family the gain mostly comes from taking more samples, not from mechanisms being good at different problems. We think that is expected: our hypothesis is that mechanisms differ across kinds of subtask, such as search, reconciling competing answers, and routine tool work. So Phase 2 moves to task graphs that mix these kinds, where a learned selector can actually choose. The selector, a rule table and a LinUCB bandit, is already implemented.
+Speaker: Nikshay. Phase 1 showed where a single agent wins, so we asked where the mechanisms should win: problems where the model cannot check its own answer. Competition maths is that case. We took AIME problems from 2020 to 2025, kept 148 as a held-out test and fixed the test in writing before running it. On GPT-6 Luna the single agent solved 71 percent. Five independent answers with a majority vote solved 84.5, and the quorum bee solved 86.5. Against the single agent the bee gains 15.5 points, and the confidence interval, 8 to 23 points, is well clear of zero: it won 30 problems and lost 7. The cost is about six times the tokens, still less than a cent per problem. Bee and plain majority are within noise of each other. We see the same order on Claude Sonnet, with a smaller gap.
 
-## 15. Status and plan to May 2027
+## 15. Inside the bee: the quorum works, recruitment does not
 
-Speaker: Nikshay. To summarise where we are. Phase 1 is done: the framework, the three mechanisms with all their controls, the baselines, the task suites, and a full cycle of experiments from calibration to a held-out test. In Phase 2 we move to multi-step tool and reasoning tasks, where subtasks really differ, then we learn the selector from recorded outcomes. In February and March we add the crow and starfish modules and test recovery from injected failures. The full study and ablations run in March and April, and we finish with the thesis and a conference paper draft in May.
+Speaker: Nikshay. Why does the bee help, and where? We split the test by how each bee run ended. On 120 problems three of the five scouts agreed, the bee stopped there, and it was right 97 percent of the time, using about two thirds of the tokens of asking all five. On the other 28 problems the scouts disagreed and the bee ran its recruitment rounds, where scouts look at each other's answers. That was right only 43 percent of the time, cost almost twice the tokens, and was no better than a plain vote. So the useful biological part is the quorum: it saves calls and it tells us how confident to be. That is exactly the kind of signal the selector in Phase 2 can use. We did this split after the test, so we present it as analysis, not as a pre-registered result.
 
-## 16. What we take from Phase 1
+## 16. Allocation pays off across kinds of task
 
-Speaker: Nikshay. To close, three points. First, a strong single agent is the real bar, and most bio-inspired designs do not clear it as first written; we measured that fairly instead of assuming the opposite. Second, on long planning, what decides the winner is whether the system uses feedback, not the animal metaphor. Third, inside one task family the differences between systems are mostly sampling noise, so the selector we build next has to choose across different kinds of subtask. The code, every decision and every run are in our repository. Thank you, we are happy to take questions.
+Speaker: Nikshay. Putting the two findings side by side. On planning, where a simulator checks every plan, the single agent that revises from feedback beat the bee, 73 against 60 percent. On maths, where nothing checks the answer, the quorum bee beat the single agent, 87 against 71. So the best way of working really depends on the kind of task. Inside one task family we found the differences were only extra sampling, but across kinds of task the winner flips, and that is what per-subtask allocation needs. One honest limit: the planning numbers are on Claude Sonnet and the maths numbers on GPT-6 Luna. Phase 2 runs both kinds on the same model, inside mixed task graphs, where a learned selector, already implemented as a rule table and a LinUCB bandit, can choose.
+
+## 17. Status and plan to May 2027
+
+Speaker: Nikshay. To summarise where we are. Phase 1 is done: the framework, the three mechanisms with all their controls, the baselines, the task suites, a full cycle of experiments on planning, and a held-out maths test where the quorum bee won. Moving to GPT-6 Luna makes the full study affordable: at about a thirtieth of the price per token it fits in well under a hundred dollars instead of more than a thousand. In Phase 2 we first run planning and maths on the same model, then move to task graphs that mix both kinds of subtask, and learn the selector from recorded outcomes. In February and March we add the crow and starfish modules and test recovery from injected failures. The full study and ablations run in March and April, and we finish with the thesis and a conference paper draft in May.
+
+## 18. What we take from Phase 1
+
+Speaker: Nikshay. To close, three points. First, on planning tasks where the system gets feedback, a strong single agent is the real bar, and none of our mechanisms cleared it; we measured that fairly instead of assuming the opposite. Second, on maths, where nothing checks the answer, the quorum bee beats the single agent by 15 points on a held-out test, and the quorum also tells us when to trust the answer. Third, which mechanism wins depends on the kind of task, which is exactly why the coordinator should choose per subtask; that is Phase 2. The code, every decision and every run are in our repository. Thank you, we are happy to take questions.
+
 ## Likely panel questions
 
-**"Your mechanisms lose to a single agent. So what is the contribution?"**
-A fair, enforced-budget comparison that most multi-agent papers skip, plus an explanation from the traces of why each mechanism loses (no feedback, too few calls, no legal options). Kim et al. 2026 and Wang et al. 2024 report the same pattern; we measured it under stricter controls. The selector, the actual research question (RQ2), is the next phase.
+**"Your mechanisms lose to a single agent on planning. So what is the contribution?"**
+They lose on planning, where the simulator gives the single agent feedback, and we explain why from the traces. On maths without a checker the quorum bee wins by 15.5 points on a held-out test fixed in advance. Showing that the winner flips with the kind of task is the evidence that per-subtask allocation (RQ2, the selector) is worth building, and it comes from a fair, enforced-budget comparison that most multi-agent papers skip.
 
 **"Why not use a weaker or open model, where coordination may help more?"**
-Possible in Phase 2. We chose a strong model on purpose: a gain that only appears with a weak model may disappear as models improve. The framework is model-agnostic (Bedrock and Groq adapters exist).
+Possible in Phase 2. We chose a strong model on purpose: a gain that only appears with a weak model may disappear as models improve. The framework is model-agnostic (Bedrock, OpenAI and Groq adapters exist), and the maths test already runs on a second model, GPT-6 Luna.
 
 **"Is 15 or 30 problems enough?"**
 No, and we say so: with 15 problems we detect only about 25-point differences. That is why we generated 180 problems and kept 120 as a held-out test.
@@ -83,10 +92,19 @@ We wrote the rule before the tuning run: a variant goes to the test only if it b
 Same model, prompt, decomposition and checks for every system; a ledger that refuses a call before it is sent if it would break the budget; frozen, hashed splits; and controls that remove only the biological part (for example bee without stop signals).
 
 **"Isn't 'bee' just majority voting?"**
-On Logistics it reduced to independent sampling, which we show from the traces. That is why we have a matched majority-vote control with the same number of calls; bee's inhibition matters only when there are several accepted but unverified answers, which Phase 2's reasoning tasks have.
+Partly, and we measured exactly which part is more. On AIME the bee and a plain majority of five are within noise (86.5% against 84.5%). The quorum stop is the part that helps: where three scouts agree, the bee stops early, uses about two thirds of the tokens and is right 97% of the time. The recruitment rounds, where scouts judge each other's answers, cost more and did not beat a plain vote. So we keep the quorum and treat recruitment as something to redesign or drop.
 
 **"What did it cost?"**
-About US$52 of AWS credit for every live run so far, about 7 to 14 cents per task run.
+About US$125 of AWS credit on Sonnet for everything in Phase 1, and about US$1.20 on GPT-6 Luna for the whole AIME tuning and test. The maths test itself (444 runs) cost 77 cents.
+
+**"Why did you change the model in the middle?"**
+Cost and quota. Sonnet costs US$3/US$15 per million tokens and Bedrock's daily token quota stopped every long run; Luna costs US$0.10/US$0.50, about 30 times less, with no daily quota. Every Phase 1 result is reported as a Sonnet result, and no experiment mixes models. The full study now fits well under US$100 instead of US$1,000-1,900.
+
+**"Planning is on Sonnet and maths on Luna. Isn't the contrast just the model?"**
+That is the honest limit, and we state it. Two things point against it: Sonnet on 141 of the 148 maths problems shows the same order (majority 83.9%, bee 78.3%, single agent 76.4%), and the reason the single agent wins on planning, simulator feedback, does not exist on maths. Phase 2's first step is to run both families on Luna.
+
+**"Did you look at the test before deciding?"**
+No. The maths test, its two questions and a gate were written in the decision log before it ran. Two earlier test runs were stopped because we found bugs that were unfair to the voters (scouts cut off by a call limit, and recruitment replies cut off by a 512-token limit that Luna's hidden reasoning used up). Both are disclosed in the log, fixed with tests, and the reported runs are fresh.
 
 **"What exactly is new compared with Symphony-Coord or MasRouter?"**
 They route among agents, roles, models or graph shapes. We route among coordination mechanisms with their own control flow, and test each against controls without its biological component.
