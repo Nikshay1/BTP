@@ -1296,6 +1296,32 @@ systems, 444 runs, all completed, US$0.77 (13:39-14:40 UTC).
   43 points (R27) and the quorum bee beats the single agent on AIME maths by 15.5 points (R26).
   The task-type contrast no longer rests on a change of model.
 
+## R28. What the bee adds over plain voting: the quorum stop (analysis after the tests, 2026-11-14)
+
+Not pre-registered; computed from recorded runs with `scripts/quorum_report.py`.
+
+- **Self-consistency first.** majority5 is five independent answers with a vote, which is
+  self-consistency (Wang et al., 2023); most of the AIME gain over the single agent (R26: +13.5 of
+  bee's +15.5 points) is that known effect. The bee's own parts are the quorum stop and the
+  inhibition and recruitment rounds.
+- **Quorum-stop vote.** Re-reading the bee runs with the quorum stop kept and the recruitment rounds
+  replaced by the plurality of the five scouts' recorded answers (ties by canonical order, as
+  majority5); exact for these samples, not a new run:
+
+| backbone (run) | quorum-stop vote | majority5 | bee as run | tokens vs majority5 |
+|---|---|---|---|---|
+| Luna (`luna-aime-test-v2`, 148) | 126 | 125 | 128 | 0.75x (bee as run 1.07x) |
+| Sonnet (`aime-test-v2`, 141 complete) | 110 | 120 | 112 | 0.78x |
+
+- **Reading.** The quorum stop saves about a quarter of majority5's tokens on both backbones, and a
+  formed quorum is a strong confidence signal (Luna: 97% right on 120 problems, against 43% without
+  one). Matching majority5's accuracy holds on Luna but not on the partial Sonnet run (110 against
+  120 of 141, mostly on problems where the token cap stopped the scouts), so equal accuracy at lower
+  cost is a hypothesis for a pre-registered Phase 2 test, not a result.
+- **Cost per correct answer (R26, Luna):** single agent US$0.0006, bee US$0.0029, about 5x; the
+  voting gain is bought with tokens, which a selector should spend only where answers cannot be
+  checked.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
