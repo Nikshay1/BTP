@@ -1322,6 +1322,26 @@ Not pre-registered; computed from recorded runs with `scripts/quorum_report.py`.
   voting gain is bought with tokens, which a selector should spend only where answers cannot be
   checked.
 
+## R29. Choosing by task type against fixed choices (analysis after the tests, 2026-11-14)
+
+`scripts/allocation_report.py runs/luna-logistics-compare runs/luna-aime-test-v2`, GPT-6 Luna,
+solve rate and US$ per task; the mean is over the two families unweighted, so the 148-problem maths
+suite does not outweigh the 30 planning runs.
+
+| policy | planning (Logistics) | maths (AIME) | mean of the two |
+|---|---|---|---|
+| always single agent | 90.0%, US$0.0021 | 70.9%, US$0.0004 | 80.5%, US$0.0012 |
+| always bee | 46.7%, US$0.0044 | 86.5%, US$0.0025 | 66.6%, US$0.0035 |
+| choose by task type | 90.0%, US$0.0021 | 86.5%, US$0.0025 | 88.2%, US$0.0023 |
+
+- The by-type rule (single agent on planning, quorum bee on maths) differs from always-single-agent
+  only on maths (+15.5 points, CI +8.1 to +23.0, R26) and from always-bee only on planning (+43
+  points, CI +20 to +67, R27), so it is better than each fixed choice by an interval clear of zero.
+- **Limits.** The rule follows the hypothesis stated in D31 before the maths test (votes help only
+  where answers cannot be checked), but the numbers come from the same runs that showed it, so they
+  are in-sample. It chooses by family, which the coordinator knows; the learned selector that
+  chooses per subtask, evaluated on held-out tasks, is Phase 2.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
