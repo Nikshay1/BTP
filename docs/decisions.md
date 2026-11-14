@@ -1252,6 +1252,25 @@ systems, 444 runs, all completed, US$0.77 (13:39-14:40 UTC).
   feedback loop wins. The better mechanism depends on the kind of task, which is the premise of
   per-subtask allocation (RQ1). Different backbones for the two families are a limit to state.
 
+## D33. Planning comparison replicated on Luna (2026-11-14)
+
+- **Date:** 2026-11-14 · **Status:** pre-registered here, before the run
+- **Why:** the planning result (R13, Sonnet) and the maths result (R26, Luna) come from different
+  backbones, so "the better mechanism depends on the kind of task" is confounded with the model.
+  Running the planning comparison on Luna removes that.
+- **Config (`configs/luna-logistics-compare.json`):** `logistics-compare-v1` exactly, with only the
+  model (GPT-6 Luna, reasoning effort low, temperature 1.0), its prices and the concurrency (8,
+  throughput only) changed: single_agent, direct, octopus, bee, ant; the same 15 PlanBench
+  Logistics problems; 2 repetitions; 21,000 tokens, 60 calls, 2,048 completion tokens per call.
+- **Smoke (`luna-logistics-smoke`, 3 other Logistics train problems, single_agent and bee, 6 runs,
+  US$0.006):** all solved; no reply cut off (longest 977 completion tokens), so the 2,048 limit
+  holds for Luna's hidden reasoning plus the plan.
+- **Question:** single_agent minus bee on valid plans, paired over the 30 runs (group bootstrap by
+  problem, 95% CI), with the full table as for R13. **Reading, fixed now:** the Sonnet pattern
+  replicates if single_agent's rate is at least bee's; if single_agent solves 90% or more of runs,
+  the problems are at Luna's ceiling and the replication cannot separate the systems, which we
+  report as such rather than as support. Either way the result is reported.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

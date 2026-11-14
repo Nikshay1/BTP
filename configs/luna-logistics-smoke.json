@@ -1,0 +1,34 @@
+{
+ "name": "luna-logistics-smoke",
+ "mode": "debug",
+ "model": "gpt-6-luna",
+ "temperature": 1.0,
+ "reasoning_effort": "low",
+ "max_completion_tokens": 2048,
+ "pricing": {
+  "input_per_m": 0.1,
+  "output_per_m": 0.5
+ },
+ "systems": [
+  "single_agent",
+  "bee"
+ ],
+ "tasks": {
+  "split": "train",
+  "task_ids": [
+   "planbench-logistics-022",
+   "planbench-logistics-028",
+   "planbench-logistics-046"
+  ]
+ },
+ "repetitions": 1,
+ "seed": 1,
+ "budget": {
+  "max_tokens": 21000,
+  "max_model_calls": 60,
+  "max_elapsed_s": 600,
+  "max_tool_calls": 40
+ },
+ "max_attempts": 2,
+ "concurrency": 4
+}
