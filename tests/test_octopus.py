@@ -101,6 +101,7 @@ def test_reporting_counterpart_charges_supervisor_as_coordinator(tmp_path: Path)
     assert result.status == "completed"
     sup = [r for r in fake.requests if supervise(r)]
     assert len(sup) == 1  # only after the rejected step; accepted answers return at once
+    assert sup[0].max_completion_tokens == Octopus(model="m").max_completion_tokens  # R25
     assert result.cost.coordinator.total > 0
     retry = [r for r in fake.requests if is_leg(1)(r)][1]
     instr = [m for m in retry.messages if m.content == "Use only listed edges."]

@@ -1192,6 +1192,31 @@ problems.
   majority5 and its accuracy difference to majority5. Reports: `scripts/vote_report.py` and, as
   exploratory, `scripts/quorum_report.py`.
 
+## R25. Luna AIME tuning, and recruitment replies cut off by a fixed 512-token limit (2026-11-14)
+
+**Tuning (`runs/luna-aime-tune`, 90 runs, US$0.18):** single_agent 21/30 (70%), 1,296 tokens per
+problem; majority5 23/30 (77%), 6,453 tokens; bee_quorum5 22/30 (73%), 7,882 tokens. The D32 gate
+holds (23 >= 21). Split by how bee ended (`scripts/quorum_report.py`): quorum among the scouts on 22
+problems (bee 21, majority5 19, single agent 19; bee 0.72x majority5's tokens); recruitment rounds
+on 8 (bee 1, majority5 4, single agent 2).
+
+**Defect:** in the recruitment rounds 0 of 92 released scouts accepted another answer. The traces
+show every assessment reply empty with finish reason `length`: `Bee._assess` sent a fixed
+`max_completion_tokens=512`, and Luna spent all 512 on hidden reasoning before writing the short
+verdict, which then parsed as a rejection. With Sonnet (thinking off) 512 was ample. Octopus's
+per-step supervisor call had the same pattern with 256 (not used on AIME).
+
+- **Fix:** both calls take the executor's completion limit (the config's, 4,096 here). For a model
+  without hidden reasoning the reply is unchanged; only the reservation grows. Regression tests in
+  `tests/test_bee.py` (fails with the old limit) and `tests/test_octopus.py`.
+- **Consequences:** bee_quorum5's tuning result above was made with the defect; it is re-checked
+  under the fixed code as `luna-aime-tune-v2` (bee only). The gate compares majority5 with the
+  single agent, which do not use these calls, so it stands. The test run `luna-aime-test`, started
+  under the defect, was stopped by hand after 5 runs on 4 test problems (US$0.002) and is kept as
+  aborted; the test runs as `luna-aime-test-v2` with D32's primary questions unchanged.
+- **Sonnet:** the change alters `bee.py`, so the 14 unfinished runs of `aime-test-v2` would run under
+  different code; if they are finished, that is disclosed with them.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to

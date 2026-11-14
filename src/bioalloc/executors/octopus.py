@@ -160,7 +160,7 @@ class Octopus:
                 Message(role="system", content=prompts.load("supervise_step")),
                 Message(role="user", content=report, source=ctx.agent),
             ),
-            max_completion_tokens=256,
+            max_completion_tokens=self.max_completion_tokens,  # see R25
             temperature=self.temperature,
             reasoning_effort=self.reasoning_effort,  # type: ignore[arg-type]
             seed=ctx.seed + 10_000 + step,

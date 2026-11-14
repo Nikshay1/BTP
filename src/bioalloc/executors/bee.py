@@ -299,7 +299,9 @@ class Bee:
         request = LLMRequest(
             model=self.model,
             messages=tuple(messages),
-            max_completion_tokens=512,
+            # The executor's limit, not a short one: a reasoning backbone spends hidden tokens
+            # before the short verdict, and a cut-off reply counts as a rejection (R25).
+            max_completion_tokens=self.max_completion_tokens,
             temperature=self.temperature,
             reasoning_effort=self.reasoning_effort,  # type: ignore[arg-type]
             seed=ctx.seed + 10_000 * rnd + scout.index,

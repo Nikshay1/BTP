@@ -307,3 +307,14 @@ def test_a_unanimous_certificate_reports_the_quorum(tmp_path: Path) -> None:
     fake = FakeTransport().respond(SOLVE, answers({(i, 0): 42 for i in range(5)}))
     _, events = run_goal(fake, tmp_path, Bee(model="m"))
     assert stop_of(events)["reason"] == "certificate" and stop_of(events)["quorum_reached"]
+
+
+def test_assessments_get_the_executor_completion_limit(tmp_path: Path) -> None:
+    # R25: a reasoning backbone spends hidden tokens before the short verdict; at a fixed 512 every
+    # GPT-6 Luna assessment was cut off and counted as a rejection.
+    table = {(0, 0): 3, (1, 0): 3, (2, 0): 3, (3, 0): -1, (4, 0): -1}
+    fake = FakeTransport().respond(SOLVE, answers(table))
+    fake.respond(ASSESS, lambda r: json.dumps({"accept": True, "confidence": 0.9}))
+    run(fake, tmp_path, Bee(model="m", sigma=0.0, max_completion_tokens=4096))
+    assessments = [r for r in fake.requests if ASSESS(r)]
+    assert assessments and all(r.max_completion_tokens == 4096 for r in assessments)
