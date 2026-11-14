@@ -183,7 +183,7 @@ async def model_decomposition(
     model: str,
     max_completion_tokens: int = 2048,
     temperature: float = 0.6,
-    reasoning_effort: Literal["low", "medium", "high"] | None = None,
+    reasoning_effort: Literal["none", "low", "medium", "high"] | None = None,
     seed: int | None = None,
 ) -> Decomposition:
     """Ask the decomposer once, repair once if needed, else fall back to a single node. ``llm``

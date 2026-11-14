@@ -46,7 +46,7 @@ class LLMRequest(Wire):
     # Distinguishes deliberately independent samples of an otherwise identical request, so that a
     # cache or a fake never collapses k scouts into one answer.
     sample_id: str = "0"
-    reasoning_effort: Literal["low", "medium", "high"] | None = None
+    reasoning_effort: Literal["none", "low", "medium", "high"] | None = None
     response_format: dict[str, JsonValue] | None = None
     tools: tuple[dict[str, JsonValue], ...] = ()
 
@@ -103,9 +103,13 @@ class RequestRejected(LLMError):
 class RateLimited(RequestRejected):
     """HTTP 429. ``retry_after`` is the provider's requested wait in seconds, if it gave one."""
 
-    def __init__(self, message: str, retry_after: float | None = None) -> None:
+    def __init__(
+        self, message: str, retry_after: float | None = None, *, quota: bool = False
+    ) -> None:
         super().__init__(message)
         self.retry_after = retry_after
+        # A spent quota or account credit that no retry within the run can clear (D32).
+        self.quota = quota
 
 
 class ProviderThrottled(Exception):  # noqa: N818 (it is a condition of the provider, not a bug)

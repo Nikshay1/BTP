@@ -456,7 +456,11 @@ class MeteredClient:
             except RateLimited as exc:
                 # A daily quota will not clear within a run, and 429s past every retry mean the
                 # provider is unavailable: neither is a property of the task (R18).
-                if "per day" in str(exc).lower() or retry == self.max_rate_limit_retries:
+                if (
+                    exc.quota
+                    or "per day" in str(exc).lower()
+                    or retry == self.max_rate_limit_retries
+                ):
                     raise self._throttled(str(exc)) from exc
                 delay = exc.retry_after if exc.retry_after is not None else min(30.0, 2.0**retry)
                 left = self.account.time_left()

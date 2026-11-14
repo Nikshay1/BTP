@@ -44,7 +44,11 @@ def main(exp: Path) -> None:
         groups[group].append(t)
         accepts += acc
     print(f"{len(tasks)} problems with all three systems")
-    print(f"{'bee ended by':24} {'n':>4} " + " ".join(f"{s:>13}" for s in SYSTEMS) + "  bee/maj tokens")
+    print(
+        f"{'bee ended by':24} {'n':>4} "
+        + " ".join(f"{s:>13}" for s in SYSTEMS)
+        + "  bee/maj tokens"
+    )
     for group, ts in sorted(groups.items(), key=lambda kv: -len(kv[1])):
         solved = [sum(res[(t, s)]["correct"] for t in ts) for s in SYSTEMS]
         bee = sum(res[(t, "bee_quorum5")]["tokens"] for t in ts)
@@ -55,7 +59,9 @@ def main(exp: Path) -> None:
             + f"  {bee / maj:.2f}x"
         )
     if accepts:
-        print(f"recruitment: {sum(accepts)} of {len(accepts)} released scouts accepted another answer")
+        print(
+            f"recruitment: {sum(accepts)} of {len(accepts)} released scouts accepted another answer"
+        )
 
 
 if __name__ == "__main__":

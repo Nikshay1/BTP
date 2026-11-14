@@ -137,6 +137,8 @@ def wire_request(request: LLMRequest) -> dict[str, Any]:
     }
     if system:
         body["system"] = system
+    if request.reasoning_effort == "none":
+        raise RequestRejected("Claude's effort has no 'none' level; thinking is already off")
     if request.reasoning_effort is not None:
         body["output_config"] = {"effort": request.reasoning_effort}
     if request.tools:

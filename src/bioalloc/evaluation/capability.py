@@ -20,7 +20,10 @@ MODEL = "openai/gpt-oss-120b"
 
 
 async def capability_check(
-    transport: Transport, model: str = MODEL, reasoning_effort: Literal["low"] | None = "low"
+    transport: Transport,
+    model: str = MODEL,
+    reasoning_effort: Literal["none", "low"] | None = "low",
+    temperature: float = 0.6,
 ) -> dict[str, Any]:
     ask = LLMRequest(
         model=model,
@@ -31,7 +34,7 @@ async def capability_check(
             Message(role="user", content="What is 17 + 25?"),
         ),
         max_completion_tokens=256,
-        temperature=0.6,
+        temperature=temperature,
         seed=12345,
         reasoning_effort=reasoning_effort,
     )
@@ -44,7 +47,7 @@ async def capability_check(
             Message(role="user", content="What is 123 * 47?"),
         ),
         max_completion_tokens=256,
-        temperature=0.6,
+        temperature=temperature,
         seed=12345,
         reasoning_effort=reasoning_effort,
         tools=(CALCULATOR.spec.wire(),),

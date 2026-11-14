@@ -143,6 +143,7 @@ def experiment_run(
         RunRecord,
         SpendingLimitReached,
     )
+    from bioalloc.llm.openai import OpenAITransport, is_openai_model
 
     config = ExperimentConfig.model_validate(json.loads(config_path.read_text()))
     transport: Transport
@@ -153,6 +154,12 @@ def experiment_run(
         transport = RehearsalTransport()
     elif is_bedrock_model(config.model):
         transport = bedrock_transport()
+    elif is_openai_model(config.model):
+        key = read_env_key("OPENAI_API_KEY")
+        if not key:
+            print("OPENAI_API_KEY is not set (environment or .env); nothing was run.")
+            return 2
+        transport = OpenAITransport(key)
     else:
         from bioalloc.llm.groq import GroqTransport
 

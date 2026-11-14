@@ -98,6 +98,15 @@ def parse_retry_after(value: str | None) -> float | None:
     return seconds if seconds >= 0 else None
 
 
+def error_code(response: httpx.Response) -> str | None:
+    """The ``error.code`` of an OpenAI-style error body, if there is one."""
+    try:
+        code = response.json()["error"]["code"]
+    except (json.JSONDecodeError, KeyError, TypeError):
+        return None
+    return code if isinstance(code, str) else None
+
+
 def parse_reply(data: Any, latency_s: float, request_id: str | None) -> LLMReply:
     try:
         choice = data["choices"][0]
@@ -154,7 +163,7 @@ class GroqTransport:
         self.include_reasoning = include_reasoning
 
     async def send(self, request: LLMRequest) -> LLMReply:
-        body = wire_request(request, include_reasoning=self.include_reasoning)
+        body = self.body(request)
         start = time.monotonic()
         try:
             response = await self._client.post(self._url, json=body, headers=self._headers)
@@ -167,9 +176,11 @@ class GroqTransport:
         latency = time.monotonic() - start
         request_id = response.headers.get("x-request-id")
         if response.status_code == 429:
+            code = error_code(response)
             raise RateLimited(
-                f"rate limited (request {request_id})",
+                f"rate limited ({code or 'no code'}, request {request_id})",
                 retry_after=parse_retry_after(response.headers.get("retry-after")),
+                quota=code == "insufficient_quota",
             )
         if 400 <= response.status_code < 500:
             raise RequestRejected(f"HTTP {response.status_code}: {response.text[:500]}")
@@ -180,6 +191,9 @@ class GroqTransport:
         except json.JSONDecodeError as exc:
             raise LLMError("reply is not JSON") from exc
         return parse_reply(data, latency, request_id)
+
+    def body(self, request: LLMRequest) -> dict[str, Any]:
+        return wire_request(request, include_reasoning=self.include_reasoning)
 
     async def aclose(self) -> None:
         await self._client.aclose()
