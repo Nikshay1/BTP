@@ -1,6 +1,6 @@
 # Speaker notes: Phase 1 panel presentation, 17 November 2026
 
-About 15 minutes: Aryan slides 1-4 (about 3.5 min), Madan slides 5-7 (about 3.5 min), Nikshay slides 8-18 (about 8.5 min; keep slides 9-13 brisk to leave time for 14-16). The same notes are in the deck under each slide.
+About 15 minutes: Aryan slides 1-4 (about 3.5 min), Madan slides 5-7 (about 3.5 min), Nikshay slides 8-19 (about 9 min; keep slides 9-13 brisk to leave time for 14-17). The same notes are in the deck under each slide.
 
 ## 1. Adaptive Task Allocation for Heterogeneous Bio-Inspired Agents
 
@@ -66,11 +66,15 @@ Speaker: Nikshay. So what does the bee add beyond voting? We split the test by h
 
 Speaker: Nikshay. Putting the two findings side by side, on the same model, GPT-6 Luna. On planning, where a simulator checks every plan, the single agent that revises from feedback beat the bee, 90 against 47 percent. On maths, where nothing checks the answer, the quorum bee beat the single agent, 87 against 71. Both differences have confidence intervals clear of zero, and Claude Sonnet shows the same order on both. So which way of working is best really depends on the kind of task. Inside one task family the differences were only extra sampling, but across kinds of task the winner flips, and that is exactly what per-subtask allocation needs. In Phase 2 a learned selector, already implemented as a rule table and a LinUCB bandit, makes that choice inside task graphs that mix both kinds.
 
-## 17. Status and plan to May 2027
+## 17. Choosing per task type beats every fixed choice
+
+Speaker: Nikshay. This is the whole project in one table. If you always use the single agent, you are excellent at planning but weak at maths. If you always use the bee, you are good at maths but bad at planning. If you simply choose by task type, single agent for planning and bee for maths, you get the best of both: 88 percent on average, against 80 for the best fixed choice. Each gain rests on a test we already showed: plus 15.5 points over the single agent, all from maths, and plus 43 over the bee, all from planning, both with confidence intervals clear of zero. To be honest about the limits: this rule matches what we predicted before the maths test, but the numbers come from the same runs, so it is in-sample, and it chooses by task family, not per subtask. Learning that choice per subtask, and testing it on held-out tasks, is exactly Phase 2.
+
+## 18. Status and plan to May 2027
 
 Speaker: Nikshay. To summarise where we are. Phase 1 is done: the framework, the three mechanisms with all their controls, the baselines, the task suites, a full cycle of experiments on planning, and a held-out maths test where the quorum bee won. Moving to GPT-6 Luna makes the full study affordable: at about a thirtieth of the price per token it fits in well under a hundred dollars instead of more than a thousand. In Phase 2 we move to task graphs that mix planning and maths subtasks, test the cheaper quorum-stop vote properly, and learn the selector from recorded outcomes. In February and March we add the crow and starfish modules and test recovery from injected failures. The full study and ablations run in March and April, and we finish with the thesis and a conference paper draft in May.
 
-## 18. What we take from Phase 1
+## 19. What we take from Phase 1
 
 Speaker: Nikshay. To close, three points. First, on planning tasks where the system gets feedback, a strong single agent is the real bar, and none of our mechanisms cleared it on either model; we measured that fairly instead of assuming the opposite. Second, on maths, where nothing checks the answer, voting beats the single agent by 13 to 16 points on a held-out test, and the bee's quorum rule makes that voting cheaper and tells us when to trust the answer. Third, on the same model the winner flips with the kind of task, which is exactly why the coordinator should choose per subtask; that is Phase 2. The code, every decision and every run are in our repository. Thank you, we are happy to take questions.
 
@@ -96,6 +100,9 @@ Yes, most of the maths gain is self-consistency (Wang et al., 2023, which we cit
 
 **"Isn't 'bee' just majority voting?"**
 Partly, and we measured which part is more. The quorum stop is the part that helps: where three of five scouts agree, the bee stops early and is right 97% of the time, against 43% where no quorum forms. The recruitment rounds, where scouts judge each other's answers, cost almost twice the tokens and did not beat a plain vote. If we keep the quorum and replace recruitment by a plain vote, the same recorded answers give 126 correct against the majority's 125 at 0.75 times the tokens. On Sonnet the saving was the same (0.78 times) but accuracy fell below the majority, so "same accuracy, cheaper" is a hypothesis we will test properly in Phase 2. That analysis was done after the test and we label it so.
+
+**"Your by-type rule is chosen after seeing the results. Isn't that cheating?"**
+It would be if we claimed it as a tested selector, and we do not. The rule (feedback tasks to the single agent, unverifiable answers to voting) was our stated hypothesis before the maths test, and each of its two gains rests on a test fixed in advance (+15.5 on maths, +43 on planning). But the table itself is in-sample and chooses by task family. Learning the choice per subtask and testing it on held-out tasks is Phase 2, and we keep the 120 held-out Logistics problems untouched for that.
 
 **"Is +15 points worth five times the cost?"**
 Depends on the task, which is our point. A correct AIME answer costs US$0.0006 from the single agent and US$0.0029 from the bee, both well under a cent; when correctness matters and nothing can check the answer, that is cheap. On planning, the extra tokens buy nothing: the single agent is both better and cheaper. A selector should spend votes only where answers cannot be checked, and the quorum tells it when to stop spending.

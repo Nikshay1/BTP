@@ -463,6 +463,32 @@ same (0.78 times) but accuracy fell below the majority (110 against 120 of 141),
 cost is a hypothesis for a pre-registered test, not a result. A selector can trust a quorum answer and
 spend more, or a different mechanism, on the problems without one.
 
+\subsection{Choosing by task type}
+On one backbone (GPT-6 Luna), Table~\ref{tab:bytype} compares two fixed choices with the rule that sends
+planning to the single agent and unverifiable maths to the quorum bee. The mean is taken over the two families
+unweighted, so that the larger maths suite does not dominate.
+
+\begin{table}[H]
+\centering\small
+\caption{Solve rate and US\$ per task on Logistics (30 runs) and AIME (148 problems), GPT-6 Luna.}
+\label{tab:bytype}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+\head{Policy} & \head{Planning} & \head{Maths} & \head{Mean} & \head{US\$/task} \\
+\midrule
+Always single agent & 90.0\% & 70.9\% & 80.5\% & 0.0012 \\
+Always bee & 46.7\% & 86.5\% & 66.6\% & 0.0035 \\
+Choose by task type & 90.0\% & 86.5\% & 88.2\% & 0.0023 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The rule differs from always using the single agent only on maths ($+15.5$ points, CI $+8.1$ to $+23.0$) and
+from always using the bee only on planning ($+43$ points, CI $+20$ to $+67$), so it beats each fixed choice
+by an interval clear of zero. It follows the hypothesis stated before the maths test, but the table uses the
+same runs and chooses by family, which the coordinator knows; a selector that learns the choice per subtask
+and is evaluated on held-out tasks is the subject of Phase~2.
+
 \subsection{Cost}
 The Sonnet work cost about US\$125 of AWS credit (US\$122.68 in recorded runs, the rest in runs set aside
 after a provider quota stopped an experiment); the AIME work and the Logistics replication on Luna,
