@@ -22,7 +22,7 @@ MODEL = "openai/gpt-oss-120b"
 async def capability_check(
     transport: Transport,
     model: str = MODEL,
-    reasoning_effort: Literal["none", "low"] | None = "low",
+    reasoning_effort: Literal["low"] | None = "low",
     temperature: float = 0.6,
 ) -> dict[str, Any]:
     ask = LLMRequest(

@@ -46,7 +46,7 @@ class LLMRequest(Wire):
     # Distinguishes deliberately independent samples of an otherwise identical request, so that a
     # cache or a fake never collapses k scouts into one answer.
     sample_id: str = "0"
-    reasoning_effort: Literal["none", "low", "medium", "high"] | None = None
+    reasoning_effort: Literal["low", "medium", "high"] | None = None
     response_format: dict[str, JsonValue] | None = None
     tools: tuple[dict[str, JsonValue], ...] = ()
 

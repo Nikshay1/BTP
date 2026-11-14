@@ -34,11 +34,7 @@ def main() -> int:
             print("OPENAI_API_KEY is not set (environment or .env); nothing was sent.")
             return 2
         transport = openai.OpenAITransport(key)
-        report = asyncio.run(
-            capability_check(
-                transport, model=openai.MODEL, reasoning_effort="none", temperature=1.0
-            )
-        )
+        report = asyncio.run(capability_check(transport, model=openai.MODEL, temperature=1.0))
     else:
         print(f"unknown provider {provider!r}; use bedrock, groq or openai")
         return 2

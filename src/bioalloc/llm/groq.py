@@ -190,10 +190,13 @@ class GroqTransport:
             data = response.json()
         except json.JSONDecodeError as exc:
             raise LLMError("reply is not JSON") from exc
-        return parse_reply(data, latency, request_id)
+        return self.parse(data, latency, request_id)
 
     def body(self, request: LLMRequest) -> dict[str, Any]:
         return wire_request(request, include_reasoning=self.include_reasoning)
+
+    def parse(self, data: Any, latency_s: float, request_id: str | None) -> LLMReply:
+        return parse_reply(data, latency_s, request_id)
 
     async def aclose(self) -> None:
         await self._client.aclose()
