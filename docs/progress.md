@@ -109,4 +109,8 @@ crow and starfish modules; failure injection (RQ4); full study and ablations.
   cost about US$1-3.
 - Codex reviews are unavailable (the ChatGPT login rejects every model since 14 November); the
   D32 adapter was reviewed by hand and checked live.
+- Luna AIME test (R26, US$0.77): bee 86.5%, majority5 84.5%, single agent 70.9% on 148 problems;
+  bee minus single agent +15.5 points (CI +8.1 to +23.0). A quorum among scouts is right 97% of
+  the time. Luna spend so far about US$1.15 (tune 0.18, re-check 0.11, test 0.77, probes and
+  smoke 0.08).
 

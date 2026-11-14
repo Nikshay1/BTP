@@ -1220,6 +1220,38 @@ per-step supervisor call had the same pattern with 256 (not used on AIME).
   per problem; no assessment cut off; 15 of 64 released scouts accepted another answer. Quorum on
   22 problems (22 solved), recruitment rounds on 8 (2 solved). `luna-aime-test-v2` started.
 
+## R26. Luna AIME test: both voting systems beat the single agent (2026-11-14)
+
+`runs/luna-aime-test-v2`, the D32 pre-registered test under the R25 fix: 148 test problems x 3
+systems, 444 runs, all completed, US$0.77 (13:39-14:40 UTC).
+
+| system | solved | tokens per problem | US$ per run |
+|---|---|---|---|
+| single_agent | 105/148 (70.9%) | 1,112 | 0.0004 |
+| majority5 | 125/148 (84.5%) | 6,004 | 0.0022 |
+| bee_quorum5 | 128/148 (86.5%) | 6,441 | 0.0025 |
+
+- **Primary question 1:** bee_quorum5 minus single_agent +0.155 (95% paired bootstrap CI +0.081 to
+  +0.230; 30 wins, 7 losses), at 5.79x the tokens. majority5 minus single_agent +0.135 (CI +0.054
+  to +0.216; 29 wins, 9 losses), at 5.40x.
+- **Primary question 2:** bee_quorum5 minus majority5 +0.020 (CI -0.020 to +0.068; 7 wins, 4
+  losses); bee's tokens 1.07x majority5's.
+- **Exploratory (`scripts/quorum_report.py`):** a quorum formed among the scouts on 120 problems:
+  bee solved 116 (97%), majority5 111, single agent 95, bee at 0.69x majority5's tokens. On the 28
+  problems without a quorum, bee's recruitment rounds solved 12 (43%), majority5 14, single agent
+  10, bee at 1.87x majority5's tokens; 39 of 144 released scouts accepted another answer. So the
+  quorum stop is where bee saves, and whether a quorum forms is a strong confidence signal
+  (97% against 43%); the recruitment rounds cost tokens without beating plain voting.
+- **Against Sonnet (`aime-test-v2`, 141 of 148 problems, not finished, R24):** the same ordering
+  with a smaller gap (majority5 83.9%, bee 78.3%, single agent 76.4%; only majority5's +0.070
+  reached the edge of significance). Sonnet's recruitment accepted answers freely (32 of 54), and
+  its single agent was stronger, leaving less headroom.
+- **Reading:** on competition maths, where the model cannot check its answer, independent votes
+  carry information, and both voting systems beat one agent by 13-16 points at about 5-6x the
+  tokens; on long Logistics plans with a simulator (Phase 1, Sonnet), the single agent's
+  feedback loop wins. The better mechanism depends on the kind of task, which is the premise of
+  per-subtask allocation (RQ1). Different backbones for the two families are a limit to state.
+
 ## Open questions found while planning (settled by D10-D14)
 
 These came out of Sol's critique of the plan. They need a decision and, where noted, a change to
