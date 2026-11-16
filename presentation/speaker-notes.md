@@ -28,7 +28,7 @@ Speaker: Madan. This is the framework we built, called bioalloc. A task arrives 
 
 ## 7. Built so the comparison is fair
 
-Speaker: Madan. Multi-agent papers are often criticised because the multi-agent system simply used more compute. We built the framework to prevent that. Every system gets the same model, the same prompt for solving, the same task decomposition and the same checks. Every system gets the same token budget, and the budget is enforced before a call is sent, not after. The task splits are frozen and hashed before any run, and the rule for which variant goes to the final test was written down before the tuning run. Every design decision and every review round is logged in the repository, and we have 354 automated tests. Now Nikshay will present the experiments.
+Speaker: Madan. Multi-agent papers are often criticised because the multi-agent system simply used more compute. We built the framework to prevent that. Every system gets the same model, the same prompt for solving, the same task decomposition and the same checks. Every system gets the same token budget, and the budget is enforced before a call is sent, not after. The task splits are frozen and hashed before any run, and the rule for which variant goes to the final test was written down before the tuning run. Every design decision and every review round is logged in the repository, and we have 372 automated tests. Now Nikshay will present the experiments.
 
 ## 8. Experimental setup
 

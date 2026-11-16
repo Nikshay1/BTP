@@ -15,6 +15,6 @@
 <x-connector x1="1160" y1="115" x2="1260" y2="115" head="end" style="color:#5A6470;border-width:3px"></x-connector>
 <x-connector x1="1462" y1="190" x2="1462" y2="330" head="end" style="color:#5A6470;border-width:3px"></x-connector>
 </div>
-<p style="font-size:30px;line-height:1.45;color:#3D4652">Python package, about 9,000 lines of code and 5,600 lines of tests. Every run writes an append-only trace of each call, so any result can be replayed and audited.</p>
+<p style="font-size:30px;line-height:1.45;color:#3D4652">Python package, about 9,400 lines of code and 5,800 lines of tests. Every run writes an append-only trace of each call, so any result can be replayed and audited.</p>
 <aside>Speaker: Madan. This is the framework we built, called bioalloc. A task arrives as a graph of subtasks. The coordinator takes the ready subtasks, asks the allocation policy which executor should handle each one, and gives it a share of the budget. The executor is the mechanism: ant, bee, octopus, or a direct call. Every model call goes through the metered client, which counts tokens and refuses a call that would break the budget. The result is checked by runtime checks, for example a plan simulator. If the check fails, the subtask is reallocated. Only a separate grader holds the true answers, and the coordinator can never see them. Every run is written to a trace, so any number we report can be audited.</aside>
 </section>
