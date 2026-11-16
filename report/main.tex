@@ -1,29 +1,57 @@
-% Progress report -- Adaptive Task Allocation for Heterogeneous Bio-Inspired Agents
-% Compiles on Overleaf with the default pdfLaTeX compiler. Single file, no .bib needed.
+% B.Tech Project Report (Phase I) -- Adaptive Task Allocation for Heterogeneous Bio-Inspired Agents
+% Delhi Technological University, Department of Computer Science and Engineering, Group GP105.
+% Compiles on Overleaf with pdfLaTeX. Upload this file together with figures/dtu-logo.png.
+% No .bib file is needed: the references are written out in IEEE style at the end.
 
-\documentclass[11pt,a4paper]{article}
+\documentclass[11pt,a4paper,openany]{report}
 
+% ---------------------------------------------------------------- fonts and layout
 \usepackage[T1]{fontenc}
-\usepackage{newtxtext,newtxmath}
-\usepackage[a4paper,margin=1in]{geometry}
+\usepackage{newtxtext,newtxmath}          % Times, as in IEEE and ACM papers
+\usepackage[a4paper,top=1in,bottom=1in,left=1.1in,right=1in]{geometry}
 \usepackage{microtype}
-\usepackage{parskip}
-\usepackage{booktabs,tabularx,array}
+\usepackage{setspace}
+\setstretch{1.12}
+\usepackage{graphicx}
+\usepackage{booktabs,tabularx,array,multirow}
 \usepackage{enumitem}
 \usepackage{titlesec}
 \usepackage[font=small,labelfont=bf,labelsep=period]{caption}
+\usepackage{subcaption}
 \usepackage{xcolor}
-\usepackage{tikz}
-\usetikzlibrary{positioning,arrows.meta,fit}
-\usepackage{placeins}
+\usepackage{amsmath,amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{listings}
 \usepackage{float}
-\usepackage{amsmath}
+\usepackage{placeins}
+\usepackage{tikz}
+\usetikzlibrary{positioning,arrows.meta,fit,calc,shapes.geometric,backgrounds}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepackage{fancyhdr}
 \usepackage[hidelinks]{hyperref}
 
+% ---------------------------------------------------------------- colours (one scheme for every figure)
+\definecolor{ink}{HTML}{2F3B4C}      % single agent / neutral
+\definecolor{accent}{HTML}{8B1A1A}   % bee / this work (DTU maroon)
+\definecolor{mute}{HTML}{A9B4C2}     % majority vote / controls
+\definecolor{gold}{HTML}{C08A2B}     % by-type policy / highlights
+\definecolor{paper}{HTML}{F4F1EC}
+
+% ---------------------------------------------------------------- headings
+\titleformat{\chapter}[display]
+  {\normalfont\bfseries}
+  {\large\scshape\color{accent}\chaptertitlename\ \thechapter}
+  {4pt}
+  {\LARGE}
+  [\vspace{2pt}{\color{black!25}\titlerule}]
+\titlespacing*{\chapter}{0pt}{-12pt}{16pt}
 \titleformat{\section}{\normalfont\large\bfseries}{\thesection}{0.7em}{}
 \titleformat{\subsection}{\normalfont\normalsize\bfseries}{\thesubsection}{0.6em}{}
-\titlespacing*{\section}{0pt}{16pt}{4pt}
-\titlespacing*{\subsection}{0pt}{10pt}{2pt}
+\titlespacing*{\section}{0pt}{14pt}{5pt}
+\titlespacing*{\subsection}{0pt}{10pt}{3pt}
+
 \setlist{itemsep=2pt,topsep=3pt,leftmargin=1.5em}
 \renewcommand{\arraystretch}{1.18}
 \newcolumntype{L}{>{\raggedright\arraybackslash}X}
@@ -32,345 +60,934 @@
 \newcommand{\runin}[1]{\textbf{#1}\quad}
 \hyphenation{meta-heu-ris-tic pher-o-mone}
 \emergencystretch=1.2em
+\setlength{\parskip}{3pt}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\itshape Adaptive Task Allocation for Heterogeneous Bio-Inspired Agents}
+\fancyhead[R]{\small\itshape GP105}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\setlength{\headheight}{14pt}
+\renewcommand{\bibname}{References}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% ---------------------------------------------------------------- code listings
+\lstset{
+  basicstyle=\ttfamily\footnotesize,
+  keywordstyle=\color{accent}\bfseries,
+  commentstyle=\color{black!55}\itshape,
+  stringstyle=\color{ink},
+  numbers=left, numberstyle=\tiny\color{black!45}, numbersep=6pt,
+  frame=lines, framerule=0.4pt, rulecolor=\color{black!30},
+  breaklines=true, columns=fullflexible, keepspaces=true,
+  showstringspaces=false, xleftmargin=1.5em, aboveskip=6pt, belowskip=6pt
+}
+
+% ---------------------------------------------------------------- shared plot style
+\pgfplotsset{
+  btp/.style={
+    axis lines*=left, ymajorgrids, grid style={black!8},
+    tick label style={font=\footnotesize}, label style={font=\footnotesize},
+    legend style={font=\scriptsize, draw=none, fill=none},
+    legend cell align=left,
+  },
+}
 
 \begin{document}
 
+% ================================================================= TITLE PAGE
+\begin{titlepage}
+\thispagestyle{empty}
 \begin{center}
-  {\LARGE\bfseries Adaptive Task Allocation for\\[3pt]
-  Heterogeneous Bio-Inspired Agents\par}
-  \vspace{12pt}
-  {\large Phase 1 Progress Report\par}
-  \vspace{5pt}
-  Final Year B.Tech Project, 2026--27\\
-  Department of Computer Science and Engineering\\
-  Delhi Technological University\par
-  \vspace{8pt}
-  {\small Group GP105 (Group Key A4) \quad Guide: Prof.~Shailender Kumar \quad Coordinator: Dr.~Yeshwant Singh}\\[2pt]
-  {\small Nikshay Yadav (23/CS/284) \quad Madan Raj Murugesan (23/CS/234) \quad Aryan Varshney (24/CS/111)}\\[2pt]
-  {\small 17 November 2026}
+{\large\bfseries A Project Report on\par}
+\vspace{10pt}
+{\LARGE\bfseries Adaptive Task Allocation for\\[4pt] Heterogeneous Bio-Inspired Agents\par}
+\vspace{12pt}
+{\normalsize Phase I (Seventh Semester) Report\par}
+\vspace{12pt}
+{\itshape Submitted in partial fulfilment of the requirements for the award of the degree of\par}
+\vspace{4pt}
+{\large\bfseries Bachelor of Technology\par}
+{\normalsize in\par}
+{\large\bfseries Computer Science and Engineering\par}
+\vspace{16pt}
+{\normalsize Submitted by\par}
+\vspace{4pt}
+\begin{tabular}{@{}ll@{}}
+\textbf{Nikshay Yadav} & 23/CS/284 \\
+\textbf{Madan Raj Murugesan} & 23/CS/234 \\
+\end{tabular}\par
+\vspace{6pt}
+{\normalsize Group GP105 \quad (Group Key A4)\par}
+\vspace{14pt}
+\begin{tabular}{@{}c@{\hspace{2.2cm}}c@{}}
+{\normalsize Under the supervision of} & {\normalsize Faculty Coordinator} \\[2pt]
+\textbf{Prof.~Shailender Kumar} & \textbf{Dr.~Yeshwant Singh} \\
+{\small Department of CSE} & {\small Department of CSE} \\
+\end{tabular}\par
+\vfill
+\includegraphics[width=3.6cm]{figures/dtu-logo.png}\par
+\vspace{10pt}
+{\large\bfseries Department of Computer Science and Engineering\par}
+{\large\bfseries Delhi Technological University\par}
+{\normalsize (Formerly Delhi College of Engineering)\par}
+{\normalsize Bawana Road, Delhi -- 110042\par}
+\vspace{6pt}
+{\normalsize November 2026\par}
 \end{center}
+\end{titlepage}
 
-\begin{abstract}
+\pagenumbering{roman}
+\setcounter{page}{2}
+
+% ================================================================= DECLARATION
+\chapter*{Candidate's Declaration}
+\addcontentsline{toc}{chapter}{Candidate's Declaration}
+\thispagestyle{plain}
+
+We, Nikshay Yadav (23/CS/284) and Madan Raj Murugesan (23/CS/234), students of B.Tech.\ in Computer
+Science and Engineering, hereby declare that the project report titled \emph{``Adaptive Task Allocation
+for Heterogeneous Bio-Inspired Agents''}, submitted by us to the Department of Computer Science and
+Engineering, Delhi Technological University, Delhi, in partial fulfilment of the requirements for the
+award of the degree of Bachelor of Technology, is a record of our own work carried out during the
+seventh semester under the supervision of Prof.~Shailender Kumar.
+
+The work is original and has not been copied from any source without proper citation. To the best of
+our knowledge, it has not previously formed the basis for the award of any degree, diploma, fellowship
+or other similar title or recognition. All experimental results reported here come from runs whose
+traces and configurations are kept in the project repository.
+
+\vspace{2.2cm}
 \noindent
-Multi-agent systems built on large language models (LLMs) usually apply one coordination pattern to every
-part of a task, and controlled studies report that they often fail to beat a well-prompted single agent.
-This project asks whether a coordinator that chooses a different coordination mechanism for each subtask
-can do better within the same token budget. The mechanisms come from animal behaviour and are written as
-ordinary algorithms: reinforced search (ant), evidence accumulation with cross inhibition (bee) and bounded
-local execution (octopus), each paired with plain controls that lack its distinguishing parts. This report
-covers Phase~1. We built \texttt{bioalloc}, a Python framework with a common executor interface, a budget
-ledger that admits a model call only if it fits, append-only traces of every call, runtime checks kept
-separate from the grader, frozen task splits and a resumable experiment runner. With Claude Sonnet~4.6 as the
-backbone we ran smoke tests, a difficulty calibration, a comparison of five systems on PlanBench Logistics
-at a 21,000-token cap, and tuning runs of redesigned mechanisms on a generated Logistics suite. The single agent solved every calibration task when given a generous budget and
-remained the strongest system on Logistics (73\% of runs against 67\% for octopus, 60\% for bee, 57\% for a
-single direct call and 0\% for the step-per-call ant). Trace analysis shows why: the single agent revises
-its plan against the simulator's message, and the first versions of the mechanisms did not use that
-feedback. Redesigned scouts that repair their own rejected plans came within one success of the single agent
-(23/60 against 24/60) but did not pass the pre-registered rule for a held-out test, and a macro ant that
-proposes plan segments solved 2 of 60 runs because most of its decisions had no legal option. We then
-tested the regime the bee is built for, answers that cannot be checked: on 148 held-out AIME competition
-problems with GPT-6 Luna as backbone, in a test fixed in advance, a quorum-sensing bee with five scouts
-solved 86.5\% against 70.9\% for the single agent (+15.5 points, 95\% CI +8.1 to +23.0) at about five times
-the cost per correct answer, and a plain majority of five solved 84.5\%, so most of the gain is
-self-consistency. The bee's own contribution is its quorum: when three scouts agreed it was right 97\% of
-the time, and a quorum stop followed by a plain vote used a quarter fewer tokens than the majority. On the
-same backbone the Logistics comparison gave the single agent 90\% against the bee's 47\%. The better
-mechanism therefore depends on the kind of task, while within one family the per-problem differences are
-explained by sampling; Phase~2 tests allocation on task graphs that mix both kinds of subtask.
-\end{abstract}
+\begin{tabular}{@{}p{0.5\textwidth}p{0.45\textwidth}@{}}
+\rule{4.5cm}{0.4pt} & \rule{4.5cm}{0.4pt} \\
+Nikshay Yadav (23/CS/284) & Madan Raj Murugesan (23/CS/234) \\
+\end{tabular}
 
-\section{Introduction}
+\vspace{1cm}
+\noindent Place: Delhi \\
+Date: 17 November 2026
 
-An LLM multi-agent system splits a task among agents that exchange messages. The split is useful only if
-the way the agents coordinate suits the work. A subtask with many possible solution paths may benefit from
-exploration that remembers what worked, a subtask with a few competing answers needs those answers compared,
-and a well-specified subtask needs no discussion at all. Most current systems choose one pattern for the
-whole task. Kim et al.~\cite{kim2025scaling} compared a single agent with four multi-agent architectures
-under standardized tools, prompts and compute and found changes from $+80.8\%$ to $-70.0\%$ depending on the
-task, and Cemri et al.~\cite{cemri2025mast} traced many failures of popular frameworks to system design and
-coordination rather than to the model.
+% ================================================================= CERTIFICATE
+\chapter*{Certificate}
+\addcontentsline{toc}{chapter}{Certificate}
+\thispagestyle{plain}
 
-This project studies \emph{adaptive allocation}: a coordinator that, for each subtask of a task graph,
-chooses one mechanism from a pool, or answers it with a single direct call, so as to maximize the chance of
-a correct final answer within a fixed budget. The pool is bio-inspired, but every mechanism is specified by
-what it computes and tested against plain counterparts, following the criticism of metaphor-driven
-algorithms by Camacho-Villal\'on et al.~\cite{camacho2023}.
+I hereby certify that the project report titled \emph{``Adaptive Task Allocation for Heterogeneous
+Bio-Inspired Agents''}, submitted by Nikshay Yadav (23/CS/284) and Madan Raj Murugesan (23/CS/234),
+Group GP105, to the Department of Computer Science and Engineering, Delhi Technological University,
+Delhi, in partial fulfilment of the requirements for the award of the degree of Bachelor of Technology,
+is a record of the project work carried out by the students under my supervision. To the best of my
+knowledge, this work has not been submitted in part or in full for any degree or diploma to this
+University or elsewhere.
 
-The five research questions of the approved synopsis are: \textbf{RQ1} do the mechanisms have complementary
-strengths; \textbf{RQ2} can dynamic allocation improve performance within a fixed budget; \textbf{RQ3} what
-value do the biological mechanisms add over conventional ones; \textbf{RQ4} can the framework adapt to
-failures; and \textbf{RQ5} when does coordination stop paying for itself.
+\vspace{2.6cm}
+\noindent
+\begin{tabular}{@{}p{0.5\textwidth}p{0.45\textwidth}@{}}
+\rule{4.5cm}{0.4pt} & \rule{4.5cm}{0.4pt} \\
+\textbf{Prof.~Shailender Kumar} & \textbf{Dr.~Yeshwant Singh} \\
+Supervisor & Faculty Coordinator \\
+Department of CSE & Department of CSE \\
+Delhi Technological University & Delhi Technological University \\
+\end{tabular}
 
-\runin{Phase 1 contributions.}
-\begin{enumerate}[label=(\arabic*)]
-  \item A framework in which mechanisms, baselines and controls share one model, one solving prompt, one
-        stored decomposition, the same checks and an equal, enforced token budget (Section~\ref{sec:system}).
-  \item Ant, bee and octopus executors with their controls; single-agent, direct, majority-vote,
-        plan-then-execute and specialist baselines; rule-table and LinUCB~\cite{li2010linucb} policies.
-  \item Task suites with automatic checking: GSM8K~\cite{cobbe2021gsm8k}, PlanBench~\cite{valmeekam2023planbench}
-        with our own plan simulator, a deterministic tool suite, a controlled synthetic suite, and 180
-        generated Logistics problems, all in frozen, hashed splits.
-  \item A measured first answer to parts of RQ1, RQ3 and RQ5: on long-horizon planning the single agent
-        wins, explained from the traces, with redesigned mechanisms that use feedback; on competition
-        maths, where no check exists, a quorum-sensing bee beats it on a held-out test
-        (Section~\ref{sec:results}).
-\end{enumerate}
+\vspace{1cm}
+\noindent Place: Delhi \\
+Date: 17 November 2026
 
-\section{Related Work}
-\label{sec:lit}
+% ================================================================= ACKNOWLEDGEMENT
+\chapter*{Acknowledgement}
+\addcontentsline{toc}{chapter}{Acknowledgement}
+\thispagestyle{plain}
 
-\runin{Fixed workflows and their cost.}
-He, Treude and Lo~\cite{he2025lma} review 71 studies of LLM multi-agent systems in software engineering
-and name the optimization of agent collaboration as an open phase of research. Cemri et
-al.~\cite{cemri2025mast} built a taxonomy of 14 failure modes from 150 traces and used it to annotate more
-than 1,600 traces of seven frameworks. Wang et al.~\cite{wang2024rethinking} found that a single agent with a
-strong prompt comes close to the best multi-agent discussion method on reasoning benchmarks, and Zhang et
-al.~\cite{zhang2025agentprune} showed that many inter-agent messages can be pruned.
+We are grateful to our supervisor, Prof.~Shailender Kumar, for his guidance throughout this semester,
+for questioning our early designs and for insisting that every claim be backed by a measurement. We
+thank Dr.~Yeshwant Singh, our faculty coordinator, for organising the project reviews and for his
+feedback on the synopsis. We also thank the Department of Computer Science and Engineering, Delhi
+Technological University, for the facilities and the academic environment that made this work possible.
 
-\runin{Adaptive topology and routing.}
-GPTSwarm~\cite{zhuge2024gptswarm} optimizes agent graphs, DyLAN~\cite{liu2024dylan} selects teams,
-G-Designer~\cite{zhang2025gdesigner} generates a topology per task, AFlow~\cite{zhang2025aflow} searches
-workflows written as code, and RouteLLM~\cite{ong2025routellm} routes queries between models.
-MasRouter~\cite{yue2025masrouter} chooses the collaboration mode, roles and models together.
-GraphPlanner~\cite{feng2026graphplanner}, AdaptOrch~\cite{yu2026adaptorch} and
-Symphony-Coord~\cite{guan2026symphony} route at the level of steps or subtasks; the last uses a LinUCB bandit
-over task and agent features, as our learned policy will. In all of them the candidates are agents, roles,
-models or graph shapes, not coordination mechanisms with their own control flow.
+Parts of the implementation and its code review were carried out with the help of AI coding
+assistants. Every design decision, review finding and fix is recorded in the project's decision log,
+and every result in this report was produced by code we ran and checked ourselves.
 
-\runin{Bio-inspired coordination with LLMs.}
-Wu et al.~\cite{wu2025ecllm} survey LLMs and evolutionary computation. AMRO-S~\cite{wang2026amros} and
-SwarmSys~\cite{li2025swarmsys} apply ant-colony rules to routing and task allocation. Rahman et
-al.~\cite{rahman2026swarms} found that an LLM version of Boids needed about 300 times the computation of the
-classical one, a warning we take seriously by holding compute equal. The mechanisms we implement come from
-ant colony optimization~\cite{dorigo2004aco}, honeybee nest-site selection with cross
-inhibition~\cite{seeley2012} (whose nearest software relative is self-consistency voting~\cite{wang2023selfconsistency})
-and the peripheral motor programs of the octopus arm~\cite{sumbre2001}.
+Finally, we thank our families and friends for their patience and support.
 
-\runin{Gap.}
-No prior system chooses between whole coordination mechanisms per subtask and tests each one against
-controls without its biological components at equal compute. That is the gap this project addresses.
+\vspace{1.5cm}
+\noindent
+\begin{tabular}{@{}p{0.5\textwidth}p{0.45\textwidth}@{}}
+Nikshay Yadav (23/CS/284) & Madan Raj Murugesan (23/CS/234) \\
+\end{tabular}
 
-\section{Problem Formulation}
+% ================================================================= ABSTRACT
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+\thispagestyle{plain}
 
-A task is decomposed into a dependency graph $G=(V,E)$ of subtasks. A pool
-$\mathcal{M}=\{m_1,\dots,m_K\}$ of mechanisms is available behind one interface, together with a direct
-route that answers a subtask with one model call. For each ready subtask $v$ the coordinator chooses
-$\pi(v)\in\mathcal{M}\cup\{\text{direct}\}$ from features observable before execution and from recorded
-outcomes. It sees only runtime checks, never reference answers. The aim is
-\begin{equation}
-  \max_{\pi}\ \Pr[\text{final answer correct}] \quad \text{subject to} \quad
-  \mathrm{tokens}(\pi) \le B,
-\end{equation}
-where the token count includes the coordinator's own calls and any reallocation after a failed check. A
-wrong choice is paid twice: once in wasted budget and once in the reallocation that follows.
+Multi-agent systems built on large language models (LLMs) usually apply one coordination pattern to
+every part of a task, and controlled studies report that they often fail to beat a well-prompted
+single agent. This project asks whether a coordinator that chooses a different coordination mechanism
+for each subtask can do better within the same token budget. The mechanisms come from animal behaviour
+and are written as ordinary algorithms: reinforced search (ant), evidence accumulation with cross
+inhibition and a quorum (bee) and bounded local execution (octopus). Each is paired with plain controls
+that lack its distinguishing parts.
 
-\section{System Design}
-\label{sec:system}
+In Phase~I we built \texttt{bioalloc}, a Python framework (about 9,400 lines of code and 372 tests)
+with a common executor interface, a budget ledger that admits a model call only if it fits, append-only
+traces of every call, runtime checks kept separate from the grader, frozen task splits and a resumable
+experiment runner. On long-horizon planning (PlanBench Logistics, 21,000 tokens per task) the single
+agent was the strongest system on both backbones we used (73\% of runs on Claude Sonnet~4.6 and 90\%
+on GPT-6 Luna, against 60\% and 47\% for the bee), because it revises its plan against the
+simulator's error message. Redesigned scouts that repair their own plans came within one success of
+it but did not pass the pre-registered rule for a held-out test. On competition mathematics (148
+held-out AIME problems), where answers cannot be checked, a quorum-sensing bee solved 86.5\% against
+70.9\% for the single agent (+15.5 points, 95\% CI +8.1 to +23.0) at about five times the cost per
+correct answer; a plain majority of five solved 84.5\%, so most of the gain is self-consistency. The
+bee's own contribution is its quorum: when three scouts agreed they were right 97\% of the time. A rule
+that sends planning to the single agent and mathematics to the bee averages 88.2\% across the two
+families, above every fixed choice. The better mechanism therefore depends on the kind of task, which
+is the premise of per-subtask allocation that Phase~II will learn and test on held-out task graphs.
+
+\vspace{6pt}
+\noindent\textbf{Keywords:} large language models, multi-agent systems, task allocation, swarm
+intelligence, quorum sensing, self-consistency, equal-compute evaluation.
+
+% ================================================================= LISTS
+\cleardoublepage
+\tableofcontents
+\clearpage\phantomsection
+\addcontentsline{toc}{chapter}{List of Figures}
+\listoffigures
+\clearpage\phantomsection
+\addcontentsline{toc}{chapter}{List of Tables}
+\listoftables
+
+% ================================================================= ABBREVIATIONS
+\chapter*{List of Abbreviations and Symbols}
+\addcontentsline{toc}{chapter}{List of Abbreviations and Symbols}
+\thispagestyle{plain}
+
+\begin{minipage}[t]{0.48\textwidth}
+\small
+\begin{tabular}{@{}P{1.6cm}P{5.0cm}@{}}
+\toprule
+\head{Abbr.} & \head{Meaning} \\
+\midrule
+ACO & Ant Colony Optimization \\
+AIME & American Invitational Mathematics Examination \\
+API & Application Programming Interface \\
+CI & Confidence interval (95\%, bootstrap) \\
+DAG & Directed acyclic graph \\
+D$n$ / R$n$ & Decision / review entry $n$ in the project's decision log \\
+GSM8K & Grade School Math 8K benchmark \\
+JSONL & JSON Lines (one JSON object per line) \\
+LinUCB & Linear Upper Confidence Bound (contextual bandit) \\
+LLM & Large Language Model \\
+MAS & Multi-Agent System \\
+PDDL & Planning Domain Definition Language \\
+RQ & Research question \\
+SA & Single agent (baseline) \\
+STRIPS & Stanford Research Institute Problem Solver (planning formalism) \\
+US\$ & United States dollars (API cost) \\
+\bottomrule
+\end{tabular}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}
+\small
+\begin{tabular}{@{}P{1.4cm}P{5.2cm}@{}}
+\toprule
+\head{Symbol} & \head{Meaning} \\
+\midrule
+$G=(V,E)$ & Task graph of subtasks $V$ and dependencies $E$ \\
+$\mathcal{M}$ & Pool of coordination mechanisms \\
+$\pi(v)$ & Mechanism the policy chooses for subtask $v$ \\
+$B$ & Token budget per task \\
+$\tau_{ij}$ & Pheromone on choice $j$ after state $i$ \\
+$\eta_{ij}$ & Heuristic desirability of a choice \\
+$\alpha,\beta$ & Weights of pheromone and heuristic \\
+$\rho$ & Pheromone evaporation rate \\
+$k$ & Number of bee scouts \\
+$\theta$ & Quorum fraction; quorum $q=\lceil\theta k\rceil$ \\
+$\sigma$ & Probability that inhibition releases a scout \\
+$\mathbf{x}_v$ & Feature vector of subtask $v$ (selector input) \\
+$\Delta$ & Paired difference in solve rate (points) \\
+\bottomrule
+\end{tabular}
+\end{minipage}
+
+% ================================================================= MAIN TEXT
+\clearpage
+\pagenumbering{arabic}
+
+% ----------------------------------------------------------------- CHAPTER 1
+\chapter{Introduction}
+\label{ch:intro}
+
+\section{Overview and Background}
+An LLM-based multi-agent system (MAS) splits a task among several model instances, or \emph{agents},
+that exchange messages: one plans, others solve parts, others criticise or vote. Frameworks of this kind
+are now used for software engineering, data analysis and question answering~\cite{he2025lma}. The split
+is useful only if the way the agents \emph{coordinate} suits the work. A subtask with many possible
+solution paths may benefit from exploration that remembers what worked; a subtask with a few competing
+answers needs those answers compared; a well-specified subtask needs no discussion at all.
+
+Most current systems nevertheless choose one coordination pattern for the whole task. Kim et
+al.~\cite{kim2025scaling} compared a single agent with four multi-agent architectures under standardized
+tools, prompts and compute and found changes from $+80.8\%$ to $-70.0\%$ depending on the task, and
+Cemri et al.~\cite{cemri2025mast} traced many failures of popular frameworks to system design and
+coordination rather than to the model. Nature offers a wider repertoire: ant colonies reinforce
+successful paths, honeybee swarms choose a nest by a quorum of independent scouts, and an octopus arm
+executes a reach with little central control. Each is a different answer to the question of how a
+group should decide.
+
+\section{Motivation}
+Figure~\ref{fig:motivation} shows the situation this project targets. A realistic task, such as
+planning a delivery and then computing its cost, contains subtasks of different kinds. A planning
+subtask comes with a checker (a simulator says which action failed), so one agent that revises against
+that message may be enough. A calculation whose answer cannot be checked is a different problem: there,
+several independent attempts and a vote are known to help~\cite{wang2023selfconsistency}. A system with
+one fixed pattern pays for the wrong mechanism on part of every task.
 
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-  box/.style={draw=black!60, rounded corners=2pt, align=center, minimum height=0.95cm, font=\small, inner sep=4pt},
-  dark/.style={box, fill=black!80, text=white},
-  arr/.style={-{Stealth[length=2.2mm]}, black!60, line width=0.6pt}]
-  \node[box] (g) {Task graph};
-  \node[dark, right=0.9cm of g] (c) {Coordinator};
-  \node[box, below=0.8cm of c] (p) {Allocation policy\\\scriptsize rules, LinUCB};
-  \node[box, right=0.9cm of c] (e) {Executor\\\scriptsize ant, bee, octopus, direct};
-  \node[box, below=0.8cm of e] (m) {Metered client\\\scriptsize budget ledger, trace};
-  \node[box, right=0.9cm of e] (k) {Runtime checks\\\scriptsize accept or reallocate};
-  \node[box, below=0.8cm of k] (r) {Grader\\\scriptsize holds the answers};
-  \draw[arr] (g) -- (c);
-  \draw[arr, <->] (c) -- (p);
-  \draw[arr] (c) -- (e);
-  \draw[arr] (e) -- (m);
-  \draw[arr] (e) -- (k);
-  \draw[arr] (k) -- (r);
+  sub/.style={draw=ink, rounded corners=3pt, fill=paper, align=center, font=\small, minimum width=3.3cm, minimum height=1.05cm},
+  mech/.style={rounded corners=2pt, align=center, font=\footnotesize, text=white, minimum width=2.6cm, minimum height=0.7cm},
+  arr/.style={-{Stealth[length=2.2mm]}, black!60, line width=0.6pt},
+  sel/.style={-{Stealth[length=2mm]}, accent, line width=0.6pt, dashed}]
+  \node[sub] (a) {Plan the deliveries\\\scriptsize planning, simulator check};
+  \node[sub, right=1.0cm of a] (b) {Compute the total cost\\\scriptsize maths, no check};
+  \node[sub, right=1.0cm of b] (c) {Report the answer\\\scriptsize well specified};
+  \draw[arr] (a) -- (b);
+  \draw[arr] (b) -- (c);
+  \node[mech, fill=ink, below=0.9cm of a] (ma) {Single agent\\\scriptsize revise on feedback};
+  \node[mech, fill=accent, below=0.9cm of b] (mb) {Quorum bee\\\scriptsize independent scouts};
+  \node[mech, fill=mute, text=black, below=0.9cm of c] (mc) {Direct\\\scriptsize one call};
+  \draw[sel] (a) -- (ma);
+  \draw[sel] (b) -- (mb);
+  \draw[sel] (c) -- (mc);
+  \node[font=\scriptsize\itshape, text=accent, anchor=west] at ($(b.south)!0.5!(mb.north)+(0.1,0)$) {allocation $\pi(v)$};
 \end{tikzpicture}
-\caption{The \texttt{bioalloc} framework. Only the grader, which lives in the evaluation package, holds
-reference answers; nothing outside that package may import it (enforced by a test).}
-\label{fig:arch}
+\caption{Adaptive allocation: each subtask of a task graph is sent to the coordination mechanism that
+suits it, instead of running one pattern for the whole task.}
+\label{fig:motivation}
 \end{figure}
 
-\subsection{Coordinator and executors}
-The coordinator repeatedly takes the subtasks whose dependencies are done, asks the policy which executor
-should handle each one, dispatches it under a child budget account, checks the result and either accepts it
-or reallocates the subtask with the rejection reason. When every final subtask is accepted, a deterministic
-family-specific aggregator builds the answer. Executors implement one method,
-\texttt{execute(subtask, context)}, and differ only in control flow, communication, memory and stopping. The
-context carries accepted upstream outputs, earlier rejections, a metered client, a derived seed and a trace
-hook.
+Two further observations motivate the design of the study. First, comparisons of multi-agent systems
+are often confounded by compute: a system that makes five calls is compared with one that makes
+one~\cite{wang2024rethinking}. We therefore enforce an equal token budget in code. Second, bio-inspired
+algorithms have been criticised for hiding ordinary techniques behind metaphors~\cite{camacho2023}; we
+therefore specify every mechanism by what it computes and test it against controls without its
+biological components.
 
-\subsection{Budget ledger}
-Every model call reserves an estimate of its prompt plus its maximum completion before it is sent. If the
-reservation does not fit in what the dispatch and all its ancestors have left, the call waits for calls in
-flight to settle or is refused. Near the end of the budget a call is fitted to what is left if that still
-allows a minimum completion. Calls that time out after being sent are charged at their full reservation.
-This makes ``equal compute'' a property enforced by the code and not a post-hoc normalization.
+\section{Problem Statement}
+A task is decomposed into a dependency graph $G=(V,E)$ of subtasks. A pool
+$\mathcal{M}=\{m_1,\dots,m_K\}$ of mechanisms is available behind one interface, together with a direct
+route that answers a subtask with one model call. For each ready subtask $v$ the coordinator chooses
+$\pi(v)\in\mathcal{M}\cup\{\text{direct}\}$ from features $\mathbf{x}_v$ observable before execution and
+from recorded outcomes. It sees only runtime checks, never reference answers. The aim is
+\begin{equation}
+  \max_{\pi}\ \Pr\!\left[\text{final answer correct}\right] \quad \text{subject to} \quad
+  \sum_{v\in V} \mathrm{tokens}\bigl(\pi(v), v\bigr) + \mathrm{tokens}_{\text{coord}} \le B,
+  \label{eq:problem}
+\end{equation}
+where the token count includes the coordinator's own calls and any reallocation after a failed check.
+A wrong choice is paid twice: once in wasted budget and once in the reallocation that follows.
 
-\subsection{Mechanisms and their controls}
+\section{Objectives}
+The approved synopsis poses five research questions (Table~\ref{tab:rq}). Phase~I (seventh semester)
+builds the infrastructure and measures single mechanisms on single-kind tasks; Phase~II (eighth
+semester) learns the allocation policy and evaluates it on mixed task graphs.
+
 \begin{table}[H]
 \centering\small
-\caption{Mechanisms in Phase 1 and the controls that remove their distinguishing components.}
-\label{tab:mech}
-\begin{tabularx}{\textwidth}{@{}P{1.6cm}LP{5.0cm}@{}}
+\caption{Research questions and their status at the end of Phase~I.}
+\label{tab:rq}
+\begin{tabularx}{\textwidth}{@{}P{0.9cm}LP{5.4cm}@{}}
 \toprule
-\head{Mechanism} & \head{What it computes} & \head{Controls} \\
+\head{RQ} & \head{Question} & \head{Phase~I status} \\
 \midrule
-Ant & Agents build solutions step by step from a typed action space; steps are sampled with probability
-$\propto \tau^\alpha \eta^\beta$; accepted paths deposit pheromone and all weights evaporate. &
-no deposit, no evaporation, uniform weights \\
-Bee & $k$ scouts propose answers; uncommitted scouts assess and may adopt supported options; committed
-scouts are released with probability $\sigma$ when rivals exist (cross inhibition); stop at a quorum
-$\lceil\theta k\rceil$ or on a verified answer. & no stop signal ($\sigma=0$), majority vote with matched
-calls \\
-Octopus & The coordinator hands a bounded job to an arm that acts and observes locally with check feedback
-and reports only the result. & per-step reporting, plan-then-execute \\
-Direct & One model call (a tool episode where tools are allowed). & -- \\
+RQ1 & Do the mechanisms have complementary strengths? & Yes across task families: single agent wins planning, bee wins maths (Section~\ref{sec:bytype}) \\
+RQ2 & Can dynamic allocation improve performance within a fixed budget? & Demonstrated by a fixed by-type rule; learned policy in Phase~II \\
+RQ3 & What do the biological mechanisms add over conventional ones? & Partly: the bee's quorum is a reliable confidence signal; its recruitment adds cost, not accuracy \\
+RQ4 & Can the framework adapt to failures? & Reallocation implemented; failure injection in Phase~II \\
+RQ5 & When does coordination stop paying for itself? & First data: voting costs about $5\times$ per correct answer \\
 \bottomrule
 \end{tabularx}
 \end{table}
 
-Baselines are the single agent (one conversation that revises against check feedback, the strongest simple
-competitor), a specialist coordinator with conventional roles~\cite{he2025lma}, fixed and random allocation,
-and a conventional adaptive coordinator that uses LinUCB over ordinary workers.
+\runin{Phase~I objectives.}
+\begin{enumerate}[label=(\roman*)]
+  \item Build a framework in which mechanisms, baselines and controls share one model, one solving
+        prompt, one stored decomposition, the same checks and an equal, enforced token budget.
+  \item Implement ant, bee and octopus executors with their controls, and the single-agent, direct,
+        majority-vote and specialist baselines.
+  \item Prepare task suites with automatic checking in frozen, hashed splits.
+  \item Measure the mechanisms against the single agent at equal budget, explain the results from the
+        traces, and run one pre-registered held-out test.
+\end{enumerate}
+\runin{Phase~II objectives.}
+\begin{enumerate}[label=(\roman*), resume]
+  \item Build multi-step task graphs that mix planning, calculation and tool use.
+  \item Learn the allocation policy (a rule table, then LinUCB~\cite{li2010linucb}) from recorded
+        outcomes and test it on held-out graphs.
+  \item Add failure injection (RQ4) and measure the cost at which coordination stops paying (RQ5).
+\end{enumerate}
 
-\subsection{Checks, grading and reproducibility}
-Runtime checks return \emph{pass}, \emph{fail} or \emph{unknown} with an evidence strength; for planning
-the check is a STRIPS simulator that validates every action and the goal. A goal-verified answer is a public
-certificate, since the simulator uses only the problem statement. Every run writes an append-only JSON Lines
-trace of each request, reply, tool call and budget event, and a manifest with the configuration, the code
-revision, prompt hashes and the split hash. The experiment runner is resumable, refuses to mix runs made
-under different configurations or solving code, computes spending from the fsynced traces, and stops at a
-spending limit. A provider throttle or daily quota stops the experiment and leaves the interrupted runs
-unrecorded, so that a quota is never counted as a task failure.
+\section{Organization of the Report}
+Chapter~\ref{ch:lit} reviews the background and related work and identifies the research gaps.
+Chapter~\ref{ch:method} describes the system architecture, the datasets and the mechanisms.
+Chapter~\ref{ch:results} reports the experimental setup, the modules implemented and the results of
+Phase~I. Chapter~\ref{ch:conclusion} summarises the work, lists its limitations and gives the plan for
+Phase~II. The appendices hold code excerpts and dataset samples.
 
-\subsection{Engineering process}
-The package has about 9,000 lines of code and 5,600 lines of tests (354 tests, run in CI with
-\texttt{ruff}, strict \texttt{mypy} and \texttt{pytest}). Every design decision (D1--D30) and every review
-round (R1--R20) is recorded in \texttt{docs/decisions.md}. Each bug found in review was fixed together with
-a regression test that fails when the fix is reverted.
+% ----------------------------------------------------------------- CHAPTER 2
+\chapter{Literature Review}
+\label{ch:lit}
 
-\section{Experimental Methodology}
-\label{sec:method}
+\section{Theoretical Background}
 
-\runin{Backbone.}
-Claude Sonnet~4.6 on Amazon Bedrock with low effort, extended thinking off and temperature 1.0 for every
-system (at 0.6, all 60 bee planning scouts in the first smoke test reached the same plan, so scouts and
-repetitions would not differ). The same model is
-used for every role. The competition-maths test (Section~\ref{sec:aime}) runs on GPT-6 Luna through OpenAI's
-Responses API, at low reasoning effort and temperature 1.0, chosen for cost (US\$0.10 and US\$0.50 per million
-input and output tokens against US\$3 and US\$15) and because Bedrock's daily token quota stopped every long
-Sonnet run; the Logistics comparison was repeated on Luna to separate the task from the model. Within any
-one experiment all systems share one backbone.
+\runin{LLM agents and voting.}
+An LLM agent is a model called in a loop with tools and a memory of the conversation. When an answer
+cannot be checked, sampling $n$ independent reasoning paths and returning the most frequent final
+answer, \emph{self-consistency}~\cite{wang2023selfconsistency}, improves accuracy on arithmetic and
+commonsense benchmarks:
+\begin{equation}
+  \hat{a} = \arg\max_{a} \sum_{i=1}^{n} \mathbb{1}[a_i = a].
+\end{equation}
+It is the conventional baseline against which the bee must be judged.
 
-\runin{Tasks.}
-Split v2 holds 450 study tasks from GSM8K, PlanBench Blocksworld and Logistics, our tool suite and the
-synthetic suite, grouped so that no structure is shared across train, tune and test. The generated Logistics
-suite has 3 or 4 cities, two airplanes and 5, 7 or 9 packages; six strata of 30 instances are each split
-5/5/20 into training, tuning and test, and every instance has a constructive witness plan of 25--93 actions
-that passes the simulator. Test instances were never selected or filtered by any model result. The maths
-suite holds the 178 AIME problems of 2020--2025 with a single integer answer (one problem with two accepted
-answers is excluded), 30 for tuning and 148 for test, split by a hash of the problem text.
+\runin{Ant colony optimization.}
+In ACO~\cite{dorigo2004aco}, artificial ants build solutions step by step. From state $i$, choice $j$ is
+taken with probability
+\begin{equation}
+  p_{ij} = \frac{\tau_{ij}^{\alpha}\,\eta_{ij}^{\beta}}{\sum_{l\in\mathcal{N}_i}\tau_{il}^{\alpha}\,\eta_{il}^{\beta}},
+  \qquad
+  \tau_{ij} \leftarrow (1-\rho)\,\tau_{ij} + \sum_{\text{ants}} \Delta\tau_{ij},
+  \label{eq:aco}
+\end{equation}
+where $\tau$ is pheromone, $\eta$ a heuristic, $\rho$ the evaporation rate and $\Delta\tau$ the deposit
+of ants whose solutions were good. Reinforcement makes the colony return to what worked; evaporation
+lets it forget.
 
-\runin{Budget.}
-The primary cap is 21,000 tokens per task, twice the single agent's mean in calibration, fixed before any
-comparison, with at most 2,048 completion tokens per call, 60 calls and 600~s. On maths every system has
-60,000 tokens, 30 calls and 4,096 completion tokens per call.
+\runin{Honeybee nest-site selection.}
+A swarm chooses a new nest without a leader~\cite{seeley2012}. Scouts inspect sites and advertise them;
+uncommitted bees are recruited in proportion to the advertising; scouts of rival sites deliver
+\emph{stop signals} that release committed bees (cross inhibition); and the swarm commits once a quorum
+of scouts is present at one site. The quorum lets the swarm decide fast when scouts agree and keep
+searching when they do not.
 
-\runin{Protocol.}
-Each step was decided before it was run: smoke tests to find integration bugs; a calibration to find where
-the single agent is neither at floor nor at ceiling; a comparison of mechanisms; a tuning run of
-redesigned variants with a pre-registered advancement rule; and a single held-out test of the variant that
-advances. Paired differences use a group bootstrap over tasks.
+\runin{Octopus arm control.}
+An octopus arm can complete a reach driven by a peripheral motor program, with the brain issuing only
+the command to start~\cite{sumbre2001}. The computational analogue is a coordinator that hands a bounded
+job to a worker which acts and observes locally and reports only the result.
 
-\section{Results}
-\label{sec:results}
+\runin{Contextual bandits.}
+The allocation policy planned for Phase~II is LinUCB~\cite{li2010linucb}, which for features
+$\mathbf{x}_v$ chooses the arm $m$ maximising
+$\mathbf{x}_v^{\top}\hat{\boldsymbol\theta}_m + \alpha\sqrt{\mathbf{x}_v^{\top}A_m^{-1}\mathbf{x}_v}$,
+an estimate of reward plus an exploration bonus.
 
-\subsection{Smoke tests: integration problems first}
-The first live smoke test (US\$1.26) failed for reasons of our own making: the ant returned flat candidate
-lists, and some replies held several JSON objects. We replaced the parser by a depth-aware top-level JSON
-parser that fails closed and added an instruction that the corrected object comes last. The second smoke
-test and a diversity check (together US\$3.88) ran cleanly. On the original panel the single agent solved
-6/6 tasks at about US\$0.023 per run.
+\section{Review of Existing Work}
 
-\subsection{Calibration: the easy tasks are at ceiling}
-At a generous 120,000-token cap the single agent solved all 30 calibration tasks (US\$2.49 for 60 runs),
-including 15/15 Logistics problems; the one-call Direct route solved 8/15 Logistics. On Logistics only 2 of
-15 first plans were valid, and the hardest problems took 4 to 8 calls and up to 47,000 tokens. Cutting the
-recorded runs at lower caps gives the single agent 9/15 at 12,000 tokens, 10/15 at 21,000, 13/15 at 30,000
-and 15/15 at 50,000. Standard maths, tool and easy planning tasks therefore leave no headroom for any
-mechanism, and the comparison moved to Logistics at the 21,000-token cap.
+\runin{Fixed workflows and their cost.}
+He, Treude and Lo~\cite{he2025lma} review 71 studies of LLM multi-agent systems in software engineering
+and name the optimization of agent collaboration as an open phase of research. Cemri et
+al.~\cite{cemri2025mast} built a taxonomy of 14 failure modes from 150 traces and used it to annotate
+more than 1,600 traces of seven frameworks. Wang et al.~\cite{wang2024rethinking} found that a single
+agent with a strong prompt comes close to the best multi-agent discussion method on reasoning
+benchmarks, and Zhang et al.~\cite{zhang2025agentprune} showed that many inter-agent messages can be
+pruned without loss. Together these works show that more agents are not automatically better and that
+compute must be controlled.
 
-\subsection{Comparison on Logistics at equal budget}
+\runin{Adaptive topology and routing.}
+GPTSwarm~\cite{zhuge2024gptswarm} optimizes agent graphs, DyLAN~\cite{liu2024dylan} selects teams,
+G-Designer~\cite{zhang2025gdesigner} generates a communication topology per task,
+AFlow~\cite{zhang2025aflow} searches workflows written as code, and RouteLLM~\cite{ong2025routellm}
+routes queries between models. MasRouter~\cite{yue2025masrouter} chooses the collaboration mode, roles
+and models together. GraphPlanner~\cite{feng2026graphplanner}, AdaptOrch~\cite{yu2026adaptorch} and
+Symphony-Coord~\cite{guan2026symphony} route at the level of steps or subtasks; the last uses a LinUCB
+bandit over task and agent features, as our learned policy will. In all of them the candidates are
+agents, roles, models or graph shapes, not coordination mechanisms with their own control flow.
+
+\runin{Bio-inspired coordination with LLMs.}
+Wu et al.~\cite{wu2025ecllm} survey the combination of LLMs and evolutionary computation.
+AMRO-S~\cite{wang2026amros} and SwarmSys~\cite{li2025swarmsys} apply ant-colony rules to routing and task
+allocation among LLM agents. Rahman et al.~\cite{rahman2026swarms} found that an LLM version of Boids
+needed about 300 times the computation of the classical algorithm, a warning we take seriously by
+holding compute equal. Camacho-Villal\'on et al.~\cite{camacho2023} showed that several popular
+``novel'' metaheuristics are re-labelled versions of known methods, which is why each of our mechanisms
+is tested against controls that remove its distinguishing parts.
+
+\section{Comparative Summary}
+
 \begin{table}[H]
 \centering\small
-\caption{Fifteen PlanBench Logistics problems, two repetitions, 21,000 tokens per task (150 runs, US\$12.37).}
-\label{tab:logistics}
-\begin{tabular}{@{}lrrrr@{}}
+\caption{Comparison of related systems by what they adapt and at what granularity.}
+\label{tab:lit}
+\begin{tabularx}{\textwidth}{@{}P{3.0cm}P{1.25cm}LP{2.1cm}P{1.5cm}@{}}
 \toprule
-\head{System} & \head{Valid plans} & \head{Mean tokens} & \head{US\$/run} & \head{US\$/success} \\
+\head{Work} & \head{Year} & \head{What is chosen or adapted} & \head{Unit of choice} & \head{Bio-inspired} \\
 \midrule
-Single agent & 22/30 (73\%) & 11,138 & 0.066 & 0.090 \\
-Octopus & 20/30 (67\%) & 12,085 & 0.071 & 0.106 \\
-Bee (certificate stop) & 18/30 (60\%) & 17,213 & 0.139 & 0.231 \\
-Direct & 17/30 (57\%) & 5,703 & 0.040 & 0.071 \\
-Ant & 0/30 (0\%) & 19,053 & 0.096 & -- \\
+GPTSwarm~\cite{zhuge2024gptswarm} & 2024 & Edges and nodes of an agent graph & Task distribution & No \\
+DyLAN~\cite{liu2024dylan} & 2024 & Team of agents & Task & No \\
+AgentPrune~\cite{zhang2025agentprune} & 2025 & Which messages are sent & Communication edge & No \\
+G-Designer~\cite{zhang2025gdesigner} & 2025 & Communication topology & Task & No \\
+AFlow~\cite{zhang2025aflow} & 2025 & Workflow program & Task distribution & No \\
+RouteLLM~\cite{ong2025routellm} & 2025 & Model (strong or weak) & Query & No \\
+MasRouter~\cite{yue2025masrouter} & 2025 & Collaboration mode, roles, models & Query & No \\
+GraphPlanner~\cite{feng2026graphplanner} & 2026 & Agent for the next step & Step & No \\
+AdaptOrch~\cite{yu2026adaptorch} & 2026 & Orchestration pattern & Task or subtask & No \\
+Symphony-Coord~\cite{guan2026symphony} & 2026 & Agent, by LinUCB & Subtask & No \\
+AMRO-S~\cite{wang2026amros} & 2026 & Route among agents & Query & Ant colony \\
+SwarmSys~\cite{li2025swarmsys} & 2025 & Agent for a task & Task & Ant colony \\
+\midrule
+\textbf{This work} & 2026 & \textbf{Coordination mechanism with its own control flow, tested against controls at equal budget} & \textbf{Subtask} & \textbf{Ant, bee, octopus} \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Research Gaps Identified}
+Table~\ref{tab:gaps} lists the gaps that follow from the review and how this project addresses each.
+
+\begin{table}[H]
+\centering\small
+\caption{Research gaps and how this project addresses them.}
+\label{tab:gaps}
+\begin{tabularx}{\textwidth}{@{}P{0.6cm}LL@{}}
+\toprule
+\head{\#} & \head{Gap} & \head{How this project addresses it} \\
+\midrule
+G1 & Adaptive systems choose agents, roles, models or topologies; none chooses between whole coordination mechanisms per subtask. & A coordinator chooses per subtask among executors that differ in control flow, memory, communication and stopping. \\
+G2 & Multi-agent systems are often compared with a single agent at unequal compute. & A budget ledger enforces the same token cap for every system before each call is sent. \\
+G3 & Bio-inspired methods are rarely tested against controls without their biological parts. & Each mechanism has controls (no deposit, no evaporation, no stop signal, majority vote, per-step reporting). \\
+G4 & Reported gains are seldom tied to the task property that produces them. & Mechanisms are compared on families with and without a checker, with every run traced, so wins and losses can be explained. \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ----------------------------------------------------------------- CHAPTER 3
+\chapter{Proposed Methodology and System Design}
+\label{ch:method}
+
+\section{System Architecture}
+Figure~\ref{fig:arch} shows the \texttt{bioalloc} framework. The coordinator repeatedly takes the
+subtasks whose dependencies are done, asks the allocation policy which executor should handle each one,
+dispatches it under a child budget account, checks the result and either accepts it or reallocates the
+subtask with the rejection reason. When every final subtask is accepted, a deterministic
+family-specific aggregator builds the answer.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  box/.style={draw=black!55, rounded corners=2pt, align=center, minimum height=1.0cm, minimum width=2.5cm, font=\small, inner sep=4pt, fill=white},
+  dark/.style={box, fill=ink, text=white, draw=ink},
+  hot/.style={box, fill=accent, text=white, draw=accent},
+  arr/.style={-{Stealth[length=2.2mm]}, black!60, line width=0.6pt}]
+  \node[box] (g) {Task + stored\\decomposition};
+  \node[dark, right=0.65cm of g] (c) {Coordinator};
+  \node[box, below=0.85cm of c] (p) {Allocation policy\\\scriptsize rules, LinUCB};
+  \node[hot, right=0.65cm of c] (e) {Executor\\\scriptsize ant, bee, octopus, direct};
+  \node[box, below=0.85cm of e] (m) {Metered client\\\scriptsize budget ledger, trace};
+  \node[box, right=0.65cm of e] (k) {Runtime checks\\\scriptsize accept or reallocate};
+  \node[box, below=0.85cm of m] (llm) {LLM transport\\\scriptsize Bedrock, OpenAI};
+  \node[box, below=0.85cm of k] (agg) {Aggregator\\\scriptsize final answer};
+  \node[box, below=0.85cm of agg, dashed] (r) {Grader\\\scriptsize holds the answers};
+  \draw[arr] (g) -- (c);
+  \draw[arr, <->] (c) -- (p);
+  \draw[arr] (c) -- (e);
+  \draw[arr] (e) -- (m);
+  \draw[arr] (m) -- (llm);
+  \draw[arr] (e) -- (k);
+  \draw[arr] (k) -- (agg);
+  \draw[arr] (agg) -- (r);
+  \draw[arr, dashed] (k.north) to[bend right=25] node[above, font=\scriptsize] {rejection reason} (c.north);
+  \begin{scope}[on background layer]
+    \node[draw=black!25, dashed, rounded corners=4pt, fit=(g)(c)(p)(e)(m)(k)(agg)(llm), inner sep=7pt,
+          label={[font=\scriptsize\itshape, text=black!55]south west:system under test (never sees reference answers)}] {};
+  \end{scope}
+\end{tikzpicture}
+\caption{The \texttt{bioalloc} framework. Only the grader, in the evaluation package, holds reference
+answers; a test enforces that nothing outside that package imports it.}
+\label{fig:arch}
+\end{figure}
+
+\runin{Executor interface.}
+Every executor implements one method, \texttt{execute(subtask, context)}, and executors differ only in
+control flow, communication, memory and stopping. The context carries accepted upstream outputs,
+earlier rejections, a metered model client, a derived random seed and a trace hook.
+
+\runin{Budget ledger.}
+Every model call reserves an estimate of its prompt plus its maximum completion before it is sent. If
+the reservation does not fit in what the dispatch and all its ancestor accounts have left, the call
+waits for calls in flight to settle or is refused (Listing~\ref{lst:reserve}). Near the end of the
+budget a call is fitted to what is left if that still allows a minimum completion. Calls that time out
+after being sent are charged at their full reservation. ``Equal compute'' is thus a property enforced
+by the code rather than a normalization after the fact.
+
+\runin{Checks, grading and traces.}
+Runtime checks return \emph{pass}, \emph{fail} or \emph{unknown} with an evidence strength; for planning
+the check is a STRIPS simulator that validates every action and the goal, so a goal-verified plan is a
+public certificate. Every run writes an append-only JSON Lines trace of each request, reply, tool call
+and budget event, and a manifest with the configuration, code revision, prompt hashes and split hash.
+The experiment runner is resumable, refuses to mix runs made under different configurations or solving
+code, computes spending from the traces, and stops at a spending limit. A provider quota stops the
+experiment and leaves interrupted runs unrecorded, so that a quota is never counted as a task failure.
+
+\section{Dataset Description and Preprocessing}
+Table~\ref{tab:data} lists the task suites. All are checked automatically, and all are split once,
+before any experiment, into frozen files whose SHA-256 hash is recorded in every run manifest.
+
+\begin{table}[H]
+\centering\small
+\caption{Task suites prepared in Phase~I.}
+\label{tab:data}
+\begin{tabularx}{\textwidth}{@{}P{3.1cm}P{1.6cm}LP{3.2cm}@{}}
+\toprule
+\head{Suite} & \head{Size} & \head{Content} & \head{Check / grading} \\
+\midrule
+GSM8K~\cite{cobbe2021gsm8k} & 150 & Grade-school word problems & Numeric match \\
+PlanBench~\cite{valmeekam2023planbench} & 150 & Blocksworld and Logistics in PDDL & Our STRIPS simulator \\
+Tool suite (ours) & 150 & Deterministic multi-tool tasks & Exact output \\
+Synthetic routes (ours) & panel & Controlled route graphs (diagnostic, not split) & Optimal-cost check \\
+Generated Logistics (ours) & 180 & 3--4 cities, 2 airplanes, 5/7/9 packages & STRIPS simulator \\
+AIME 2020--2025 & 178 & Competition problems, one integer answer & Exact integer, after the run \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\runin{Preprocessing.}
+Raw data are downloaded once by the only module allowed to use the network and stored as two files per
+suite: a \emph{public} file with what a system may see and a \emph{private} file with the reference
+answers, read only by the grader. Tasks are grouped by structure (for example by a hash of the problem
+text) so that no group is shared across train, tune and test. Split v2 holds 450 study tasks, 150 for
+each of the planning, reasoning and tools families, divided 50/30/50 into train, tune and test plus 20
+test-only variants (for example the 5-block Blocksworld instances and the longest fifth of GSM8K
+questions, larger than anything seen in development). The generated Logistics suite has six strata (3 or 4 cities $\times$ 5, 7 or 9
+packages) of 30 instances, each split 5/5/20; every instance has a constructive witness plan of 25--93
+actions that passes the simulator, and no test instance was selected or filtered by any model result.
+The maths suite keeps the 178 AIME problems of 2020--2025 with a single integer answer (one problem with
+two accepted answers is excluded), split by hash into 30 tuning and 148 test problems.
+
+\section{Algorithmic Design}
+
+\subsection{Mechanisms and their controls}
+Table~\ref{tab:mech} gives each mechanism, what it computes and the controls that remove its
+distinguishing components. Baselines are the single agent (one conversation that revises against check
+feedback, the strongest simple competitor), a specialist coordinator with conventional
+roles~\cite{he2025lma}, fixed and random allocation, and a conventional adaptive coordinator that uses
+LinUCB over ordinary workers.
+
+\begin{table}[H]
+\centering\small
+\caption{Mechanisms implemented in Phase~I and their controls.}
+\label{tab:mech}
+\begin{tabularx}{\textwidth}{@{}P{1.6cm}LP{4.6cm}@{}}
+\toprule
+\head{Mechanism} & \head{What it computes} & \head{Controls} \\
+\midrule
+Ant & Agents build solutions step by step from a typed action space with probabilities as in
+Eq.~\eqref{eq:aco}; accepted paths deposit pheromone and all weights evaporate. &
+No deposit, no evaporation, uniform weights \\
+Macro ant & At most five decisions, each proposing two ranked plan segments of up to 12 actions; a legal
+segment is sampled by $\tau[\text{shape}]^\alpha (1/\text{rank})^\beta$; deposit only when a new goal
+atom becomes true. & Same three controls and a greedy macro planner \\
+Bee & $k$ scouts answer independently; stop at a quorum $q=\lceil\theta k\rceil$ or a verified answer;
+otherwise cross inhibition and recruitment rounds (Algorithm~\ref{alg:bee}). & No stop signal
+($\sigma=0$); majority vote with matched calls \\
+Repair scouts & Each scout repairs its own rejected answer, seeing only its latest answer and the latest
+feedback (short memory). & Single agent with full memory \\
+Octopus & The coordinator hands a bounded job to an arm that acts and observes locally with check
+feedback and reports only the result. & Per-step reporting, plan-then-execute \\
+Direct & One model call (one tool episode where tools are allowed). & -- \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\subsection{The quorum bee}
+The bee used on maths has $k=5$ scouts, quorum fraction $\theta=0.6$ (so $q=3$) and release probability
+$\sigma=0.2$. Scouts answer one after another in a fixed order, so a quorum of three among five is
+always the plurality and the quorum stop alone can never cost accuracy against a majority of the same
+five answers; it only saves the remaining calls. Algorithm~\ref{alg:bee} and Figure~\ref{fig:bee} give
+the control flow.
+
+\begin{algorithm}[H]
+\caption{Quorum bee on one subtask $v$}
+\label{alg:bee}
+\begin{algorithmic}[1]
+\Require subtask $v$; scouts $k$; quorum fraction $\theta$; release probability $\sigma$; rounds $R$
+\State $q \gets \lceil \theta k \rceil$
+\For{$i = 1$ \textbf{to} $k$} \Comment{independent scouts, fixed order}
+  \State $a_i \gets$ \Call{Solve}{$v$}
+  \If{$a_i$ passes a runtime check} \State \Return $a_i$ \Comment{certificate stop} \EndIf
+  \If{some answer has support $\ge q$} \State \Return that answer \Comment{quorum stop} \EndIf
+\EndFor
+\For{$r = 1$ \textbf{to} $R$}
+  \State release each committed scout with probability $\sigma$ if a rival answer exists \Comment{cross inhibition}
+  \ForAll{uncommitted scouts $s$}
+    \State draw answer $o$ with probability proportional to its support
+    \State $s$ commits to $o$ if \Call{Assess}{$v, o$} accepts it \Comment{recruitment}
+  \EndFor
+  \If{some answer has support $\ge q$} \State \Return that answer \EndIf
+\EndFor
+\State \Return the answer with most support
+\end{algorithmic}
+\end{algorithm}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  st/.style={draw=ink, rounded corners=2pt, fill=paper, align=center, font=\small, minimum height=0.9cm, minimum width=2.4cm},
+  dec/.style={draw=accent, diamond, aspect=2.2, align=center, font=\footnotesize, inner sep=1pt, fill=white},
+  out/.style={rounded corners=2pt, fill=accent, text=white, align=center, font=\small, minimum height=0.8cm, minimum width=2.2cm},
+  arr/.style={-{Stealth[length=2mm]}, black!60, line width=0.6pt}]
+  \node[st] (s) {Scouts 1--5 answer\\\scriptsize one after another};
+  \node[dec, right=0.7cm of s] (q) {3 agree?};
+  \node[out, right=0.8cm of q] (stop) {Stop: quorum\\\scriptsize 120 of 148 problems};
+  \node[st, below=0.6cm of q] (inh) {Cross inhibition\\\scriptsize release w.p.\ $\sigma$};
+  \node[st, below=0.5cm of inh] (rec) {Recruitment\\\scriptsize scouts assess rivals};
+  \node[dec, below=0.5cm of rec] (q2) {quorum?};
+  \node[out, right=0.8cm of q2, fill=ink] (stop2) {Stop: plurality\\\scriptsize 28 of 148 problems};
+  \draw[arr] (s) -- (q);
+  \draw[arr] (q) -- node[above, font=\scriptsize] {yes} (stop);
+  \draw[arr] (q) -- node[right, font=\scriptsize] {no} (inh);
+  \draw[arr] (inh) -- (rec);
+  \draw[arr] (rec) -- (q2);
+  \draw[arr] (q2) -- node[above, font=\scriptsize, align=center] {yes, or\\rounds over} (stop2);
+  \draw[arr] (q2.west) -- ++(-0.7,0) |- node[pos=0.25, left, font=\scriptsize] {no} (inh.west);
+\end{tikzpicture}
+\caption{Control flow of the quorum bee, with how often each exit was taken on the AIME test (GPT-6
+Luna).}
+\label{fig:bee}
+\end{figure}
+
+\subsection{Allocation policies}
+The policies implemented are constant, random, a rule table over subtask features and LinUCB. Features
+are computed in trusted code before execution, never from model output or reference answers: the
+family, whether tools are allowed, whether the family offers a goal-level check, the number of
+dependencies, how many sibling subtasks are ready at the same time, the size of the inputs and of the
+instruction, and the attempt number. Phase~I evaluates single
+executors; the policies are exercised only in offline tests and are evaluated in Phase~II.
+
+\section{Hardware and Software Requirements}
+
+\begin{table}[H]
+\centering\small
+\caption{Hardware and software used in Phase~I.}
+\label{tab:hw}
+\begin{tabularx}{\textwidth}{@{}P{3.4cm}L@{}}
+\toprule
+\head{Item} & \head{Specification} \\
+\midrule
+Development machine & Laptop, 16 CPU threads, 16 GB RAM, Linux; no GPU is needed because models are called through APIs \\
+Language and tooling & Python 3.12, \texttt{uv} for environments, \texttt{ruff} (lint), \texttt{mypy} (strict types), \texttt{pytest} \\
+Libraries & \texttt{pydantic}, \texttt{networkx}, \texttt{jsonschema}, \texttt{httpx}, \texttt{numpy}, \texttt{boto3} \\
+Model access & Claude Sonnet~4.6 on Amazon Bedrock; GPT-6 Luna on the OpenAI Responses API \\
+Continuous integration & GitHub Actions: lint, type check and all offline tests on every push \\
+Report and slides & \LaTeX\ (Overleaf); TikZ and PGFPlots for figures \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+% ----------------------------------------------------------------- CHAPTER 4
+\chapter{Preliminary Implementation and Results}
+\label{ch:results}
+
+\section{Experimental Setup}
+
+\runin{Backbones.}
+Every system in one experiment uses the same model for every role (Table~\ref{tab:backbone}). Claude
+Sonnet~4.6 ran all Phase~I planning work. Bedrock's daily token quota stopped every long Sonnet run, and
+a full study at its prices was estimated at US\$1,000--1,900, so we moved to GPT-6 Luna, which costs
+about 30 times less, and repeated the main planning comparison on it to separate the task from the model.
+
+\begin{table}[H]
+\centering\small
+\caption{Backbone models and settings.}
+\label{tab:backbone}
+\begin{tabular}{@{}lll@{}}
+\toprule
+& \head{Claude Sonnet~4.6} & \head{GPT-6 Luna} \\
+\midrule
+Access & Amazon Bedrock & OpenAI Responses API \\
+Price (input / output, US\$ per M tokens) & 3.00 / 15.00 & 0.10 / 0.50 \\
+Reasoning & extended thinking off, low effort & low effort (hidden reasoning tokens) \\
+Temperature & 1.0 & 1.0 (fixed by the API) \\
+Used for & smoke, calibration, Logistics, tuning, AIME & AIME test, Logistics replication \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-No mechanism beat the single agent. The paired differences are $-0.13$ for bee (95\% CI $-0.30$ to $0.07$)
-and $-0.07$ for octopus ($-0.20$ to $0.07$); with 15 tasks the detectable effect is about 0.25, so small
-differences cannot be resolved. Direct was the cheapest per success.
+\runin{Budgets.}
+On planning every system has 21,000 tokens per task, twice the single agent's mean in calibration and
+fixed before any comparison, with at most 2,048 completion tokens per call, 60 calls and 600~s. On maths
+every system has 60,000 tokens, 30 calls and 4,096 completion tokens per call.
 
-\runin{Replication on GPT-6 Luna.} We repeated the comparison with only the model changed, after writing
-down how it would be read (150 runs, US\$0.39). The order was the same and sharper: single agent 27/30
-(90\%), octopus 26/30 (87\%), bee 14/30 (47\%), direct 14/30 (47\%), ant 0/30. The single agent's margin
-over the bee is $+0.43$ (95\% CI $+0.20$ to $+0.67$). The reading fixed in advance had named a single-agent
-rate of 90\% or more as Luna's ceiling, at which the systems could not be separated; the single agent hit
+\runin{Protocol.}
+Each step was decided and written down before it was run (Figure~\ref{fig:protocol}). Paired differences
+use a group bootstrap over tasks with 95\% intervals.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[
+  step/.style={draw=ink, fill=paper, rounded corners=2pt, align=center, font=\footnotesize, minimum height=1.25cm, text width=2.2cm},
+  gate/.style={step, draw=accent, fill=accent!8},
+  arr/.style={-{Stealth[length=2mm]}, black!60, line width=0.6pt}]
+  \node[step] (a) {\textbf{Smoke tests}\\find integration bugs};
+  \node[step, right=0.45cm of a] (b) {\textbf{Calibration}\\find headroom for the single agent};
+  \node[step, right=0.45cm of b] (c) {\textbf{Comparison}\\mechanisms at equal budget};
+  \node[gate, right=0.45cm of c] (d) {\textbf{Tuning}\\pre-registered advancement rule};
+  \node[gate, right=0.45cm of d] (e) {\textbf{Held-out test}\\only for a variant that advances};
+  \draw[arr] (a) -- (b);
+  \draw[arr] (b) -- (c);
+  \draw[arr] (c) -- (d);
+  \draw[arr] (d) -- (e);
+\end{tikzpicture}
+\caption{Experimental protocol. The two shaded steps follow rules fixed before the runs; the test split
+is touched only by a variant that passes tuning.}
+\label{fig:protocol}
+\end{figure}
+
+\section{Modules Implemented (Seventh Semester Progress)}
+Table~\ref{tab:modules} lists the modules of the \texttt{bioalloc} package. The package has about 9,400
+lines of code and 5,800 lines of tests; 372 tests run offline in continuous integration with
+\texttt{ruff}, strict \texttt{mypy} and \texttt{pytest}. Every design decision (D1--D33) and every
+review round or analysis (R1--R29) is recorded in \texttt{docs/decisions.md}, and every bug found in
+review was fixed together with a regression test that fails when the fix is reverted.
+
+\begin{table}[H]
+\centering\small
+\caption{Modules implemented in Phase~I.}
+\label{tab:modules}
+\begin{tabularx}{\textwidth}{@{}P{3.5cm}LP{1.7cm}@{}}
+\toprule
+\head{Module} & \head{Responsibility} & \head{Status} \\
+\midrule
+\texttt{schemas}, \texttt{graph}, \texttt{decomposition} & Data contracts, task graphs validated as DAGs, stored decompositions & Done \\
+\texttt{coordinator}, \texttt{policies}, \texttt{features} & Select, dispatch, check, aggregate or reallocate; constant, random, rule and LinUCB policies & Done; policies evaluated in Phase~II \\
+\texttt{budget}, \texttt{trace} & Hierarchical budget accounts, metered client, traces and manifests & Done \\
+\texttt{llm/} & Request/reply contracts; Bedrock, OpenAI Responses and Groq transports; fake model & Done \\
+\texttt{executors/} & Direct, ant, macro ant, bee, repair scouts, octopus, conventional and specialist & Done \\
+\texttt{tasks/}, \texttt{checks}, \texttt{tools} & Public side of each family, STRIPS interpreter, calculator, tool service & Done \\
+\texttt{evaluation/} & Data preparation, splits, generators, graders, experiment runner, analysis & Done \\
+Analysis scripts & Quorum breakdown and by-type allocation reports & Done \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Preliminary Results and Analysis}
+
+\subsection{Smoke tests and calibration}
+The first live smoke test (US\$1.26) failed for reasons of our own making: the ant returned flat candidate
+lists and some replies held several JSON objects. We replaced the parser by a depth-aware top-level JSON
+parser that fails closed. The second smoke test and a diversity check (US\$3.88) ran cleanly.
+
+At a generous 120,000-token cap the single agent solved all 30 calibration tasks, including 15/15
+Logistics problems, so standard maths, tool and easy planning tasks leave no headroom for any mechanism.
+On Logistics only 2 of 15 first plans were valid and the hardest problems took up to 47,000 tokens.
+Cutting the recorded runs at lower caps (Figure~\ref{fig:calib}) shows where the single agent is
+neither at floor nor at ceiling; the comparison therefore moved to Logistics at 21,000 tokens.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[btp,
+  width=0.72\linewidth, height=5.0cm,
+  xmode=log, xmin=10, xmax=150,
+  xtick={12,21,30,50,120}, xticklabels={12k,21k,30k,50k,120k},
+  ymin=0, ymax=16, ytick={0,5,8,10,15},
+  xlabel={Token cap per task}, ylabel={Logistics problems solved (of 15)},
+  legend pos=south east]
+\addplot[ink, line width=1.2pt, mark=*, mark size=2pt, draw=ink] coordinates {(12,9) (21,10) (30,13) (50,15) (120,15)};
+\addlegendentry{Single agent}
+\addplot[mute, dashed, line width=1pt, domain=10:150, samples=2, draw=mute] {8};
+\addlegendentry{Direct (one call)}
+\draw[accent, densely dotted, line width=0.8pt] (axis cs:21,0) -- (axis cs:21,16);
+\node[font=\scriptsize, text=accent, anchor=west] at (axis cs:21,2) {primary cap};
+\end{axis}
+\end{tikzpicture}
+\caption{Calibration on 15 PlanBench Logistics problems (Claude Sonnet~4.6): problems the single agent
+solves when its recorded runs are cut at each cap.}
+\label{fig:calib}
+\end{figure}
+
+\subsection{Long-horizon planning at equal budget}
+Table~\ref{tab:logistics} and Figure~\ref{fig:logistics} compare five systems on 15 PlanBench Logistics
+problems with two repetitions. No mechanism beat the single agent. On Sonnet the paired differences
+are $-0.13$ for the bee (95\% CI $-0.30$ to $0.07$) and $-0.07$ for the octopus ($-0.20$ to $0.07$). On
+Luna, repeated with only the model changed and its reading written down in advance, the order was the
+same and sharper: the single agent's margin over the bee is $+0.43$ (CI $+0.20$ to $+0.67$). The
+reading fixed in advance named a single-agent rate of 90\% or more as a ceiling; the single agent hit
 exactly 90\%, but bee, direct and ant were far below it, so we report both the flag and the separation.
+
+\begin{table}[H]
+\centering\small
+\caption{PlanBench Logistics, 15 problems $\times$ 2 repetitions, 21,000 tokens per task (Sonnet: 150 runs,
+US\$12.37; Luna: 150 runs, US\$0.39).}
+\label{tab:logistics}
+\begin{tabular}{@{}lrrrr@{}}
+\toprule
+& \multicolumn{3}{c}{\head{Claude Sonnet~4.6}} & \head{GPT-6 Luna} \\
+\cmidrule(lr){2-4}\cmidrule(l){5-5}
+\head{System} & \head{Valid plans} & \head{Mean tokens} & \head{US\$/success} & \head{Valid plans} \\
+\midrule
+Single agent & 22/30 (73\%) & 11,138 & 0.090 & 27/30 (90\%) \\
+Octopus & 20/30 (67\%) & 12,085 & 0.106 & 26/30 (87\%) \\
+Bee (certificate stop) & 18/30 (60\%) & 17,213 & 0.231 & 14/30 (47\%) \\
+Direct & 17/30 (57\%) & 5,703 & 0.071 & 14/30 (47\%) \\
+Ant & 0/30 (0\%) & 19,053 & -- & 0/30 (0\%) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[btp, ybar, bar width=11pt,
+  width=0.85\linewidth, height=5.0cm,
+  ymin=0, ymax=105, ylabel={Valid plans (\%)},
+  symbolic x coords={sa,oct,bee,dir,ant}, xtick=data,
+  xticklabels={Single agent,Octopus,Bee,Direct,Ant},
+  enlarge x limits=0.13,
+  nodes near coords, nodes near coords style={font=\tiny},
+  legend style={at={(0.99,0.98)}, anchor=north east}]
+\addplot[fill=ink, draw=none] coordinates {(sa,73) (oct,67) (bee,60) (dir,57) (ant,0)};
+\addplot[fill=accent, draw=none] coordinates {(sa,90) (oct,87) (bee,47) (dir,47) (ant,0)};
+\legend{Claude Sonnet 4.6, GPT-6 Luna}
+\end{axis}
+\end{tikzpicture}
+\caption{Logistics at equal budget on two backbones: the order of systems is the same, and the single
+agent's lead over the bee grows on Luna.}
+\label{fig:logistics}
+\end{figure}
 
 \runin{Why, from the traces.}
 \begin{itemize}
-  \item \emph{Ant.} Each step is one call carrying the whole problem (about 3,500 tokens). Valid plans found
-        by other systems have 14 to 45 actions (median 27), and the cap buys 5 to 7 calls. In 30 runs the
-        ant finished one path. A step-per-call ant cannot do long-horizon planning at a realistic budget.
-  \item \emph{Bee.} Seventeen of its 18 successes came from the first five independent answers. Every
-        rejected plan left its scout uncommitted and every accepted plan was a certificate, so recruitment
-        and inhibition never ran: on this task, bee reduced to independent sampling with certificate
-        selection, and its scouts never saw why a plan was rejected.
-  \item \emph{Octopus.} On a one-node graph it runs the same act-observe loop as the single agent, so their
-        difference is sampling noise.
+  \item \emph{Ant.} Each step is one call carrying the whole problem (about 3,500 tokens). Valid plans
+        found by other systems have 14 to 45 actions (median 27), and the cap buys 5 to 7 calls. A
+        step-per-call ant cannot do long-horizon planning at a realistic budget.
+  \item \emph{Bee.} Seventeen of its 18 Sonnet successes came from the first five independent answers.
+        Every accepted plan was a certificate, so recruitment and inhibition never ran: on this task the
+        bee reduced to independent sampling with certificate selection, and its scouts never saw why a
+        plan was rejected.
+  \item \emph{Octopus.} On a one-node graph it runs the same act-observe loop as the single agent, so
+        their difference is sampling noise.
 \end{itemize}
 The single agent's advantage is revision against the simulator's message. A mechanism that does not use
 that feedback cannot match it on long plans.
 
-\runin{Complementarity (RQ1).}
-Choosing the best system per task, on its two repetitions together, would solve 25/30 runs against the
-single agent's 22/30; choosing per task and repetition gives 27/30. Bee solved two problems more often than
-the single agent and octopus one. This is an optimistic upper bound from few tasks, but it is the room an
-allocation policy can use.
-
 \subsection{Redesigned mechanisms and tuning}
 Two redesigns follow from the traces. \emph{Repair scouts} give one solve episode at a time to a named
-scout; a scout's later episodes see only its own latest answer and the latest feedback, so each scout
-repairs its own rejected plan with short memory. Three variants were fixed in advance: one scout
-(\texttt{scout\_short\_memory}), two scouts in stages (\texttt{bee\_staged}) and three scouts in turn
-(\texttt{bee\_feedback3}), each with at most six solve episodes. The \emph{macro ant} makes at most five
-decisions, each proposing up to two ranked segments of at most 12 actions; illegal segments are dropped with
-the reasons shown at the next decision, a legal segment is sampled by $\tau[\text{shape}]^\alpha (1/\text{rank})^\beta$,
-and pheromone is deposited only when a segment makes a new goal atom true.
-
-The tuning run compares the single agent with the three repair variants on the 30 tuning instances of the
-generated suite, two repetitions each (240 runs). The pre-registered rule advances the candidate with the
-highest tuning success if it beats the single agent, or matches it while saving at least 20\% of its mean
-tokens.
+scout, which sees only its own latest answer and the latest feedback. Three variants were fixed in
+advance (one scout with short memory, two scouts in stages, three scouts in turn), and compared with the
+single agent on the 30 tuning instances of the generated suite, two repetitions each (240 runs,
+US\$26.08). The pre-registered rule advances the best candidate only if it beats the single agent, or
+matches it while saving at least 20\% of its tokens.
 
 \begin{table}[H]
 \centering\small
-\caption{Tuning run on the generated Logistics suite (30 instances, two repetitions, 21,000 tokens).}
+\caption{Tuning on the generated Logistics suite (30 instances $\times$ 2 repetitions, 21,000 tokens,
+Claude Sonnet~4.6).}
 \label{tab:tune}
 \begin{tabular}{@{}lrrr@{}}
 \toprule
@@ -384,50 +1001,24 @@ Bee, 3 scouts & 15/60 (25\%) & 16,900 & 0.124 \\
 \end{tabular}
 \end{table}
 
-The run cost US\$26.08. No candidate advanced: the best, the short-memory scout, neither beat the single
-agent nor matched it with fewer tokens (it used 4\% more). Short memory costs nothing in accuracy: a scout that
-sees only its latest answer and the latest feedback is within one success of the full-conversation single
-agent. Spreading repair over two or three scouts is worse, because each new scout pays for a fresh first
-plan. By stratum, the single agent solved 7, 5 and 1 of 10 runs with 5, 7 and 9 packages in three cities,
-and 6, 3 and 2 in four; nine packages is near the floor for every system.
+No candidate advanced: the short-memory scout came within one success of the single agent but used 4\%
+more tokens. Short memory therefore costs nothing in accuracy, while spreading repair over several
+scouts is worse because each new scout pays for a fresh first plan. The \emph{macro ant} and its four
+controls solved 2 of 60 runs (US\$4.84): in 209 of 299 decisions no proposed segment was legal, and only
+15 decisions offered two legal segments, the only case in which pheromone can change a choice. As the
+rule requires, no held-out Logistics test was run; the 120 test instances remain unseen and are
+reserved for Phase~II.
 
-Every instance that any system solved was also solved at least once by the single agent (18 of 30 instances
-were solved by someone). Picking the best system per instance would give 29/60, but that gain comes from more
-samples on the same instances, not from systems being good at different instances; the 25/30 bound on
-PlanBench is probably inflated the same way.
-
-\runin{Macro ant.} The macro ant and its four controls (no deposit, no evaporation, uniform weights and a
-greedy macro planner) ran on 6 tuning instances, two repetitions each (60 runs, US\$4.84). Together they
-solved 2 runs. In 209 of 299 decisions no proposed segment was legal (a precondition failed), and only 15
-decisions offered two legal segments, the only case in which pheromone can change a choice. The mechanism's
-learning therefore had almost nothing to act on; ant-style search needs several cheap, checkable options,
-such as choices between tools or sub-plans, rather than single steps of a long plan.
-
-\subsection{Held-out Logistics test}
-The pre-registered rule sends a variant to the 120 held-out instances only if it passes the tuning screen.
-None did, so no test was run and the test instances remain unseen by any system. They are kept for the
-evaluation of the learned selector in Phase~2.
-
-\subsection{Competition maths: where voting wins}
+\subsection{Competition mathematics: where voting wins}
 \label{sec:aime}
-Logistics favours the single agent because the simulator tells it what to fix. The bee's biological
-strength is different: a swarm commits once a quorum of scouts agrees and keeps searching when they
-disagree~\cite{seeley2012}. That can only help where answers cannot be checked, so that independent opinions
-carry information. AIME problems are such a case: the answer is one integer, the model has a calculator but
-no way to verify its result, and the grader compares with the reference only after the run.
-
-\runin{Systems.} \emph{Majority of five} asks five independent scouts one after another and returns the
-plurality answer, in the spirit of self-consistency~\cite{wang2023selfconsistency}. The \emph{quorum bee}
-asks the same five scouts in the same order but stops as soon as three agree; when no quorum forms, it runs
-the inhibition and recruitment rounds of Section~\ref{sec:system}. With the same order, a quorum of three among
-five is always the plurality, so the quorum stop alone cannot cost accuracy against the majority; it only
-saves the remaining calls.
-
-\runin{Protocol.} The test, its two primary questions and a gate (majority must solve at least as many tuning
-problems as the single agent) were written down before the test ran. Two runs were stopped and are reported
-as aborted: a Sonnet run in which each scout was cut off after four completions, and a Luna run in which the
-bee's recruitment replies were cut off by a fixed 512-token limit that Luna's hidden reasoning used up. Both
-defects were fixed with regression tests before the reported runs.
+The bee's biological strength is a quorum among independent scouts~\cite{seeley2012}, which can only
+help where answers cannot be checked. AIME problems are such a case: the answer is one integer, the
+model has a calculator but no way to verify its result, and the grader compares with the reference only
+after the run. The test, its two primary questions and a gate (the majority must solve at least as many
+tuning problems as the single agent) were written down before it ran. Two earlier runs were stopped and
+are reported as aborted: one in which each Sonnet scout was cut off after four completions, and one in
+which Luna's hidden reasoning used up a fixed 512-token limit on the bee's recruitment replies. Both
+defects were fixed with regression tests before the reported run.
 
 \begin{table}[H]
 \centering\small
@@ -436,37 +1027,104 @@ US\$0.77). Differences are paired over problems with 95\% bootstrap intervals.}
 \label{tab:aime}
 \begin{tabular}{@{}lrrrl@{}}
 \toprule
-\head{System} & \head{Solved} & \head{Tokens/problem} & \head{US\$/run} & \head{Against the single agent} \\
+\head{System} & \head{Solved} & \head{Tokens/problem} & \head{US\$/correct} & \head{$\Delta$ vs single agent} \\
 \midrule
-Single agent & 105 (70.9\%) & 1,112 & 0.0004 & -- \\
-Majority of five & 125 (84.5\%) & 6,004 & 0.0022 & $+13.5$ (CI $+5.4$ to $+21.6$) \\
-Quorum bee & 128 (86.5\%) & 6,441 & 0.0025 & $+15.5$ (CI $+8.1$ to $+23.0$) \\
+Single agent & 105 (70.9\%) & 1,112 & 0.0006 & -- \\
+Majority of five & 125 (84.5\%) & 6,004 & 0.0026 & $+13.5$ (CI $+5.4$ to $+21.6$) \\
+Quorum bee & 128 (86.5\%) & 6,441 & 0.0029 & $+15.5$ (CI $+8.1$ to $+23.0$) \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Both voting systems beat the single agent clearly (the bee won 30 problems and lost 7). The bee and the
-majority are within noise of each other ($+2.0$ points, CI $-2.0$ to $+6.8$), so most of the gain is the
-known effect of voting over independent samples, self-consistency~\cite{wang2023selfconsistency}. It is paid
-for in tokens: a correct answer costs US\$0.0006 from the single agent and US\$0.0029 from the bee. On Claude
+\begin{figure}[H]
+\centering
+\begin{subfigure}[b]{0.48\linewidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[btp, ybar, bar width=18pt, bar shift=0pt,
+  width=\linewidth, height=4.8cm,
+  ymin=50, ymax=95, ylabel={Problems solved (\%)},
+  symbolic x coords={sa,maj,bee}, xtick=data,
+  xticklabels={Single agent,Majority 5,Quorum bee},
+  enlarge x limits=0.25,
+  nodes near coords, nodes near coords style={font=\scriptsize}]
+\addplot[fill=ink, draw=none] coordinates {(sa,70.9)};
+\addplot[fill=mute, draw=none] coordinates {(maj,84.5)};
+\addplot[fill=accent, draw=none] coordinates {(bee,86.5)};
+\end{axis}
+\end{tikzpicture}
+\caption{Accuracy}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.48\linewidth}
+\centering
+\begin{tikzpicture}
+\begin{axis}[btp, ybar, bar width=18pt, bar shift=0pt,
+  width=\linewidth, height=4.8cm,
+  ymin=0, ymax=7500, ylabel={Tokens per problem},
+  symbolic x coords={sa,maj,bee}, xtick=data,
+  xticklabels={Single agent,Majority 5,Quorum bee},
+  enlarge x limits=0.25,
+  scaled y ticks=false, yticklabel style={/pgf/number format/1000 sep={,}},
+  nodes near coords, nodes near coords style={font=\scriptsize, /pgf/number format/1000 sep={,}}]
+\addplot[fill=ink, draw=none] coordinates {(sa,1112)};
+\addplot[fill=mute, draw=none] coordinates {(maj,6004)};
+\addplot[fill=accent, draw=none] coordinates {(bee,6441)};
+\end{axis}
+\end{tikzpicture}
+\caption{Cost}
+\end{subfigure}
+\caption{AIME held-out test on GPT-6 Luna: voting adds about 15 points of accuracy for about five to six
+times the tokens.}
+\label{fig:aime}
+\end{figure}
+
+Both voting systems beat the single agent clearly; the bee won 30 problems against it and lost 7. The
+bee and the majority are within noise of each other ($+2.0$ points, CI $-2.0$ to $+6.8$), so most of
+the gain is the known effect of voting over independent samples, self-consistency. It is paid for in
+tokens: a correct answer costs US\$0.0006 from the single agent and US\$0.0029 from the bee. On Claude
 Sonnet~4.6, in a run stopped by the daily quota at 141 of 148 problems, the order was the same with a
 smaller gap (majority 83.9\%, bee 78.3\%, single agent 76.4\%).
 
-\runin{Inside the bee (analysis after the test).} On 120 of the 148 problems three scouts agreed; the bee
-stopped there and was right on 116 (97\%), using 0.69 times the majority's tokens. On the other 28 its
-recruitment rounds solved 12 (43\%, the majority 14) at 1.87 times the majority's tokens. The quorum is thus
-both a cheaper stop and a strong confidence signal, while the recruitment rounds, in which language-model
-scouts judge each other's answers, add cost without beating a plain vote. Re-reading the same runs with the
-quorum stop kept and recruitment replaced by a plain vote of the five recorded scout answers gives 126
-correct against the majority's 125 at 0.75 times its tokens. On the partial Sonnet run the saving is the
-same (0.78 times) but accuracy fell below the majority (110 against 120 of 141), so equal accuracy at lower
-cost is a hypothesis for a pre-registered test, not a result. A selector can trust a quorum answer and
-spend more, or a different mechanism, on the problems without one.
+\runin{Inside the bee (analysis after the test).}
+Figure~\ref{fig:quorum} splits the problems by how the bee's run ended. On 120 problems three scouts
+agreed; the bee stopped there and was right on 116 (97\%) using 0.69 times the majority's tokens. On the
+other 28 its recruitment rounds solved 12 (43\%, the majority 14) at 1.87 times the majority's tokens;
+only 39 of 144 released scouts accepted another answer. The quorum is therefore both a cheaper stop and a
+strong confidence signal, and the absence of a quorum marks hard problems (the single agent solved 79\%
+of the first group and 36\% of the second). The recruitment rounds, in which language-model scouts judge
+each other's answers, add cost without beating a plain vote. Re-reading the same traces with the quorum
+stop kept and recruitment replaced by a plain vote of the five recorded answers gives 126 correct at 0.75
+times the majority's tokens; on the partial Sonnet run the saving was similar (0.78 times) but accuracy
+fell below the majority, so this is a hypothesis for a pre-registered test in Phase~II, not a result.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[btp, ybar, bar width=16pt,
+  width=0.8\linewidth, height=5.0cm,
+  ymin=0, ymax=110, ylabel={Solved (\%)},
+  symbolic x coords={q,nq}, xtick=data,
+  xticklabels={{Three scouts agreed\\(120 problems)},{No quorum: recruitment rounds\\(28 problems)}},
+  xticklabel style={align=center},
+  enlarge x limits=0.45,
+  nodes near coords, nodes near coords style={font=\scriptsize},
+  legend style={at={(0.99,0.98)}, anchor=north east}]
+\addplot[fill=ink, draw=none] coordinates {(q,79) (nq,36)};
+\addplot[fill=mute, draw=none] coordinates {(q,92) (nq,50)};
+\addplot[fill=accent, draw=none] coordinates {(q,97) (nq,43)};
+\legend{Single agent, Majority of five, Quorum bee}
+\end{axis}
+\end{tikzpicture}
+\caption{AIME problems split by whether the bee's first scouts reached a quorum. A quorum marks easy,
+reliably answered problems; without one, every system struggles and recruitment does not beat a vote.}
+\label{fig:quorum}
+\end{figure}
 
 \subsection{Choosing by task type}
-On one backbone (GPT-6 Luna), Table~\ref{tab:bytype} compares two fixed choices with the rule that sends
-planning to the single agent and unverifiable maths to the quorum bee. The mean is taken over the two families
-unweighted, so that the larger maths suite does not dominate.
+\label{sec:bytype}
+On one backbone (GPT-6 Luna), Table~\ref{tab:bytype} and Figure~\ref{fig:bytype} compare two fixed
+choices with the rule that sends planning to the single agent and unverifiable maths to the quorum bee.
+The mean is taken over the two families unweighted, so that the larger maths suite does not dominate.
 
 \begin{table}[H]
 \centering\small
@@ -478,119 +1136,220 @@ unweighted, so that the larger maths suite does not dominate.
 \midrule
 Always single agent & 90.0\% & 70.9\% & 80.5\% & 0.0012 \\
 Always bee & 46.7\% & 86.5\% & 66.6\% & 0.0035 \\
-Choose by task type & 90.0\% & 86.5\% & 88.2\% & 0.0023 \\
+\textbf{Choose by task type} & \textbf{90.0\%} & \textbf{86.5\%} & \textbf{88.2\%} & 0.0023 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-The rule differs from always using the single agent only on maths ($+15.5$ points, CI $+8.1$ to $+23.0$) and
-from always using the bee only on planning ($+43$ points, CI $+20$ to $+67$), so it beats each fixed choice
-by an interval clear of zero. It follows the hypothesis stated before the maths test, but the table uses the
-same runs and chooses by family, which the coordinator knows; a selector that learns the choice per subtask
-and is evaluated on held-out tasks is the subject of Phase~2.
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}
+\begin{axis}[btp, ybar, bar width=13pt,
+  width=0.85\linewidth, height=5.0cm,
+  ymin=0, ymax=105, ylabel={Solved (\%)},
+  symbolic x coords={plan,math,mean}, xtick=data,
+  xticklabels={Planning (Logistics),Maths (AIME),Mean of the two},
+  enlarge x limits=0.22,
+  nodes near coords, nodes near coords style={font=\tiny},
+  legend style={at={(0.5,1.03)}, anchor=south, legend columns=3}]
+\addplot[fill=ink, draw=none] coordinates {(plan,90.0) (math,70.9) (mean,80.5)};
+\addplot[fill=accent, draw=none] coordinates {(plan,46.7) (math,86.5) (mean,66.6)};
+\addplot[fill=gold, draw=none] coordinates {(plan,90.0) (math,86.5) (mean,88.2)};
+\legend{Always single agent, Always bee, Choose by task type}
+\end{axis}
+\end{tikzpicture}
+\caption{The winner flips with the task: a by-type rule keeps the better system on each family and
+beats both fixed choices.}
+\label{fig:bytype}
+\end{figure}
 
-\subsection{Cost}
-The Sonnet work cost about US\$125 of AWS credit (US\$122.68 in recorded runs, the rest in runs set aside
-after a provider quota stopped an experiment); the AIME work and the Logistics replication on Luna,
-including tuning, probes and the aborted run, cost about US\$1.60. A full study at Sonnet~4.6 prices was estimated at US\$1,000--1,900; at
-Luna's prices it fits well under US\$100, which is why Phase~2 uses Luna.
+The rule differs from always using the single agent only on maths ($+15.5$ points, CI $+8.1$ to $+23.0$)
+and from always using the bee only on planning ($+43$ points, CI $+20$ to $+67$), so it beats each fixed
+choice by an interval clear of zero. It follows the hypothesis stated before the maths test, but the
+table uses the same runs and chooses by family, which the coordinator knows. A selector that learns the
+choice per subtask and is evaluated on held-out tasks is the subject of Phase~II.
 
-\section{Discussion and Threats to Validity}
-
-\runin{Ceiling effects.}
-A strong current model solves standard benchmark tasks alone, so mechanism differences can only appear on
-tasks with headroom; we chose that region by calibration before comparing systems, and report it.
-
-\runin{Power.}
-Fifteen PlanBench problems detect only large effects; the generated suite exists to give the held-out test
-120 instances.
-
-\runin{One suite per family.}
-The task-type contrast now holds on one backbone (Luna) and in the same direction on a second (Sonnet), but
-each family is one suite: Logistics for planning and AIME for unverifiable answers. The analysis of the
-bee's quorum was made after the tests and is reported as such. The mechanisms' remaining expected strengths
-(search, bounded local work) need multi-step graphs with heterogeneous subtasks.
-
-\runin{Fairness.}
-Shared prompts, decomposition, checks and an enforced budget remove the most common confound in
-multi-agent comparisons (extra compute); the controls separate the biological components from the rest.
-
-\section{Plan for Phase 2}
+\subsection{Cost of the experiments}
+Table~\ref{tab:cost} lists the spending. The switch of backbone is what makes the Phase~II study
+affordable: a full study at Sonnet~4.6 prices was estimated at US\$1,000--1,900, while at Luna's prices
+it fits well under US\$100.
 
 \begin{table}[H]
 \centering\small
-\begin{tabularx}{\textwidth}{@{}P{2.6cm}L@{}}
+\caption{API spending in Phase~I (US\$).}
+\label{tab:cost}
+\begin{tabular}{@{}llr@{}}
 \toprule
-\head{Period} & \head{Work} \\
+\head{Backbone} & \head{Experiment} & \head{Cost} \\
 \midrule
-Dec 2026--Jan 2027 & Mechanisms on multi-step graphs that mix planning and maths; pre-registered test of the quorum-stop vote; hand-labelled sample of checker verdicts \\
-Jan--Feb 2027 & Learn the allocation policy (rule table, then LinUCB) from recorded outcomes (RQ2) \\
-Feb--Mar 2027 & Crow (tool-prerequisite planning) and starfish (checkpoint recovery); failure injection (RQ4) \\
-Mar--Apr 2027 & Full study with ablations (RQ2, RQ3) and the cost at which coordination stops paying (RQ5) \\
-Apr--May 2027 & Thesis and a conference paper draft \\
+\multirow{6}{*}{Claude Sonnet 4.6} & Smoke tests and diversity check & 5.14 \\
+& Calibration (60 runs) & 2.49 \\
+& Logistics comparison (150 runs) & 12.37 \\
+& Repair-scout tuning (240 runs) & 26.08 \\
+& Macro ant and controls (60 runs) & 4.84 \\
+& AIME tuning, partial test and runs set aside after quota stops & $\approx$74 \\
+\midrule
+\multirow{3}{*}{GPT-6 Luna} & AIME held-out test (444 runs) & 0.77 \\
+& Logistics replication (150 runs) & 0.39 \\
+& Tuning, probes and the aborted run & $\approx$0.44 \\
+\midrule
+\textbf{Total} & & $\approx$\textbf{126.6} \\
 \bottomrule
-\end{tabularx}
+\end{tabular}
 \end{table}
 
-\section{Conclusion}
+% ----------------------------------------------------------------- CHAPTER 5
+\chapter{Conclusion and Future Roadmap}
+\label{ch:conclusion}
 
-Phase~1 delivered a framework in which bio-inspired mechanisms, conventional baselines and their controls
-can be compared at equal, enforced compute, and a first set of measurements with it. A strong single agent
-is the real bar: on long Logistics plans it solved 73\% of runs at 21,000 tokens, and none of the first
-mechanism designs beat it. The traces explain the result (the ant ran out of calls, the bee's scouts never
-saw feedback) and led to redesigns that use feedback; the best of them matched the single agent within one
-success but did not beat it. On competition maths, where no check exists, the picture reverses: a
-quorum-sensing bee beat the single agent by 15.5 points on 148 held-out problems, most of it from voting
-itself, and a quorum among its scouts marked answers that were right 97\% of the time; on the same backbone
-the single agent still won planning by 43 points. Which mechanism wins depends on the kind of task,
-which is the premise of per-subtask allocation, the subject of Phase~2; the held-out Logistics instances are
-untouched and reserved for that test.
+\section{Summary of Work Done}
+Phase~I delivered a framework in which bio-inspired mechanisms, conventional baselines and their
+controls can be compared at equal, enforced compute, and a first set of measurements with it.
+\begin{itemize}
+  \item \textbf{Infrastructure.} A typed, tested Python package with a coordinator, six executor
+        families, a budget ledger, traces, frozen splits, a resumable runner and transports for two
+        model providers.
+  \item \textbf{Planning.} A strong single agent is the real bar. On Logistics it solved 73\% (Sonnet)
+        and 90\% (Luna) of runs, and no mechanism beat it, because it revises against the simulator's
+        message. The best redesign matched it within one success but did not advance.
+  \item \textbf{Maths.} Where no check exists the picture reverses: the quorum bee beat the single agent
+        by 15.5 points on 148 held-out problems, most of it from voting, and a quorum among its scouts
+        marked answers that were right 97\% of the time.
+  \item \textbf{Allocation.} Choosing the mechanism by task type averages 88.2\% against 80.5\% and
+        66.6\% for the two fixed choices, which is the premise of per-subtask allocation.
+\end{itemize}
 
-\section*{Code and records}
-Code, configurations, run traces and the decision log are in \url{https://github.com/Nikshay1/BTP}.
+\section{Limitations}
+\begin{itemize}
+  \item \textbf{One suite per family.} Planning is represented by Logistics and unverifiable answers by
+        AIME. The task-type contrast holds on two backbones, but not yet on other suites.
+  \item \textbf{In-sample allocation.} The by-type comparison chooses by family on the same runs it
+        reports; it is a demonstration, not a test of a learned policy.
+  \item \textbf{Analysis after the test.} The breakdown of the bee by quorum and the quorum-stop vote were
+        computed after the AIME test and are reported as such.
+  \item \textbf{Power.} Fifteen PlanBench problems detect only large effects (about 25 points); one run
+        per AIME problem limits the precision of the bee-versus-majority comparison.
+  \item \textbf{Ceiling and model changes.} The Luna Logistics run hit the pre-registered ceiling flag,
+        and the Sonnet AIME run stopped at 141 of 148 problems because of the provider's daily quota.
+  \item \textbf{Mechanism coverage.} The ant's and octopus's expected strengths (search among cheap,
+        checkable options and bounded local work) need multi-step graphs with heterogeneous subtasks,
+        which Phase~I did not include.
+\end{itemize}
 
+\section{Future Work and Timeline}
+Phase~II builds multi-step task graphs that mix planning, calculation and tool use; learns the
+allocation policy, first as a rule table and then with LinUCB, from recorded outcomes; runs a
+pre-registered test of the quorum-stop vote; adds two further mechanisms (crow-style tool-prerequisite
+planning and starfish-style checkpoint recovery) with failure injection for RQ4; and ends with the full
+study and ablations for RQ2, RQ3 and RQ5. The 120 held-out Logistics instances, still unseen by any
+system, are reserved for the evaluation of the learned selector. Figure~\ref{fig:gantt} gives the
+timeline.
 
+\begin{figure}[H]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[x=1.15cm, y=-0.62cm]
+  % month grid
+  \foreach \m [count=\i from 0] in {Aug,Sep,Oct,Nov,Dec,Jan,Feb,Mar,Apr,May}{
+    \node[font=\scriptsize] at (\i+0.5,-0.55) {\m};
+    \draw[black!12] (\i,-0.2) -- (\i,12.6);
+  }
+  \draw[black!12] (10,-0.2) -- (10,12.6);
+  \node[font=\scriptsize\bfseries] at (2.5,-1.25) {2026};
+  \node[font=\scriptsize\bfseries] at (7.5,-1.25) {2027};
+  \draw[black!40] (0,-0.95) -- (4.95,-0.95);
+  \draw[black!40] (5.05,-0.95) -- (10,-0.95);
+  % phase labels
+  \node[font=\scriptsize\bfseries, text=ink, anchor=east] at (-0.15,0.5) {Phase I (Sem 7)};
+  \node[font=\scriptsize\bfseries, text=accent, anchor=east] at (-0.15,7.5) {Phase II (Sem 8)};
+  % Phase I tasks
+  \foreach \y/\s/\e/\lab in {
+      1/0.0/1.9/{Literature review and synopsis},
+      2/2.3/2.9/{Framework, checks, budget ledger (M1)},
+      3/2.6/3.5/{Executors, task suites, baselines},
+      4/2.9/3.45/{Calibration, Logistics comparison, tuning},
+      5/3.3/3.6/{AIME test, Luna replication, report}}{
+    \node[font=\scriptsize, anchor=east] at (-0.15,\y) {\lab};
+    \fill[ink, rounded corners=1pt] (\s,\y-0.3) rectangle (\e,\y+0.3);
+  }
+  % Phase II tasks
+  \foreach \y/\s/\e/\lab in {
+      8/4.0/6.0/{Mixed task graphs, quorum-stop test},
+      9/5.0/7.0/{Learn allocation policy (rules, LinUCB)},
+      10/6.0/8.0/{Crow, starfish, failure injection},
+      11/7.0/9.0/{Full study and ablations (RQ2, RQ3, RQ5)},
+      12/8.0/10.0/{Thesis and paper draft}}{
+    \node[font=\scriptsize, anchor=east] at (-0.15,\y) {\lab};
+    \fill[accent, rounded corners=1pt] (\s,\y-0.3) rectangle (\e,\y+0.3);
+  }
+  % panel review marker
+  \draw[gold, line width=1pt, densely dashed] (3.53,-0.2) -- (3.53,12.6);
+  \node[font=\scriptsize, text=gold, anchor=west] at (3.6,6.5) {Panel review, 17 Nov 2026};
+\end{tikzpicture}}
+\caption{Project timeline. Phase~I work (dark) was done in the seventh semester; Phase~II work (red) is
+planned for the eighth.}
+\label{fig:gantt}
+\end{figure}
+
+% ================================================================= REFERENCES
+\clearpage\phantomsection
+\addcontentsline{toc}{chapter}{References}
 \small
 \begin{thebibliography}{99}
 \setlength{\itemsep}{2pt}
 \sloppy
-
-\bibitem{yue2025masrouter}
-Y.~Yue, G.~Zhang, B.~Liu, G.~Wan, K.~Wang, D.~Cheng, and Y.~Qi, ``MasRouter: Learning to route LLMs for
-multi-agent systems,'' in \emph{Proc.\ 63rd Annu.\ Meeting Assoc.\ Comput.\ Linguistics (ACL)}, 2025,
-pp.~15549--15572.
-
-\bibitem{zhuge2024gptswarm}
-M.~Zhuge, W.~Wang, L.~Kirsch, F.~Faccio, D.~Khizbullin, and J.~Schmidhuber, ``GPTSwarm: Language agents as
-optimizable graphs,'' in \emph{Proc.\ 41st Int.\ Conf.\ Mach.\ Learn.\ (ICML)}, PMLR vol.~235, 2024,
-pp.~62743--62767.
-
-\bibitem{cemri2025mast}
-M.~Cemri \emph{et al.}, ``Why do multi-agent LLM systems fail?,'' in \emph{Adv.\ Neural Inf.\ Process.\
-Syst.\ (NeurIPS), Datasets and Benchmarks Track}, 2025.
 
 \bibitem{he2025lma}
 J.~He, C.~Treude, and D.~Lo, ``LLM-based multi-agent systems for software engineering: Literature review,
 vision, and the road ahead,'' \emph{ACM Trans.\ Softw.\ Eng.\ Methodol.}, vol.~34, no.~5, pp.~1--30, 2025,
 \href{https://doi.org/10.1145/3712003}{doi:~10.1145/3712003}.
 
-\bibitem{wu2025ecllm}
-X.~Wu, S.-H.~Wu, J.~Wu, L.~Feng, and K.~C.~Tan, ``Evolutionary computation in the era of large language
-model: Survey and roadmap,'' \emph{IEEE Trans.\ Evol.\ Comput.}, vol.~29, no.~2, pp.~534--554, 2025,
-\href{https://doi.org/10.1109/TEVC.2024.3506731}{doi:~10.1109/TEVC.2024.3506731}.
-
 \bibitem{kim2025scaling}
 Y.~Kim \emph{et al.}, ``Towards a science of scaling agent systems,''
 \href{https://arxiv.org/abs/2512.08296}{arXiv:2512.08296}, version~3, 2026.
+
+\bibitem{cemri2025mast}
+M.~Cemri \emph{et al.}, ``Why do multi-agent LLM systems fail?,'' in \emph{Adv.\ Neural Inf.\ Process.\
+Syst.\ (NeurIPS), Datasets and Benchmarks Track}, 2025.
+
+\bibitem{wang2023selfconsistency}
+X.~Wang \emph{et al.}, ``Self-consistency improves chain of thought reasoning in language models,'' in
+\emph{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, 2023.
 
 \bibitem{wang2024rethinking}
 Q.~Wang, Z.~Wang, Y.~Su, H.~Tong, and Y.~Song, ``Rethinking the bounds of LLM reasoning: Are multi-agent
 discussions the key?,'' in \emph{Proc.\ 62nd Annu.\ Meeting Assoc.\ Comput.\ Linguistics (ACL)}, 2024,
 pp.~6106--6131.
 
+\bibitem{camacho2023}
+C.~L.~Camacho-Villal\'on, M.~Dorigo, and T.~St\"utzle, ``Exposing the grey wolf, moth-flame, whale,
+firefly, bat, and antlion algorithms: Six misleading optimization techniques inspired by bestial
+metaphors,'' \emph{Int.\ Trans.\ Oper.\ Res.}, vol.~30, no.~6, pp.~2945--2971, 2023.
+
+\bibitem{li2010linucb}
+L.~Li, W.~Chu, J.~Langford, and R.~E.~Schapire, ``A contextual-bandit approach to personalized news article
+recommendation,'' in \emph{Proc.\ 19th Int.\ Conf.\ World Wide Web (WWW)}, 2010, pp.~661--670.
+
+\bibitem{dorigo2004aco}
+M.~Dorigo and T.~St\"utzle, \emph{Ant Colony Optimization}. Cambridge, MA, USA: MIT Press, 2004.
+
+\bibitem{seeley2012}
+T.~D.~Seeley, P.~K.~Visscher, T.~Schlegel, P.~M.~Hogan, N.~R.~Franks, and J.~A.~R.~Marshall, ``Stop signals
+provide cross inhibition in collective decision-making by honeybee swarms,'' \emph{Science}, vol.~335,
+no.~6064, pp.~108--111, 2012.
+
+\bibitem{sumbre2001}
+G.~Sumbre, Y.~Gutfreund, G.~Fiorito, T.~Flash, and B.~Hochner, ``Control of octopus arm extension by a
+peripheral motor program,'' \emph{Science}, vol.~293, no.~5536, pp.~1845--1848, 2001.
+
 \bibitem{zhang2025agentprune}
 G.~Zhang \emph{et al.}, ``Cut the crap: An economical communication pipeline for LLM-based multi-agent
 systems,'' in \emph{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, 2025.
+
+\bibitem{zhuge2024gptswarm}
+M.~Zhuge, W.~Wang, L.~Kirsch, F.~Faccio, D.~Khizbullin, and J.~Schmidhuber, ``GPTSwarm: Language agents as
+optimizable graphs,'' in \emph{Proc.\ 41st Int.\ Conf.\ Mach.\ Learn.\ (ICML)}, PMLR vol.~235, 2024,
+pp.~62743--62767.
 
 \bibitem{liu2024dylan}
 Z.~Liu, Y.~Zhang, P.~Li, Y.~Liu, and D.~Yang, ``A dynamic LLM-powered agent network for task-oriented agent
@@ -608,6 +1367,11 @@ Learn.\ Represent.\ (ICLR)}, 2025.
 I.~Ong \emph{et al.}, ``RouteLLM: Learning to route LLMs with preference data,'' in \emph{Proc.\ Int.\
 Conf.\ Learn.\ Represent.\ (ICLR)}, 2025.
 
+\bibitem{yue2025masrouter}
+Y.~Yue, G.~Zhang, B.~Liu, G.~Wan, K.~Wang, D.~Cheng, and Y.~Qi, ``MasRouter: Learning to route LLMs for
+multi-agent systems,'' in \emph{Proc.\ 63rd Annu.\ Meeting Assoc.\ Comput.\ Linguistics (ACL)}, 2025,
+pp.~15549--15572.
+
 \bibitem{feng2026graphplanner}
 T.~Feng, H.~Zhang, Z.~Lei, P.~Han, and J.~You, ``GraphPlanner: Graph memory-augmented agentic routing for
 multi-agent LLMs,'' in \emph{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, 2026.
@@ -619,6 +1383,11 @@ G.~Yu, ``AdaptOrch: Task-adaptive multi-agent orchestration in the era of LLM pe
 \bibitem{guan2026symphony}
 Z.~Guan \emph{et al.}, ``Symphony-Coord: Adaptive routing for multi-agent LLM systems,''
 \href{https://arxiv.org/abs/2602.00966}{arXiv:2602.00966}, 2026.
+
+\bibitem{wu2025ecllm}
+X.~Wu, S.-H.~Wu, J.~Wu, L.~Feng, and K.~C.~Tan, ``Evolutionary computation in the era of large language
+model: Survey and roadmap,'' \emph{IEEE Trans.\ Evol.\ Comput.}, vol.~29, no.~2, pp.~534--554, 2025,
+\href{https://doi.org/10.1109/TEVC.2024.3506731}{doi:~10.1109/TEVC.2024.3506731}.
 
 \bibitem{wang2026amros}
 X.~Wang \emph{et al.}, ``Efficient and interpretable multi-agent LLM routing via ant colony optimization,''
@@ -633,28 +1402,6 @@ M.~A.~U.~Rahman, M.~Schranz, and S.~Hayat, ``LLM-powered swarms: A new frontier 
 \emph{IEEE Intell.\ Syst.}, early access, 2026,
 \href{https://doi.org/10.1109/MIS.2026.3728883}{doi:~10.1109/MIS.2026.3728883}.
 
-\bibitem{camacho2023}
-C.~L.~Camacho-Villal\'on, M.~Dorigo, and T.~St\"utzle, ``Exposing the grey wolf, moth-flame, whale,
-firefly, bat, and antlion algorithms: Six misleading optimization techniques inspired by bestial
-metaphors,'' \emph{Int.\ Trans.\ Oper.\ Res.}, vol.~30, no.~6, pp.~2945--2971, 2023.
-
-\bibitem{seeley2012}
-T.~D.~Seeley, P.~K.~Visscher, T.~Schlegel, P.~M.~Hogan, N.~R.~Franks, and J.~A.~R.~Marshall, ``Stop signals
-provide cross inhibition in collective decision-making by honeybee swarms,'' \emph{Science}, vol.~335,
-no.~6064, pp.~108--111, 2012.
-
-\bibitem{wang2023selfconsistency}
-X.~Wang \emph{et al.}, ``Self-consistency improves chain of thought reasoning in language models,'' in
-\emph{Proc.\ Int.\ Conf.\ Learn.\ Represent.\ (ICLR)}, 2023.
-
-\bibitem{sumbre2001}
-G.~Sumbre, Y.~Gutfreund, G.~Fiorito, T.~Flash, and B.~Hochner, ``Control of octopus arm extension by a
-peripheral motor program,'' \emph{Science}, vol.~293, no.~5536, pp.~1845--1848, 2001.
-
-\bibitem{li2010linucb}
-L.~Li, W.~Chu, J.~Langford, and R.~E.~Schapire, ``A contextual-bandit approach to personalized news article
-recommendation,'' in \emph{Proc.\ 19th Int.\ Conf.\ World Wide Web (WWW)}, 2010, pp.~661--670.
-
 \bibitem{valmeekam2023planbench}
 K.~Valmeekam, M.~Marquez, A.~Olmo, S.~Sreedharan, and S.~Kambhampati, ``PlanBench: An extensible benchmark
 for evaluating large language models on planning and reasoning about change,'' in \emph{Adv.\ Neural Inf.\
@@ -663,9 +1410,127 @@ Process.\ Syst.\ (NeurIPS), Datasets and Benchmarks Track}, 2023.
 \bibitem{cobbe2021gsm8k}
 K.~Cobbe \emph{et al.}, ``Training verifiers to solve math word problems,''
 \href{https://arxiv.org/abs/2110.14168}{arXiv:2110.14168}, 2021.
-
-\bibitem{dorigo2004aco}
-M.~Dorigo and T.~St\"utzle, \emph{Ant Colony Optimization}. Cambridge, MA, USA: MIT Press, 2004.
 \end{thebibliography}
+\normalsize
+
+% ================================================================= APPENDICES
+\appendix
+
+\chapter{Plagiarism Report}
+\label{app:plag}
+\begin{center}
+\fbox{\begin{minipage}{0.8\textwidth}
+\centering\vspace{4cm}
+{\large Plagiarism verification certificate to be attached here.}\\[6pt]
+{\small Similarity index: \rule{2cm}{0.4pt}\% \qquad Tool: \rule{3cm}{0.4pt} \qquad Date: \rule{2.5cm}{0.4pt}}
+\vspace{4cm}
+\end{minipage}}
+\end{center}
+
+\chapter{Code Snippets}
+\label{app:code}
+The excerpts below are from the project repository; some lines are shortened for space.
+
+\begin{lstlisting}[language=Python, caption={Budget reservation: a call is admitted only if it fits in every ancestor account (\texttt{budget.py}).}, label={lst:reserve}]
+def reserve(self, prompt: int, completion: int) -> int:
+    """Reserve one model call. Raises BudgetExceeded if it does not fit right now."""
+    reason = self._refusal(prompt + completion, include_reservations=True)
+    if reason is not None:
+        raise BudgetExceeded(reason)
+    rid = next(self._ids)
+    self._reservations[rid] = _Reservation(prompt, completion)
+    for acc in self._chain():          # this account and all its ancestors
+        acc.reserved_tokens += prompt + completion
+        acc.reserved_calls += 1
+    return rid
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Main loop of the bee executor: certificate stop, quorum stop, inhibition and recruitment (\texttt{executors/bee.py}).}, label={lst:bee}]
+async def execute(self, subtask, ctx):
+    scouts = [Scout(i, f"{ctx.agent}/scout{i}") for i in range(self.k)]
+    budget_hit = await self._independent(subtask, ctx, scouts, 0)
+    for rnd in range(1, self.max_rounds + 1):
+        support = self._support(scouts)
+        certified = self._certified(scouts)
+        if certified is not None:
+            return self._finish_certified(certified, scouts, ctx)
+        if support and max(support.values()) >= self.quorum:   # ceil(theta * k)
+            return self._finish(scouts, ctx, "quorum")
+        if budget_hit:
+            return self._finish(scouts, ctx, "budget")
+        self._inhibit(scouts, ctx)                              # stop signals
+        uncommitted = [s for s in scouts if s.option is None]
+        budget_hit = await self._recruit(subtask, ctx, scouts, uncommitted,
+                                         self._support(scouts), rnd)
+    return self._finish(scouts, ctx, "round_limit")
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Cross inhibition: a committed scout is released with probability $\sigma$ when a rival answer exists.}, label={lst:inhibit}]
+def _inhibit(self, scouts, ctx):
+    support = self._support(scouts)
+    released = [s for s in scouts
+                if s.option is not None
+                and any(o != s.option for o in support)
+                and ctx.rng.random() < self.sigma]
+    for s in released:
+        s.last_option, s.last_output = s.option, s.output
+        s.option, s.verified = None, False
+    ctx.emit("bee_inhibition", {"released": [s.index for s in released]})
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python, caption={Re-reading a trace as a quorum-stop vote: recruitment replaced by the plurality of the recorded scout answers (\texttt{scripts/quorum\_report.py}).}, label={lst:qsv}]
+def quorum_stop_vote(trace, run):
+    events = [json.loads(line) for line in trace.read_text().splitlines() if line.strip()]
+    if not any(e["kind"] == "bee_round" for e in events):
+        return None, int(run["tokens"])        # quorum formed: unchanged
+    end = next(i for i, e in enumerate(events) if e["kind"] == "repair_schedule_end")
+    support = events[end]["data"]["support"]
+    tokens = sum(e["data"]["reply"]["usage"]["prompt_tokens"]
+                 + e["data"]["reply"]["usage"]["completion_tokens"]
+                 for e in events[:end] if e["kind"] == "llm_reply")
+    return min(support, key=lambda o: (-support[o], o)), tokens
+\end{lstlisting}
+
+\chapter{Dataset Samples}
+\label{app:data}
+
+\runin{AIME (public record; the answer is kept in the private file).}
+\begin{lstlisting}[numbers=none]
+{"group": "aime:9e7e7c6c397abddc", "id": "aime-2020-I-01", "year": 2020,
+ "question": "In $\\triangle ABC$ with $AB=AC,$ point $D$ lies strictly between $A$ and $C$
+   on side $\\overline{AC},$ and point $E$ lies strictly between $A$ and $B$ on side
+   $\\overline{AB}$ such that $AE=ED=DB=BC.$ The degree measure of $\\angle ABC$ is
+   $\\tfrac{m}{n},$ where $m$ and $n$ are relatively prime positive integers. Find $m+n.$"}
+\end{lstlisting}
+
+\runin{GSM8K (public record).}
+\begin{lstlisting}[numbers=none]
+{"group": "gsm8k:1cfeb3aa3aa8986d", "id": "gsm8k-train-00000", "upstream_split": "train",
+ "question": "Natalia sold clips to 48 of her friends in April, and then she sold half as
+   many clips in May. How many clips did Natalia sell altogether in April and May?"}
+\end{lstlisting}
+
+\runin{Generated Logistics instance (3 cities, 5 packages; PDDL, shortened).}
+\begin{lstlisting}[numbers=none]
+(define (problem logistics-gen-c3-s3-p5-a2)
+(:domain logistics-strips)
+(:objects a0 a1  c0 c1 c2  t0 t1 t2
+          l0-0 l0-1 l0-2 l1-0 l1-1 l1-2 l2-0 l2-1 l2-2  p0 p1 p2 p3 p4)
+(:init (AIRPLANE a0) (AIRPLANE a1) (TRUCK t0) (TRUCK t1) (TRUCK t2)
+       (in-city l0-0 c0) ... (AIRPORT l0-0) (AIRPORT l1-0) (AIRPORT l2-0)
+       (at t0 l0-1) (at t1 l1-1) (at t2 l2-2)
+       (at p0 l2-2) (at p1 l0-1) (at p2 l1-0) (at p3 l1-1) (at p4 l0-0)
+       (at a0 l0-0) (at a1 l1-0))
+(:goal (and (at p0 l2-1) (at p1 l2-2) (at p2 l2-1) (at p3 l1-0) (at p4 l2-0))))
+\end{lstlisting}
+
+\runin{One row of an experiment's results file.}
+\begin{lstlisting}[numbers=none]
+{"experiment": "luna-aime-test-v2", "task_id": "aime-2020-I-02", "family": "reasoning",
+ "split": "test", "system": "single_agent", "repetition": 0, "status": "completed",
+ "correct": true, "within_budget": true, "usage_complete": true, "tokens": 511,
+ "reasoning_tokens": 185, "model_calls": 1, "tool_calls": 0, "usd": 0.0001295,
+ "elapsed_s": 5.55}
+\end{lstlisting}
 
 \end{document}
