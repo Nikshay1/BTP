@@ -17,7 +17,10 @@ Today, most systems where several language-model agents work together pick one p
 debate, a pipeline of roles, or a manager with workers, and use it for the whole task. But real tasks
 are mixed. One part may be a planning problem where a simulator can check the answer. Another may be a
 calculation where nothing can check it. A third may be routine. Using one pattern everywhere wastes
-tokens, which means money and time, on parts that don't need it.
+tokens, which means money and time, on parts that don't need it. And the choice matters a lot: a
+controlled study by Kim and others found that, with the same model and the same compute, switching to a
+multi-agent design changed results by anywhere from plus 80.8 percent to minus 70 percent, depending on
+the task.
 
 So our question is: if a coordinator picks a mechanism for each subtask, can it beat one well-prompted
 agent when both get exactly the same token budget? The gap in existing work is that other systems
