@@ -19,7 +19,7 @@
 \usepackage[font=small,labelfont=bf,labelsep=period]{caption}
 \usepackage{subcaption}
 \usepackage{xcolor}
-\usepackage{amsmath,amssymb}
+\usepackage{amsmath}
 \usepackage{algorithm}
 \usepackage{algpseudocode}
 \usepackage{listings}
@@ -351,21 +351,21 @@ one fixed pattern pays for the wrong mechanism on part of every task.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-  sub/.style={draw=ink, rounded corners=3pt, fill=paper, align=center, font=\small, minimum width=3.3cm, minimum height=1.05cm},
+  subbox/.style={draw=ink, rounded corners=3pt, fill=paper, align=center, font=\small, minimum width=3.3cm, minimum height=1.05cm},
   mech/.style={rounded corners=2pt, align=center, font=\footnotesize, text=white, minimum width=2.6cm, minimum height=0.7cm},
   arr/.style={-{Stealth[length=2.2mm]}, black!60, line width=0.6pt},
-  sel/.style={-{Stealth[length=2mm]}, accent, line width=0.6pt, dashed}]
-  \node[sub] (a) {Plan the deliveries\\\scriptsize planning, simulator check};
-  \node[sub, right=1.0cm of a] (b) {Compute the total cost\\\scriptsize maths, no check};
-  \node[sub, right=1.0cm of b] (c) {Report the answer\\\scriptsize well specified};
+  selarrow/.style={-{Stealth[length=2mm]}, accent, line width=0.6pt, dashed}]
+  \node[subbox] (a) {Plan the deliveries\\\scriptsize planning, simulator check};
+  \node[subbox, right=1.0cm of a] (b) {Compute the total cost\\\scriptsize maths, no check};
+  \node[subbox, right=1.0cm of b] (c) {Report the answer\\\scriptsize well specified};
   \draw[arr] (a) -- (b);
   \draw[arr] (b) -- (c);
   \node[mech, fill=ink, below=0.9cm of a] (ma) {Single agent\\\scriptsize revise on feedback};
   \node[mech, fill=accent, below=0.9cm of b] (mb) {Quorum bee\\\scriptsize independent scouts};
   \node[mech, fill=mute, text=black, below=0.9cm of c] (mc) {Direct\\\scriptsize one call};
-  \draw[sel] (a) -- (ma);
-  \draw[sel] (b) -- (mb);
-  \draw[sel] (c) -- (mc);
+  \draw[selarrow] (a) -- (ma);
+  \draw[selarrow] (b) -- (mb);
+  \draw[selarrow] (c) -- (mc);
   \node[font=\scriptsize\itshape, text=accent, anchor=west] at ($(b.south)!0.5!(mb.north)+(0.1,0)$) {allocation $\pi(v)$};
 \end{tikzpicture}
 \caption{Adaptive allocation: each subtask of a task graph is sent to the coordination mechanism that
@@ -739,15 +739,15 @@ the control flow.
 \begin{tikzpicture}[
   st/.style={draw=ink, rounded corners=2pt, fill=paper, align=center, font=\small, minimum height=0.9cm, minimum width=2.4cm},
   dec/.style={draw=accent, diamond, aspect=2.2, align=center, font=\footnotesize, inner sep=1pt, fill=white},
-  out/.style={rounded corners=2pt, fill=accent, text=white, align=center, font=\small, minimum height=0.8cm, minimum width=2.2cm},
+  exitbox/.style={rounded corners=2pt, fill=accent, text=white, align=center, font=\small, minimum height=0.8cm, minimum width=2.2cm},
   arr/.style={-{Stealth[length=2mm]}, black!60, line width=0.6pt}]
   \node[st] (s) {Scouts 1--5 answer\\\scriptsize one after another};
   \node[dec, right=0.7cm of s] (q) {3 agree?};
-  \node[out, right=0.8cm of q] (stop) {Stop: quorum\\\scriptsize 120 of 148 problems};
+  \node[exitbox, right=0.8cm of q] (stop) {Stop: quorum\\\scriptsize 120 of 148 problems};
   \node[st, below=0.6cm of q] (inh) {Cross inhibition\\\scriptsize release w.p.\ $\sigma$};
   \node[st, below=0.5cm of inh] (rec) {Recruitment\\\scriptsize scouts assess rivals};
   \node[dec, below=0.5cm of rec] (q2) {quorum?};
-  \node[out, right=0.8cm of q2, fill=ink] (stop2) {Stop: plurality\\\scriptsize 28 of 148 problems};
+  \node[exitbox, right=0.8cm of q2, fill=ink] (stop2) {Stop: plurality\\\scriptsize 28 of 148 problems};
   \draw[arr] (s) -- (q);
   \draw[arr] (q) -- node[above, font=\scriptsize] {yes} (stop);
   \draw[arr] (q) -- node[right, font=\scriptsize] {no} (inh);
@@ -830,12 +830,12 @@ use a group bootstrap over tasks with 95\% intervals.
 \begin{figure}[H]
 \centering
 \begin{tikzpicture}[
-  step/.style={draw=ink, fill=paper, rounded corners=2pt, align=center, font=\footnotesize, minimum height=1.25cm, text width=2.2cm},
-  gate/.style={step, draw=accent, fill=accent!8},
+  stagebox/.style={draw=ink, fill=paper, rounded corners=2pt, align=center, font=\footnotesize, minimum height=1.25cm, text width=2.2cm},
+  gate/.style={stagebox, draw=accent, fill=accent!8},
   arr/.style={-{Stealth[length=2mm]}, black!60, line width=0.6pt}]
-  \node[step] (a) {\textbf{Smoke tests}\\find integration bugs};
-  \node[step, right=0.45cm of a] (b) {\textbf{Calibration}\\find headroom for the single agent};
-  \node[step, right=0.45cm of b] (c) {\textbf{Comparison}\\mechanisms at equal budget};
+  \node[stagebox] (a) {\textbf{Smoke tests}\\find integration bugs};
+  \node[stagebox, right=0.45cm of a] (b) {\textbf{Calibration}\\find headroom for the single agent};
+  \node[stagebox, right=0.45cm of b] (c) {\textbf{Comparison}\\mechanisms at equal budget};
   \node[gate, right=0.45cm of c] (d) {\textbf{Tuning}\\pre-registered advancement rule};
   \node[gate, right=0.45cm of d] (e) {\textbf{Held-out test}\\only for a variant that advances};
   \draw[arr] (a) -- (b);
