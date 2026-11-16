@@ -117,3 +117,17 @@ crow and starfish modules; failure injection (RQ4); full study and ablations.
   ant 0%; single agent minus bee +43 points (CI +20 to +67). Same ordering as on Sonnet; the task-type
   contrast now holds on one backbone.
 
+
+## 16 November 2026 (panel material)
+
+- Report rebuilt in the department's Phase I outline and cut to 14 pages in total
+  (`report/main.tex`, compiled to `report/BTP-Phase1-Report-GP105.pdf`; title page with the DTU
+  logo, declaration and certificate, abstract, contents, five chapters, references).
+- Choosing the mechanism by task type (R29, `scripts/allocation_report.py`): 88.2% mean over
+  Logistics and AIME on Luna, against 80.5% (always single agent) and 66.6% (always bee); added to
+  the deck as slide 17 and to the report.
+- Slide deck sources copied into `presentation/deck/` (19 slides, from the published artifact
+  https://claude.ai/artifact/4TJx8AuA1PruHqFoaMGUaN); speaker notes in
+  `presentation/speaker-notes.md`.
+- Summary files of every experiment (`runs/*/results.jsonl`, `config.json`, `provenance.json`) are
+  now committed; per-run traces stay local.

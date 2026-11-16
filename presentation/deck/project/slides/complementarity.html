@@ -1,0 +1,17 @@
+<section id="complementarity" data-transition="fade" style="background:#1B2430;color:#F4F1EA;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1;color:#F4F1EA">Same model, the winner flips with the task</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:64px">
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;color:#E0A458;font-weight:600;text-transform:uppercase;letter-spacing:2px">Planning with a simulator</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:700;color:#E0A458;line-height:1">90% vs 47%</p>
+<p style="font-size:28px;line-height:1.45;color:#C9D3DD">Single agent vs bee on Logistics. One agent that revises from the simulator's feedback wins.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:16px">
+<p style="font-size:26px;color:#E0A458;font-weight:600;text-transform:uppercase;letter-spacing:2px">Maths without a checker</p>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:700;color:#E0A458;line-height:1">71% vs 87%</p>
+<p style="font-size:28px;line-height:1.45;color:#C9D3DD">Single agent vs quorum bee on AIME. Independent votes carry information the model cannot check.</p>
+</div>
+</div>
+<p style="font-size:32px;line-height:1.45;color:#F4F1EA">Both on GPT-6 Luna, both differences with confidence intervals clear of zero; Sonnet shows the same order. The best mechanism depends on the kind of task, which is the case for choosing a mechanism <b>per subtask</b>.</p>
+<aside>Speaker: Nikshay. Putting the two findings side by side, on the same model, GPT-6 Luna. On planning, where a simulator checks every plan, the single agent that revises from feedback beat the bee, 90 against 47 percent. On maths, where nothing checks the answer, the quorum bee beat the single agent, 87 against 71. Both differences have confidence intervals clear of zero, and Claude Sonnet shows the same order on both. So which way of working is best really depends on the kind of task. Inside one task family the differences were only extra sampling, but across kinds of task the winner flips, and that is exactly what per-subtask allocation needs. In Phase 2 a learned selector, already implemented as a rule table and a LinUCB bandit, makes that choice inside task graphs that mix both kinds.</aside>
+</section>

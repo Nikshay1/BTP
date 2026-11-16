@@ -1,0 +1,68 @@
+{
+ "config": {
+  "name": "pilot-smoke-2",
+  "mode": "measurement",
+  "model": "global.anthropic.claude-sonnet-4-6",
+  "temperature": 1.0,
+  "reasoning_effort": "low",
+  "max_completion_tokens": 2048,
+  "pricing": {
+   "input_per_m": 3.0,
+   "output_per_m": 15.0
+  },
+  "systems": [
+   "single_agent",
+   "direct",
+   "ant",
+   "bee",
+   "octopus",
+   "fixed",
+   "random",
+   "specialist"
+  ],
+  "tasks": {
+   "split_file": "data/splits/v2.json",
+   "split": "train",
+   "per_family": {},
+   "task_ids": [
+    "planbench-blocksworld-324",
+    "planbench-logistics-095",
+    "tools-v1-revenue-s67",
+    "tools-v1-top_product-s111",
+    "gsm8k-test-00273",
+    "gsm8k-test-00831"
+   ]
+  },
+  "repetitions": 1,
+  "seed": 1,
+  "budget": {
+   "max_tokens": 120000,
+   "max_model_calls": 60,
+   "max_elapsed_s": 600.0,
+   "max_tool_calls": 40
+  },
+  "max_attempts": 2,
+  "decompose": {
+   "planning": "single",
+   "tools": "natural",
+   "reasoning": "model"
+  },
+  "concurrency": 4
+ },
+ "code": {
+  "git_commit": "7773a262702a7006b717fdfbdc30325738f31d1c",
+  "git_dirty": false,
+  "uv_lock_sha256": "bc39a6026a6084e9aa328c32421e9747feb6cc6cf0415e892b5a7f8f6b8c8f34"
+ },
+ "prompts": {
+  "assess_candidate": "f372b7ebd4caea87c3afe32464b2c6c11d39b0b11de7efe291e7f39e8401757b",
+  "decompose": "91b363c22cc7d61d65f7eafc1d511e33c9fdc9a04ad437e3f85a497355c26fed",
+  "plan_graph": "335db98027428c47cd800ec3ba64705e0cddb134fd88f55d145d9064ce21d2ee",
+  "plan_steps": "c2e06dda3a158e1024e793836aeb7b029032d9a82cab7eefc9f17b861aa722db",
+  "propose_actions": "c07a51cfabf10a648a5600cafaee8f518f5f6dff4c7e43366d4e3dc512f6f257",
+  "review_result": "75bced7af517f090bb7ed4819669d9c8f6c7ad21e159758d61114fc04d7aa59d",
+  "solve_subtask": "9572a68cc0b1647d7582962c93567f2be879d88f2a74188d12bdf0dd868e4a04",
+  "supervise_step": "6bfb42e2da66b776e4d0f1598cc3c18dbcb5e6ac2974cf42b1e6bfb472a9003d"
+ },
+ "split_sha256": "bae17926c64d365c3f206da8cc7a7db75378ce3f0470b732ef3a473f03a8aaeb"
+}

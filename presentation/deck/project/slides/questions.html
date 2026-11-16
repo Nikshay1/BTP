@@ -1,0 +1,13 @@
+<section id="questions" data-transition="fade" style="background:#F7F5F0;color:#1B2430;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Our question and how we test it</h2>
+<p style="font-size:36px;line-height:1.45;color:#1B2430;background:#ECE7DD;padding:36px 44px;border-radius:16px;border-left:8px solid #9A4F12">A task is split into a graph of subtasks. For each subtask, the coordinator picks a coordination mechanism (or a single direct call) to get a <b>correct answer within a fixed token budget</b>, seeing only runtime checks, never the reference answer.</p>
+<table style="font-size:28px;color:#1B2430;font-family:'IBM Plex Sans', Arial, sans-serif">
+<tr><th style="width:12%">RQ</th><th style="width:58%">Question</th><th style="width:30%">Status at this review</th></tr>
+<tr><td>RQ1</td><td>Do the mechanisms have complementary strengths?</td><td>Measured: planning and maths</td></tr>
+<tr><td>RQ2</td><td>Can per-subtask allocation do better on a fixed budget?</td><td>Selector built, Phase 2</td></tr>
+<tr><td>RQ3</td><td>What do the biological parts add over plain controls?</td><td>Bee vs plain vote measured</td></tr>
+<tr><td>RQ4</td><td>Can the system recover from failures?</td><td>Phase 2</td></tr>
+<tr><td>RQ5</td><td>When does coordination stop paying for itself?</td><td>First evidence</td></tr>
+</table>
+<aside>Speaker: Aryan. Here is the problem in one line. A task is broken into a graph of subtasks. For each subtask, our coordinator chooses which mechanism will solve it, or sends it to one direct model call. The goal is the right answer inside a fixed token budget. The coordinator never sees the true answer, only automatic checks such as a plan simulator. We have five research questions from the approved synopsis. This review covers the first phase: the framework, the mechanisms and their first measurements, which answer parts of RQ1, RQ3 and RQ5. The learned selector and failure recovery come in the second phase.</aside>
+</section>

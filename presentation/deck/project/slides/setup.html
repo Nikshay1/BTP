@@ -1,0 +1,24 @@
+<section id="setup" data-transition="fade" style="background:#F7F5F0;color:#1B2430;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Experimental setup</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:64px">
+<table style="font-size:28px;color:#1B2430">
+<tr><th style="width:38%">Item</th><th style="width:62%">Choice</th></tr>
+<tr><td>Models</td><td>Claude Sonnet 4.6 (Bedrock); GPT-6 Luna (OpenAI) for maths and a planning replication. Low effort, temperature 1.0</td></tr>
+<tr><td>Budget</td><td>21,000 tokens per planning task (2× the single agent’s mean); 60,000 per maths problem</td></tr>
+<tr><td>Main baseline</td><td>One agent that revises its answer from check feedback</td></tr>
+<tr><td>Spent so far</td><td>about US$ 125 on Sonnet, US$ 1.60 on Luna</td></tr>
+</table>
+<div style="display:flex;flex-direction:column;gap:20px">
+<h3 style="font-size:34px;font-weight:600;color:#2F6F8F">Task suites, answers checked automatically</h3>
+<ul style="font-size:28px;line-height:1.5;color:#3D4652">
+<li>GSM8K maths word problems</li>
+<li>PlanBench planning (Blocksworld, Logistics) with a plan simulator</li>
+<li>Our tool-use suite and a controlled synthetic suite</li>
+<li>180 generated Logistics problems (5, 7, 9 packages): 30 tune, 120 held-out test</li>
+<li>AIME 2020–2025 competition maths: 30 tune, 148 held-out test</li>
+</ul>
+</div>
+</div>
+<p style="font-size:30px;line-height:1.45;color:#3D4652">Order of work: smoke tests → difficulty calibration → mechanism comparison → tuning of improved variants → held-out test only if a variant qualifies.</p>
+<aside>Speaker: Nikshay. Phase 1 ran on Claude Sonnet 4.6 through Amazon Bedrock; we then moved to GPT-6 Luna, about 30 times cheaper per token, for the maths test and to repeat the planning comparison. Within any one experiment every system uses the same model and settings. The budget is 21,000 tokens per task, which is twice what the single agent uses on average. Our main baseline is a strong single agent that can revise its answer when the checker rejects it. The tasks come from standard benchmarks, GSM8K and PlanBench, plus our own tool and synthetic suites, and we generated 180 harder Logistics planning problems, split into tuning and test sets before any model saw them. For maths we added AIME competition problems from 2020 to 2025. We went step by step: smoke tests, then difficulty calibration, then the comparison, then tuning of improved versions, with a held-out test reserved for any version that qualified.</aside>
+</section>

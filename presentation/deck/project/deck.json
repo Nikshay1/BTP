@@ -1,0 +1,59 @@
+{
+ "v": 4,
+ "createdOnFiles": {
+  "v": 1,
+  "at": "2026-11-11T12:00:00Z"
+ },
+ "lists": "css",
+ "title": "Adaptive Task Allocation for Heterogeneous Bio-Inspired Agents",
+ "order": [
+  "cover",
+  "problem",
+  "questions",
+  "literature",
+  "mechanisms",
+  "architecture",
+  "fairness",
+  "setup",
+  "calibration",
+  "logistics",
+  "lessons",
+  "repair",
+  "test",
+  "maths",
+  "quorum",
+  "complementarity",
+  "allocation",
+  "plan",
+  "close"
+ ],
+ "sections": {
+  "s1": {
+   "description": "Why one coordination pattern for every subtask is a problem, and what we ask",
+   "start": "cover"
+  },
+  "s2": {
+   "description": "The mechanisms, the framework and how we keep the comparison fair",
+   "start": "mechanisms"
+  },
+  "s3": {
+   "description": "What the experiments found so far",
+   "start": "setup"
+  },
+  "s4": {
+   "description": "What comes next and what we conclude",
+   "start": "complementarity"
+  }
+ },
+ "faces": {
+  "source-serif-4": {
+   "family": "Source Serif 4",
+   "href": "https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;600;700&display=swap"
+  },
+  "ibm-plex-sans": {
+   "family": "IBM Plex Sans",
+   "href": "https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap"
+  }
+ },
+ "designSystems": []
+}

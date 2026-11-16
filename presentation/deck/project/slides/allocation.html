@@ -1,0 +1,21 @@
+<section id="allocation" data-transition="fade" style="background:#F7F5F0;color:#1B2430;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:32px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Choosing per task type beats every fixed choice</h2>
+<table style="font-size:30px;color:#1B2430">
+<tr><th style="width:30%">Policy (GPT-6 Luna)</th><th style="width:16%">Planning</th><th style="width:16%">Maths</th><th style="width:18%">Average</th><th style="width:20%">US$ / task</th></tr>
+<tr><td>Always single agent</td><td>90.0%</td><td>70.9%</td><td>80.5%</td><td>0.0012</td></tr>
+<tr><td>Always bee</td><td>46.7%</td><td>86.5%</td><td>66.6%</td><td>0.0035</td></tr>
+<tr style="background:#ECE7DD"><td><b>Choose by task type</b></td><td><b>90.0%</b></td><td><b>86.5%</b></td><td><b>88.2%</b></td><td>0.0023</td></tr>
+</table>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:40px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#ECE7DD;padding:28px 36px;border-radius:16px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:700;color:#2F6F8F;line-height:1">+15.5 points</p>
+<p style="font-size:28px;line-height:1.4;color:#3D4652">over always single agent, all on maths (95% CI +8.1 to +23.0)</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#ECE7DD;padding:28px 36px;border-radius:16px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:64px;font-weight:700;color:#9A4F12;line-height:1">+43 points</p>
+<p style="font-size:28px;line-height:1.4;color:#3D4652">over always bee, all on planning (95% CI +20 to +67)</p>
+</div>
+</div>
+<p style="font-size:26px;line-height:1.45;color:#3D4652">The rule matches our hypothesis from before the maths test, but these numbers come from the same runs (in-sample). Phase 2 learns the choice per subtask and tests it on held-out tasks.</p>
+<aside>Speaker: Nikshay. This is the whole project in one table. If you always use the single agent, you are excellent at planning but weak at maths. If you always use the bee, you are good at maths but bad at planning. If you simply choose by task type, single agent for planning and bee for maths, you get the best of both: 88 percent on average, against 80 for the best fixed choice. Each gain rests on a test we already showed: plus 15.5 points over the single agent, all from maths, and plus 43 over the bee, all from planning, both with confidence intervals clear of zero. To be honest about the limits: this rule matches what we predicted before the maths test, but the numbers come from the same runs, so it is in-sample, and it chooses by task family, not per subtask. Learning that choice per subtask, and testing it on held-out tasks, is exactly Phase 2.</aside>
+</section>

@@ -8,8 +8,14 @@ dist/
 build/
 *.egg-info/
 
-# Generated experiment output. Traces are published separately, not committed.
-runs/
+# Generated experiment output. Per-run traces (about 110 MB) stay local; the summary files of every
+# experiment (results, configuration, provenance) are committed so the reported numbers can be checked.
+runs/*
+!runs/*/
+runs/*/*
+!runs/*/results.jsonl
+!runs/*/config.json
+!runs/*/provenance.json
 .cache/
 data/raw/
 data/prepared/

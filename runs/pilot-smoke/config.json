@@ -1,0 +1,47 @@
+{
+ "name": "pilot-smoke",
+ "mode": "measurement",
+ "model": "global.anthropic.claude-sonnet-4-6",
+ "temperature": 0.6,
+ "reasoning_effort": "low",
+ "max_completion_tokens": 2048,
+ "pricing": {
+  "input_per_m": 3.0,
+  "output_per_m": 15.0
+ },
+ "systems": [
+  "single_agent",
+  "direct",
+  "ant",
+  "bee",
+  "octopus",
+  "fixed",
+  "random",
+  "specialist"
+ ],
+ "tasks": {
+  "split_file": "data/splits/v2.json",
+  "split": "train",
+  "per_family": {
+   "planning": 1,
+   "tools": 1,
+   "reasoning": 1
+  },
+  "task_ids": []
+ },
+ "repetitions": 1,
+ "seed": 1,
+ "budget": {
+  "max_tokens": 120000,
+  "max_model_calls": 60,
+  "max_elapsed_s": 600.0,
+  "max_tool_calls": 40
+ },
+ "max_attempts": 2,
+ "decompose": {
+  "planning": "single",
+  "tools": "natural",
+  "reasoning": "model"
+ },
+ "concurrency": 4
+}

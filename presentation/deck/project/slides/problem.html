@@ -1,0 +1,21 @@
+<section id="problem" data-transition="fade" style="background:#F7F5F0;color:#1B2430;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">The problem: one way of working for every subtask</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:64px">
+<div style="display:flex;flex-direction:column;gap:24px">
+<p style="font-size:32px;line-height:1.45;color:#3D4652">LLM multi-agent systems fix their coordination pattern before they see the task: a debate, a pipeline of roles, or a manager with workers.</p>
+<p style="font-size:32px;line-height:1.45;color:#3D4652">Real tasks are mixed. One part needs a search over many paths, another needs several opinions reconciled, a third is routine work for one worker.</p>
+<p style="font-size:32px;line-height:1.45;color:#3D4652">Using one pattern everywhere pays for messages and tokens that do not improve the answer.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#ECE7DD;padding:40px;border-radius:16px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:700;color:#9A4F12;line-height:1.1">+80.8% to −70.0%</p>
+<p style="font-size:28px;line-height:1.4;color:#3D4652">Change against a single agent across tasks, same model and compute (Kim et al., 2026). Coordination helps only when it fits the task.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#ECE7DD;padding:40px;border-radius:16px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:700;color:#2F6F8F;line-height:1.1">14 failure modes</p>
+<p style="font-size:28px;line-height:1.4;color:#3D4652">Found in 1,600+ traces of seven frameworks; many come from system design and coordination, not the model (Cemri et al., NeurIPS 2025).</p>
+</div>
+</div>
+</div>
+<aside>Speaker: Aryan. Today most multi-agent systems built on large language models choose one way for the agents to work together, and they use it for the whole task. But a task has different parts. Some parts need searching, some need a vote, and some are easy and need just one worker. A controlled study by Kim and others in 2026 compared a single agent with four multi-agent designs under the same model and compute. The change ranged from plus 81 percent on one task to minus 70 percent on another. Cemri and others studied more than 1,600 failed runs and found fourteen failure modes, many caused by the coordination design itself. So the way agents coordinate should match the work.</aside>
+</section>

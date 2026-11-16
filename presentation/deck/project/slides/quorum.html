@@ -1,0 +1,17 @@
+<section id="quorum" data-transition="fade" style="background:#F7F5F0;color:#1B2430;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:40px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">What the bee adds: a quorum makes voting cheaper</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:48px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#ECE7DD;padding:40px;border-radius:16px">
+<h3 style="font-size:32px;font-weight:600;color:#2F6F8F">3 of 5 scouts agree: stop</h3>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:700;color:#2F6F8F;line-height:1">97% right</p>
+<p style="font-size:28px;line-height:1.45;color:#3D4652">120 of 148 problems. Without a quorum: 43% right. A quorum tells you when to trust the answer.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#ECE7DD;padding:40px;border-radius:16px">
+<h3 style="font-size:32px;font-weight:600;color:#9A4F12">Keep the quorum, drop recruitment</h3>
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:96px;font-weight:700;color:#9A4F12;line-height:1">0.75× tokens</p>
+<p style="font-size:28px;line-height:1.45;color:#3D4652">Quorum stop plus a plain vote: 126 / 148 solved against the majority's 125, a quarter cheaper.</p>
+</div>
+</div>
+<p style="font-size:28px;line-height:1.45;color:#3D4652">Recruitment rounds, where scouts judge each other's answers, cost 1.87× and did not beat a plain vote. The quorum saving holds on Sonnet too (0.78×), but there accuracy fell below the majority, so “same accuracy, cheaper” is a Phase 2 test. Analysis of recorded runs, not fixed in advance.</p>
+<aside>Speaker: Nikshay. So what does the bee add beyond voting? We split the test by how each bee run ended. On 120 problems three of the five scouts agreed early, the bee stopped there, and it was right 97 percent of the time; where no quorum formed it was right only 43 percent. So the quorum is a confidence signal for free. The bee's recruitment rounds, where scouts judge each other's answers, cost almost twice the tokens and did not beat a plain vote. If we keep the quorum stop and replace recruitment by a plain vote, the same recorded answers give 126 correct against the majority's 125, using three quarters of the tokens. On Sonnet the saving is the same, but accuracy fell below the majority, so we treat equal accuracy at lower cost as a hypothesis for Phase 2, not a result. This is analysis of runs we already had, not something we fixed in advance.</aside>
+</section>

@@ -1,0 +1,41 @@
+{
+ "name": "diversity-t06",
+ "mode": "measurement",
+ "model": "global.anthropic.claude-sonnet-4-6",
+ "temperature": 0.6,
+ "reasoning_effort": "low",
+ "max_completion_tokens": 2048,
+ "pricing": {
+  "input_per_m": 3.0,
+  "output_per_m": 15.0
+ },
+ "systems": [
+  "direct"
+ ],
+ "tasks": {
+  "split_file": "data/splits/v2.json",
+  "split": "train",
+  "per_family": {},
+  "task_ids": [
+   "planbench-blocksworld-324",
+   "planbench-logistics-095",
+   "gsm8k-test-00273",
+   "gsm8k-test-00831"
+  ]
+ },
+ "repetitions": 4,
+ "seed": 1,
+ "budget": {
+  "max_tokens": 120000,
+  "max_model_calls": 60,
+  "max_elapsed_s": 600.0,
+  "max_tool_calls": 40
+ },
+ "max_attempts": 1,
+ "decompose": {
+  "planning": "single",
+  "tools": "natural",
+  "reasoning": "single"
+ },
+ "concurrency": 4
+}

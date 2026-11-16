@@ -1,0 +1,21 @@
+<section id="calibration" data-transition="fade" style="background:#F7F5F0;color:#1B2430;font-family:'IBM Plex Sans', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:48px">
+<h2 style="font-family:'Source Serif 4', Georgia, serif;font-size:72px;font-weight:600;line-height:1.1">Finding 1: easy tasks leave no room to improve</h2>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:24px">
+<p style="font-family:'Source Serif 4', Georgia, serif;font-size:120px;font-weight:700;color:#9A4F12;line-height:1">30 / 30</p>
+<p style="font-size:30px;line-height:1.45;color:#3D4652">The single agent solved every calibration task (maths, tools, planning) with a generous 120,000-token budget.</p>
+</div>
+<div style="display:flex;flex-direction:column;gap:24px">
+<table style="font-size:28px;color:#1B2430">
+<tr><th style="width:55%">Logistics, token cap</th><th style="width:45%">Single agent solves</th></tr>
+<tr><td>12,000</td><td>9 / 15</td></tr>
+<tr><td>21,000 (our cap)</td><td>10 / 15</td></tr>
+<tr><td>30,000</td><td>13 / 15</td></tr>
+<tr><td>50,000</td><td>15 / 15</td></tr>
+</table>
+<p style="font-size:26px;line-height:1.4;color:#5A6470">Estimated by cutting the recorded runs at each cap. Only 2 of 15 first plans were valid; the agent gets there by revising after the simulator rejects a plan.</p>
+</div>
+</div>
+<p style="font-size:30px;line-height:1.45;color:#1B2430">So we test where there is headroom: long Logistics plans at a fixed 21,000-token cap.</p>
+<aside>Speaker: Nikshay. Our first finding is that on the standard maths, tool and easy planning tasks, a modern model is already at the ceiling: the single agent solved all 30 calibration tasks. No mechanism can beat 100 percent, so testing there would tell us nothing. The only place with room was Logistics planning, where plans are 20 to 90 steps long. There, the single agent's first plan was valid only 2 times out of 15. It succeeds by revising after the simulator rejects the plan. With our cap of 21,000 tokens it solves about two thirds. That is the region where a better mechanism could show a difference, so we focused there.</aside>
+</section>
