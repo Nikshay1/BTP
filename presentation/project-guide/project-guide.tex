@@ -1,0 +1,352 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{newtxtext,newtxmath}
+\usepackage[T1]{fontenc}
+\usepackage{microtype}
+\usepackage{booktabs,tabularx,array}
+\usepackage{enumitem}
+\usepackage{xcolor}
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+
+\definecolor{ink}{HTML}{083D5E}
+\definecolor{accent}{HTML}{2689CA}
+\titleformat{\section}{\large\bfseries\color{ink}}{\thesection}{0.6em}{}
+\titleformat{\subsection}{\normalsize\bfseries\color{ink}}{\thesubsection}{0.5em}{}
+\titlespacing*{\section}{0pt}{1.1em}{0.4em}
+\titlespacing*{\subsection}{0pt}{0.8em}{0.3em}
+\setlist{itemsep=1pt,topsep=3pt,leftmargin=1.3em}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.45em}
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+\renewcommand{\arraystretch}{1.15}
+\newcommand{\say}[1]{\par\smallskip\noindent\colorbox{accent!10}{\parbox{\dimexpr\linewidth-2\fboxsep}{\small\itshape #1}}\par}
+
+\begin{document}
+
+\begin{center}
+{\LARGE\bfseries\color{ink} Adaptive Task Allocation for Heterogeneous Bio-Inspired Agents}\\[0.4em]
+{\large The whole project, explained}\\[0.3em]
+{\small Group GP105 \,·\, Nikshay Yadav, Madan Raj Murugesan, Aryan Varshney \,·\, Supervisor: Prof.\ Shailender Kumar}\\[0.2em]
+{\small Panel preparation, 17 November 2026}
+\end{center}
+
+\section{The idea in one paragraph}
+Many AI systems now use several language-model agents working together: one plans, others solve parts,
+others check or vote. Almost all of them pick \emph{one} way of working together (a debate, a pipeline, a
+manager with workers) and use it for the whole task. Real tasks are mixed: one part is planning, one is
+maths, one is routine. Our question: can a coordinator that \textbf{picks a different way of working for
+each part of the task} do better than one strong agent working alone, \textbf{at exactly the same
+compute}? We took the ``ways of working'' from nature: ant colonies, honeybee swarms and the octopus.
+
+\section{Why this is worth studying}
+\begin{itemize}
+  \item \textbf{Kim et al.\ (2026):} same model, same compute; switching from one agent to a multi-agent
+        design changed results by anywhere from $+80.8\%$ to $-70\%$ depending on the task. The
+        coordination choice matters a lot, and no single choice is always best.
+  \item \textbf{Cemri et al.\ (2025):} many failures of popular multi-agent frameworks come from
+        coordination, not from the model being weak.
+  \item \textbf{Wang et al.\ (2024):} one agent with a strong prompt comes close to the best
+        multi-agent discussions, so ``more agents'' is not automatically better.
+  \item \textbf{Compute confound:} papers often give the multi-agent system far more compute than the
+        single agent, so the ``win'' is just extra spending.
+  \item \textbf{Metaphor criticism:} many nature-inspired algorithms are ordinary techniques with an
+        animal name on top (Camacho-Villal\'on et al.), so we test every mechanism against a version
+        with the biological part removed.
+\end{itemize}
+
+\section{The gaps we address}
+Existing adaptive systems choose an agent graph (GPTSwarm), a communication topology (G-Designer), a
+workflow (AFlow), a model (RouteLLM), collaboration modes and roles (MasRouter), or which agent gets a
+subtask with a LinUCB bandit (Symphony-Coord). AMRO-S and SwarmSys apply ant-colony ideas to LLM agents.
+\begin{itemize}
+  \item \textbf{G1:} nobody chooses between whole \emph{coordination mechanisms}, \emph{per subtask}.
+  \item \textbf{G2:} comparisons are often made at unequal compute.
+  \item \textbf{G3:} bio-inspired methods are rarely tested against controls without their biological part.
+\end{itemize}
+
+\section{Research questions and status after Phase I}
+\begin{tabularx}{\linewidth}{@{}p{1.0cm}p{6.2cm}L@{}}
+\toprule
+\textbf{RQ} & \textbf{Question} & \textbf{Status} \\
+\midrule
+RQ1 & Do the mechanisms have different strengths? & Yes: the single agent wins planning, the bee wins maths \\
+RQ2 & Does choosing per subtask beat any fixed choice at the same budget? & Shown with a simple by-type rule; learned version in Phase II \\
+RQ3 & What does the biological part add over a plain version? & The bee's quorum is a reliable confidence signal; recruitment only adds cost \\
+RQ4 & Can the system recover from failures? & Reallocation built; failure-injection tests in Phase II \\
+RQ5 & When does coordination stop paying for itself? & Voting costs about $5\times$ per correct answer \\
+\bottomrule
+\end{tabularx}
+
+\section{The mechanisms}
+All of them are fixed coordination rules around language-model calls. The rule decides who works, how
+many, when to stop and whose answer wins; the language model does the solving.
+\begin{itemize}
+  \item \textbf{Single agent (main baseline):} one conversation. It answers, gets the check's feedback
+        (e.g.\ ``plan invalid at step 7 because\ldots''), fixes the answer, and repeats.
+  \item \textbf{Direct:} one model call, no retries. The cheapest possible system, used as a floor.
+  \item \textbf{Ant colony:} builds a solution step by step, choosing each step with a probability based on
+        ``pheromone'' weights. Steps in good solutions get more pheromone, and all pheromone slowly
+        evaporates (classic ant colony optimisation, Dorigo). \emph{Controls:} no deposit, no evaporation,
+        uniform weights. A ``macro ant'' chooses chunks of plan instead of single actions.
+  \item \textbf{Honeybee (quorum bee):} based on how bee swarms pick a nest (Seeley). Five scouts solve the
+        problem independently. As soon as \textbf{3 of 5 agree} (the quorum), or an answer passes a check that
+        proves it, it stops. Without a quorum: \emph{cross-inhibition} (committed scouts may be released
+        when a rival exists, probability 0.2) and \emph{recruitment} (uncommitted scouts look at another
+        scout's answer, chosen by support, and may adopt it). \emph{Controls:} no stop signal, and a plain
+        \textbf{majority vote over five answers} (the key control).
+  \item \textbf{Octopus:} based on the octopus arm finishing a reach on its own once the brain sends the
+        command (Sumbre et al.). The coordinator hands a bounded job to one ``arm'', which works locally
+        with check feedback and reports back only the result. \emph{Control:} per-step reporting.
+\end{itemize}
+
+\section{The framework: \texttt{bioalloc}}
+About 9,400 lines of Python and 5,800 lines of tests (372 tests), checked with ruff, strict mypy and
+pytest on GitHub Actions. Every design decision (D1--D33) and every review or result (R1--R29) is
+recorded in \texttt{docs/decisions.md}.
+
+\subsection{How a task flows through it}
+\begin{enumerate}
+  \item A task arrives as a \textbf{graph of subtasks}, decomposed in advance and stored, so every system
+        gets exactly the same breakdown.
+  \item The \textbf{coordinator} takes the subtasks whose dependencies are done and asks the
+        \textbf{allocation policy} which mechanism should take each (constant, random, rule table, LinUCB).
+  \item The \textbf{executor} (ant, bee, octopus, direct, \ldots) runs the subtask.
+  \item \textbf{Runtime checks} test the result while the system is running. For planning, our STRIPS
+        simulator runs the plan; for maths, the check can only confirm the answer is a single number.
+        If the result passes, it is accepted; if it fails, it goes back to the coordinator with the reason and
+        is reallocated, up to a retry limit that is the same for every system.
+  \item The \textbf{aggregator} combines the subtask results into the final answer.
+  \item A separate \textbf{grader}, the only module holding the correct answers, scores the result
+        \emph{after} the run. A test enforces that nothing else imports it, so no system can peek.
+\end{enumerate}
+
+\subsection{The token budget}
+The budget belongs to the \emph{task}, not to the mechanism: every system gets the same cap for the same task.
+
+\begin{tabularx}{\linewidth}{@{}Lrr@{}}
+\toprule
+\textbf{Limit per task} & \textbf{Planning (Logistics)} & \textbf{Maths (AIME)} \\
+\midrule
+Tokens & 21,000 & 60,000 \\
+Model calls & 60 & 30 \\
+Wall time & 10 min & 15 min \\
+Tool calls & 40 & 40 \\
+\bottomrule
+\end{tabularx}
+
+Every call goes through a \textbf{metered client}: it reserves a worst-case token cost before sending and
+\textbf{refuses the call} if that does not fit. Subtasks draw from the same task pot. The cap is a
+ceiling, not an allowance: systems can use less, so we also report the cost per correct answer.
+
+\subsection{Logging}
+Every run writes a trace of every call and a manifest with the config, code version and data-split hash.
+Any number in the report can be traced to \texttt{runs/*/results.jsonl}.
+
+\section{Data}
+Each suite is stored as a \emph{public} file (what systems see) and a \emph{private} file (answers, read
+only by the grader), split once into frozen train, tune and test sets.
+
+\begin{tabularx}{\linewidth}{@{}p{3.6cm}p{1.3cm}Lp{3.0cm}@{}}
+\toprule
+\textbf{Suite} & \textbf{Size} & \textbf{Content} & \textbf{Judged by} \\
+\midrule
+GSM8K + our tool suite & 150+150 & Word problems; multi-tool tasks & Number / exact match \\
+PlanBench & 150 & Blocksworld and Logistics planning (PDDL) & Our STRIPS simulator \\
+Generated Logistics (ours) & 180 & 3--4 cities, 5/7/9 packages & Simulator \\
+AIME 2020--2025 & 178 & Competition maths; 30 tuning, \textbf{148 held-out test} & Exact match after the run \\
+\bottomrule
+\end{tabularx}
+
+\section{How we ran experiments}
+\begin{itemize}
+  \item \textbf{Pre-registration:} before each experiment we wrote down in \texttt{decisions.md} what we
+        would measure, what counts as a win and what we would conclude, and only then ran it. This stops us
+        from fitting the story to the results.
+  \item \textbf{Stages:} smoke test (cheap check that nothing is broken) $\rightarrow$ calibration (find tasks
+        where the single agent is neither always right nor always wrong) $\rightarrow$ comparison at equal
+        budget $\rightarrow$ tuning with an advancement rule fixed in advance $\rightarrow$ held-out test only
+        for variants that advance.
+  \item \textbf{Statistics:} differences use a \textbf{paired bootstrap with 95\% confidence intervals}.
+        Both systems ran the same problems; we resample the problems thousands of times with replacement,
+        recompute the gap each time, and keep the middle 95\% of gaps. If the interval does not include
+        zero, the gap is very unlikely to come from which problems we happened to test.
+  \item \textbf{Models:} Claude Sonnet 4.6 on Amazon Bedrock (most of Phase I) and GPT-6 Luna on OpenAI
+        (about $30\times$ cheaper; used to replicate the key results and for Phase II). Both at temperature
+        1.0, low reasoning effort.
+\end{itemize}
+
+\section{What happened, in order}
+
+\subsection*{Step 1: Building the framework (October)}
+Everything was first built offline against a \textbf{scripted fake model} so the logic could be tested for
+free. Then came the budget ledger, checks, executors, task suites and splits. After every milestone an
+independent code review (by another AI model) was run; findings were fixed and logged.
+
+\subsection*{Step 2: Choosing a backbone}
+The plan started with GPT-OSS-120B on Groq (D3); the pilot moved to Claude Sonnet 4.6 on Bedrock (D23).
+
+\subsection*{Step 3: Calibration (R12)}
+At a generous 120,000-token cap the single agent solved \emph{every} calibration task: normal maths and
+easy planning were too easy for any mechanism to beat it. On Logistics it solved 10 of 15 at 21,000 tokens
+and 15 of 15 at 50,000. So we chose \textbf{Logistics at 21,000 tokens} (about twice the single agent's
+average spend), where there is room to improve.
+
+\subsection*{Step 4: Logistics comparison on Sonnet (R13)}
+Single agent 73\%, octopus 67\%, bee 60\%, direct 57\%, ant 0\%. No mechanism beat the single agent. The
+traces showed why:
+\begin{itemize}
+  \item The single agent reads the simulator's error message and fixes its plan.
+  \item The bee's scouts each made one plan and never saw why it was rejected; recruitment never even ran.
+  \item The ant spent one model call per action. Plans need 14--45 actions and the budget buys about 5--7
+        calls, so it never finished a plan.
+\end{itemize}
+
+\subsection*{Step 5: Trying to fix the mechanisms for planning}
+\begin{itemize}
+  \item \textbf{Repair scouts (D28, R21):} scouts that fix their own rejected plans using the simulator's
+        feedback. Three variants ran on 30 tuning instances of our generated suite. The rule fixed in advance:
+        advance only if a variant beats the single agent, or matches it with 20\% fewer tokens. The best came
+        within one success (23/60 vs 24/60) but used 4\% \emph{more} tokens, so nothing advanced. The 120
+        held-out generated instances remain unseen, reserved for Phase II.
+  \item \textbf{Macro ant (D30, R22):} 0--1 of 12 solved. The model mostly proposed illegal plan chunks, so
+        pheromone had nothing to choose between. Lesson: ant-style search fits choices between several
+        cheap, checkable options, not long plans.
+\end{itemize}
+
+\subsection*{Step 6: Where the bee should win: AIME maths (D31)}
+The bee's real strength is a quorum of independent opinions, which only helps when \textbf{nothing can
+check the answer}. AIME is exactly that: one integer answer, no checker. The \textbf{first test was stopped
+(R23)}: both voters scored below the single agent, which made no sense. The traces showed a fairness bug:
+each scout was limited to 4 model replies, so scouts that used the calculator a few times were cut off with
+no answer, while the single agent had 12 steps. We fixed it (12 for scouts too), disclosed that 52 test
+problems had been seen in the stopped run, and re-ran.
+
+\subsection*{Step 7: Switching to Luna (D32)}
+Sonnet was expensive (US\$3 / \$15 per million input/output tokens) and its daily quota kept killing long
+runs. GPT-6 Luna costs US\$0.10 / \$0.50. Sonnet results stay Sonnet results; models are never mixed inside
+one experiment.
+
+\subsection*{Step 8: AIME held-out test on Luna (R26), 148 problems}
+\begin{tabularx}{\linewidth}{@{}Lrrr@{}}
+\toprule
+\textbf{System} & \textbf{Solved} & \textbf{Tokens/problem} & \textbf{Gap vs single agent} \\
+\midrule
+Single agent & 70.9\% & 1,112 & -- \\
+Majority of five & 84.5\% & 6,004 & $+13.5$ (CI $+5.4$ to $+21.6$) \\
+\textbf{Quorum bee} & \textbf{86.5\%} & 6,441 & $\mathbf{+15.5}$ (CI $+8.1$ to $+23.0$) \\
+\bottomrule
+\end{tabularx}
+
+Both voters clearly beat the single agent. Bee vs majority is $+2.0$ points (CI $-2.0$ to $+6.8$), i.e.\
+noise, so \textbf{most of the gain is self-consistency} (voting), at about $5\times$ the cost per correct
+answer (still well under a cent). On Sonnet (stopped at 141 of 148 problems) the order was the same.
+
+\subsection*{Step 9: Logistics replicated on Luna (R27)}
+15 problems $\times$ 2 runs = 30 runs per system. Single agent 27/30 (90\%), octopus 87\%, bee 14/30 (47\%),
+direct 47\%, ant 0\%: \textbf{the same order as on Sonnet}. Single agent minus bee: $+43$ points
+(13/30), \textbf{95\% CI $+20$ to $+67$}. The interval is wide because 15 problems is a small set, but it
+stays well above zero. Caveat we report ourselves: we had pre-set a ``near-ceiling'' flag at 90\%, and the
+single agent hit exactly 90\%; the bee, direct and ant are far below it, so the problems still separate the systems.
+
+\subsection*{Step 10: What the bee adds beyond voting (R28, analysed after the test)}
+\begin{itemize}
+  \item \textbf{Quorum stop:} on \textbf{120 of 148} problems three scouts agreed early. The bee stopped and
+        was \textbf{right 97\%} of the time, using $0.69\times$ a full vote's tokens. The quorum is a cheap,
+        reliable ``I am confident'' signal.
+  \item \textbf{Recruitment:} on the other 28 problems recruitment solved 43\% (a plain majority 50\%) at
+        $1.87\times$ the tokens. Recruitment adds cost, not accuracy.
+  \item \textbf{Phase II hypothesis (untested):} stop at a quorum, otherwise take a plain vote, using about
+        $0.75\times$ a full vote's tokens.
+\end{itemize}
+
+\subsection*{Step 11: Choosing by task type (R29)}
+\begin{tabularx}{\linewidth}{@{}Lrrr@{}}
+\toprule
+\textbf{Policy (GPT-6 Luna)} & \textbf{Planning} & \textbf{Maths} & \textbf{Mean} \\
+\midrule
+Always single agent & 90.0\% & 70.9\% & 80.5\% \\
+Always bee & 46.7\% & 86.5\% & 66.6\% \\
+\textbf{Choose by task type} & \textbf{90.0\%} & \textbf{86.5\%} & \textbf{88.2\%} \\
+\bottomrule
+\end{tabularx}
+
+This is the project's central claim in miniature: the best mechanism flips with the kind of task, so
+choosing per subtask beats any fixed choice. Caveat: measured on the same runs (in-sample), so it is a
+demonstration, not a test. Phase II learns the choice and tests it on unseen tasks.
+
+\textbf{Cost of Phase I:} about US\$125 on Sonnet and US\$1.60 on Luna. A full study would cost
+US\$1,000--1,900 at Sonnet prices and under US\$100 on Luna.
+
+\section{The three takeaways}
+\begin{enumerate}
+  \item \textbf{When a task has a checker} (planning), a single agent that learns from feedback is very hard
+        to beat; none of our mechanisms did.
+  \item \textbf{When nothing checks the answer} (maths), voting beats the single agent by 13--16 points, and
+        the bee's quorum tells you when to trust the answer (97\% right when reached).
+  \item \textbf{The best mechanism depends on the task type}, which is exactly why per-subtask allocation matters.
+\end{enumerate}
+
+\section{Limitations (say these before the panel does)}
+\begin{itemize}
+  \item Each task type is one suite (Logistics, AIME).
+  \item The by-type result is in-sample.
+  \item The quorum analysis was made after the test.
+  \item 15 PlanBench problems detect only large effects, so the intervals are wide.
+  \item The ant never got a fair use case in Phase I.
+\end{itemize}
+
+\section{Phase II (December--May)}
+\begin{itemize}
+  \item Build \textbf{mixed task graphs}: planning, calculation and tool use in one task.
+  \item \textbf{Learn the allocation policy}: a rule table first, then a \textbf{LinUCB contextual bandit}
+        that learns which mechanism to pick from subtask features and past outcomes.
+  \item Test the \textbf{quorum-stop-then-vote} idea.
+  \item Add two more mechanisms, and \textbf{failure injection} (RQ4): break agents or tools and check that
+        reallocation recovers.
+  \item Run the full study with ablations on held-out tasks; write the thesis and a paper.
+\end{itemize}
+
+\section{Likely panel questions}
+
+\subsection*{``What exactly is a runtime check?''}
+An automatic test on a result while the system is still running, using only what would exist in real use:
+the plan simulator for planning, a format check (``is it a single number?'') for maths. Pass: accepted.
+Fail: sent back with the reason and reallocated. Runtime checks never see the correct answers; only the
+grader does, after the run.
+
+\subsection*{``Which comparison is fair, and how?''}
+Each bio-inspired mechanism against the plain versions: mainly the single agent, plus the majority vote and
+the direct call. The only difference allowed is how the agents work together: same model, prompt, checks
+and token cap for every system, enforced in code, and no system ever sees the answers.
+
+\subsection*{``Is there a separate token cap for the bee, the octopus, \ldots?''}
+\say{Every system gets the same budget for each task, 21,000 tokens for a planning task and 60,000 for a
+maths problem. It's a ceiling: a system can use less, but every call is checked before it's sent, and any
+call that would go over is refused. So no mechanism can win just by spending more.}
+
+\subsection*{``Aren't these just deterministic algorithms you call agents?''}
+\say{That's fair for the coordination layer. The ant, bee and octopus rules are deliberately written as fixed
+algorithms, so we can test whether the mechanism itself helps. But the agents inside them are language-model
+calls that each reason independently and give different answers every run, and that's what the rules
+coordinate. It's the same structure as debate or manager--worker systems in the literature. And the
+adaptive part of the project is choosing which mechanism to use for each subtask, which Phase II learns from data.}
+
+If pushed on ``why bio-inspired then?'': the biology is the source of the coordination rules (quorum
+sensing, pheromone reinforcement, decentralised arms); we do not claim the agents are bees.
+
+\subsection*{``What does $+80.8\%$ to $-70\%$ mean?''}
+\say{One study tested the same AI working alone versus as a team. On some tasks the team did 80 percent better;
+on others it did 70 percent worse. So teamwork isn't always better; it depends on the task. That's the idea
+behind our project: pick the right way of working for each part of the task.}
+
+\subsection*{``Where do the 43 points and the 20--67 interval come from?''}
+\say{On Luna the single agent made a valid plan in 27 of 30 runs and the bee in 14, a 43-point gap. We resampled
+the problems thousands of times to see how much that gap could move by chance; it stayed between 20 and 67
+points, never near zero, so the difference is real, not an accident of which problems we picked.}
+
+\vfill
+\small Code and results: \texttt{github.com/Nikshay1/BTP} \,·\, Report: \texttt{report/BTP-Phase1-Report-GP105.pdf}
+\,·\, Decision log: \texttt{docs/decisions.md}
+
+\end{document}
